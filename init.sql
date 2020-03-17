@@ -14,10 +14,12 @@ create table Orders (
 	totalcost			INTEGER not null,
 	fdspromoid			INTEGER,
     preparedbyrest      boolean not null,
+    restid              INTEGER not null,
 
 	primary key (orderid),
 	foreign key (reid) references Reviews,
-	foreign key (customerid) references Customers
+	foreign key (customerid) references Customers,
+    foreign key (restid) references Restaurants,
 	foreign key (fdspromoid) references FDSPromo
 )
 
@@ -54,7 +56,7 @@ create table Locations (
 create table PaymentMethods (
 	paymentmethodid	INTEGER,
 	customerid 		INTEGER,
-	cardInfo		varchar(60),
+	cardinfo		varchar(60),
 
 	primary key (paymentmethodid),
 	foreign key (customerid) references Customers
@@ -104,14 +106,15 @@ create table RestaurantsStats (
 )
 
 create table Food ( 
-    foodid          INTEGER,
+    foodid          integer,
     description     varchar(50),
     price           float not null,
-    availability    INTEGER not null,
+    availability    integer not null,
     category        varchar(20),
-    restid          INTEGER not null,
+    restid          integer not null,
 
-    primary key(foodid, restid)
+    primary key(foodid, restid),
+    foreign key (restid) from Restaurants
 );
 
 insert into Food(foodid, price, availability, category) values
@@ -169,8 +172,7 @@ create table Contains (
     description varchar(50) not null,
     quantity    INTEGER not null,
 
-
-    foreign key(foodid, restid) references Food
+    foreign key(foodid, restid) references Food,
     foreign key(orderid) references Orders
 );
 
@@ -212,13 +214,13 @@ create trigger contains_trigger
 --insertion into from table needs to check if restid is same as all other restid
 ----------------------------------------------------
 create table FDSPromo (
-    description     varchar(50)
-    fdspromoid      integer
-    orderid         integer not null
-    startTime       DATE
-    endTime         DATE
+    description     varchar(50),
+    fdspromoid      integer,
+    orderid         integer not null,
+    startTime       DATE,
+    endTime         DATE,
 
-    primary key(fdspromoid)
+    primary key(fdspromoid),
     foreign key(orderid) references Campaigns
 );
 
@@ -263,7 +265,7 @@ CREATE TABLE PartTimeRiders (
 CREATE TABLE MonthlyWorkSchedule (
      mwsid              INTEGER,
      startday           INTEGER NOT NULL
-                        CHECK (startday in (1, 2, 3, 4, 5, 6, 7),
+                        CHECK (startday in (1, 2, 3, 4, 5, 6, 7)),
      mwshours           INTEGER NOT NULL
                         CHECK (totalhours = 40),
      fwsid              INTEGER NOT NULL,
