@@ -1,7 +1,7 @@
 create table Uaers (
     userid              INTEGER,
-    name                TEXT,
-    password            TEXT,
+    name                varchar(20),
+    password            varchar(10),
 
     primary key (userid)
 )
@@ -71,6 +71,33 @@ create table Delivers (
 	primary key (orderid),
 	foreign key (orderid) references Orders
 	foreign key (paymentmethodid) references PaymentMethods
+)
+
+create table CustomersStats (
+    customerid          INTEGER,
+    totalnumorders      INTEGER,
+    totalcostorders     INTEGER,
+
+    primary key (customerid),
+    foreign key (customerid) from Customers
+)
+
+-- for the FDS manager
+create table AllStats (
+    monthid             INTEGER,
+    totalnewcust        INTEGER,
+    totalorderscost     INTEGER,
+
+    primary key (monthid)
+)
+
+create table RestaurantsStats (
+    restid              INTEGER,
+    numcompletedorders  INTEGER,
+    totalorderscost     INTEGER,
+
+    primary key (restid),
+    foreign key (restid) from Restaurants
 )
 
 create table Food ( 
@@ -201,6 +228,16 @@ CREATE TABLE DeliveryRiders (
     userid              INTEGER,
     PRIMARY KEY (userid),
     FOREIGN KEY (userid) REFERENCES Users
+);
+
+--use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
+CREATE TABLE RiderStats (
+	userid 			INTEGER,
+	totalOrders		INTEGER,
+	totalHours		INTEGER,
+	totalSalary		INTEGER;
+
+	foreign key(userid)	references DeliveryRiders
 );
 
 CREATE TABLE FullTimeRiders (
