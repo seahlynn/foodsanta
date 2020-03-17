@@ -111,7 +111,8 @@ create table Food (
     foodid          integer,
     description     varchar(50),
     price           float not null,
-    availability    integer not null,
+    availability    integer not null 
+                    check availability >= 0,
     category        varchar(20),
     restid          integer not null,
 
@@ -174,6 +175,7 @@ create table Contains (
     description varchar(50) not null,
     quantity    INTEGER not null,
 
+    primary key (orderid, foodid),
     foreign key(foodid, restid) references Food,
     foreign key(orderid) references Orders
 );
