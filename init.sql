@@ -295,7 +295,7 @@ CREATE TABLE DailyWorkShift (
                         CHECK (duration in (1, 2, 3, 4))
     wwsid               INTEGER,
 
-    PRIMARY KEY (dwsid),
+    PRIMARY KEY (dwsid, starthour),
     FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
 )
 
@@ -307,9 +307,9 @@ begin
     select dws.dwsid into dwsid
         from DailyWorkShift dws 
         where new.dwsid = dws.dwsid
-        and   (dws.starthour <= new.starthour and new.starthour <= dws.starhour + dws.duration)
-        and   (dws.starthour + new.duration <= new.starthour and new.starthour + new.duration <= dws.starhour + dws.duration
-    if dwsid is null then
+        and   ((dws.starthour <= new.starthour and new.starthour <= dws.starthour + dws.duration)
+        or    (dws.starthour <= new.starthour + new.duration and new.starthour + new.duration <= dws.starthour + dws.duration))
+    if dwsid is not null then
         raise exception 'Hours clash with an existing shift' 
         end if;
         return null;
