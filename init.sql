@@ -203,6 +203,16 @@ CREATE TABLE DeliveryRiders (
     FOREIGN KEY (userid) REFERENCES Users
 );
 
+--use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
+CREATE TABLE RiderStats (
+	userid 			INTEGER,
+	totalOrders		INTEGER,
+	totalHours		INTEGER,
+	totalSalary		INTEGER;
+
+	foreign key(userid)	references DeliveryRiders
+);
+
 CREATE TABLE FullTimeRiders (
     userid             INTEGER,
     PRIMARY KEY (userid),
