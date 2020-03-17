@@ -65,7 +65,7 @@ create table Delivers (
 	orderid					INTEGER,
 	rating					INTEGER check ((rating <= 5) and (rating >= 0)),
 	location 				varchar(50) not null,
-	timedeparttolocation	DATE not null,
+	timedeparttorestaurant	DATE not null,
 	timearrivedatrestaurant	DATE not null,
 	timeorderdelivered		DATE not null,
 	paymentmethodid			INTEGER, 			

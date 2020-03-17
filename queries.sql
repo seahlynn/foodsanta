@@ -37,12 +37,53 @@ create view custPoints (points) as
     from Customers
     where customerid = c2;
 
---list of food solds for individual restaurant (r1)
+-- see locations of customer (c4) 
+create view seeLocations (location, dateadded) as    
+    select (location, dateadded) 
+    from Locations 
+    where customerid = c4
+    order by dateadded asc;
 
+-- see current promotions acc to current time (t1) 
+create view seePromotions(promodesc) as
+    select distinct description
+    from FDSPromo
+    where startTime <= t1
+    and endTime >= t1
+    union
+    select distinct description
+    from RestaurantPromo
+    where startTime <= t1
+    and endTime >= t1;
+
+-- see current order being made acc to current time (t2) by customer (c5)
+-- if time delivered is not null, then order has been delivered
+create view seeCurrentOrder(orderid, ordercreatedtime, timedeparttorestaurant, 
+    timearrivedatrestaurant, cardinfo) as   
+    select distinct Orders.orderid, Orders.ordercreatedtime, 
+        Delivers.timedeparttorestaurant, Delivers.timearrivedatrestaurant,
+        PaymentMethods.cardinfo 
+    from (Orders natural join Delivers) natural join PaymentMethods
+    where Delivers.timeorderdelivered = null
+    and Orders.customer = c5;
+
+-- see all previous orders made by customer (c6)
+create view seePastOrders(orderid, ordercreatedtime, timedeparttorestaurant, 
+    timearrivedatrestaurant, timeorderdelivered, cardinfo) as 
+    select distinct Orders.orderid, Orders.ordercreatedtime, 
+        Delivers.timedeparttorestaurant, Delivers.timearrivedatrestaurant,
+        Delivers.timeorderdelivered, PaymentMethods.cardinfo 
+    from (Orders natural join Delivers) natural join PaymentMethods
+    where Delivers.timeorderdelivered <> null
+    and Orders.customer = c6;
+
+
+--Restaurants    
+
+--list of food solds for individual restaurant (r1)
 create view allFood (foodid, price, availability) AS
 	select distinct F.foodid, F.price, F.availability
 	from Food F
 	where F.restid = r1;
 
 
---
