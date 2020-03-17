@@ -14,20 +14,20 @@ create view restaurantMenuItems (foodid) as
 
 -- see reviews of a particular restaurant (r2) written by others 
 -- and when it was created
-create view seeReviews (reviewdesc, ordercreatedtime) as 
-    select reviewdesc, ordercreatedtime
+create view seeReviews (reviewDesc, orderCreatedTime) as 
+    select reviewDesc, orderCreatedTime
     from Reviews natural join Orders
     where Orders.restid = r2;
 
 -- see reviews written by themselves (customer c3)
-create view seeOwnReviews (reviewdesc, ordercreatedtime) as
-    select reviewdesc, ordercreatedtime
+create view seeOwnReviews (reviewDesc, orderCreatedTime) as
+    select reviewDesc, orderCreatedTime
     from Reviews natural join Orders
     where Orders.userid = c3;
 
 -- see registered payment methods by customer (c1)
-create view custPaymentMethods (cardinfo) as
-    select cardinfo
+create view custPaymentMethods (cardInfo) as
+    select cardInfo
     from PaymentMethods 
     where userid = c1;
 
@@ -38,11 +38,11 @@ create view custPoints (points) as
     where userid = c2;
 
 -- see locations of customer (c4) 
-create view seeLocations (location, dateadded) as    
-    select (location, dateadded) 
+create view seeLocations (location, dateAdded) as    
+    select (location, dateAdded) 
     from Locations 
     where customerid = c4
-    order by dateadded asc;
+    order by dateAdded asc;
 
 -- see current promotions acc to current time (t1) 
 create view seePromotions (promodesc) as
@@ -58,23 +58,23 @@ create view seePromotions (promodesc) as
 
 -- see current order being made acc to current time (t2) by customer (c5)
 -- if time delivered is not null, then order has been delivered
-create view seeCurrentOrder (orderid, ordercreatedtime, timedeparttorestaurant, 
-    timearrivedatrestaurant, cardinfo) as   
-    select distinct Orders.orderid, Orders.ordercreatedtime, 
-        Delivers.timedeparttorestaurant, Delivers.timearrivedatrestaurant,
+create view seeCurrentOrder (orderid, orderCreatedTime, timeDepartToRestaurant, 
+    timeArrivedAtRestaurant, cardinfo) as   
+    select distinct Orders.orderid, Orders.orderCreatedTime, 
+        Delivers.timeDepartToRestaurant, Delivers.timeArrivedAtRestaurant,
         PaymentMethods.cardinfo 
     from (Orders natural join Delivers) natural join PaymentMethods
-    where Delivers.timeorderdelivered = null
+    where Delivers.timeOrderDelivered = null
     and Orders.userid = c5;
 
 -- see all previous orders made by customer (c6)
-create view seePastOrders (orderid, ordercreatedtime, timedeparttorestaurant, 
-    timearrivedatrestaurant, timeorderdelivered, cardinfo) as 
-    select distinct Orders.orderid, Orders.ordercreatedtime, 
-        Delivers.timedeparttorestaurant, Delivers.timearrivedatrestaurant,
-        Delivers.timeorderdelivered, PaymentMethods.cardinfo 
+create view seePastOrders (orderid, orderCreatedTime, timeDepartToRestaurant, 
+    timeArrivedAtRestaurant, timeOrderDelivered, cardinfo) as 
+    select distinct Orders.orderid, Orders.orderCreatedTime, 
+        Delivers.timeDepartToRestaurant, Delivers.timeArrivedAtRestaurant,
+        Delivers.timeOrderDelivered, PaymentMethods.cardinfo 
     from (Orders natural join Delivers) natural join PaymentMethods
-    where Delivers.timeorderdelivered <> null
+    where Delivers.timeOrderDelivered <> null
     and Orders.userid = c6;
 
 
@@ -97,7 +97,7 @@ create view foodOrdered(orderid, foodid, description, quantity) AS
 
 --revenue for restaurant r1 of for feb of 2020
 create view totalRevenue(revenue) AS
-	select S.totalorderscost
+	select S.totalCostOfOrders
 	from RestaurantsStats S
 	where S.restid = r1
 	and month = 2
@@ -105,7 +105,7 @@ create view totalRevenue(revenue) AS
 
 --total orders for restaurant r1
 create view totalRevenue(revenue) AS
-	select S.totalorderscost
+	select S.totalCostOfOrders
 	from RestaurantsStats S
 	where S.restid = r1
 	and month = 2
@@ -114,15 +114,15 @@ create view totalRevenue(revenue) AS
 -- FDS Manager
 
 -- see stats for the month (m1)
-create view seeMonthlyStats (totalnewcust, totalnumorders, 
-    totalorderscost) as
-    select totalnewcust, totalnumorders, totalorderscost
+create view seeMonthlyStats (totalNewCust, totalNumOrders, 
+    totalCostOfOrders) as
+    select totalNewCust, totalNumOrders, totalCostOfOrders
     from AllStats
     where monthid = m1;
 
 -- see each customer stats for the month (m2)
-create view seeEachCustomerStats (userid, totalnumorders, totalorderscost) as
-    select userid, totalnumorders, totalorderscost
+create view seeEachCustomerStats (userid, totalNumOrders, totalCostOfOrders) as
+    select userid, totalNumOrders, totalCostOfOrders
     from CustomersStats
     where monthid = m2;
 

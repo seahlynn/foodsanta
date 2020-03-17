@@ -9,11 +9,11 @@ create table Uaers (
 create table Orders (
 	orderid				INTEGER,
 	userid			    INTEGER,
-	ordercreatedtime	DATE, 
-	deliveryfee			INTEGER not null,
-	totalcost			INTEGER not null,
+	orderCreatedTime	DATE, 
+	deliveryFee			INTEGER not null,
+	totalCost			INTEGER not null,
 	fdspromoid			INTEGER,
-    preparedbyrest      boolean not null,
+    preparedByRest      boolean not null,
     restid              INTEGER not null,
 
 	primary key (orderid),
@@ -34,7 +34,7 @@ create table Customers (
 -- need to enforce that userid has made the order that has the same orderid
 create table Reviews (
 	orderid			INTEGER,
-	reviewdesc		varchar(100),
+	reviewDesc		varchar(100),
 
 	primary key (orderid),
 	foreign key (orderid) from Orders
@@ -45,7 +45,7 @@ create table Reviews (
 create table Locations (
 	userid 		    INTEGER,
 	location		varchar(50),
-	dateadded		DATE not null,
+	dateAdded		DATE not null,
 
 	primary key (userid),
 	foreign key (userid) references Customers
@@ -56,7 +56,7 @@ create table Locations (
 create table PaymentMethods (
 	paymentmethodid	INTEGER,
 	userid  		INTEGER,
-	cardinfo		varchar(60),
+	cardInfo		varchar(60),
 
 	primary key (paymentmethodid),
 	foreign key (userid) references Customers
@@ -66,9 +66,9 @@ create table Delivers (
 	orderid					INTEGER,
 	rating					INTEGER check ((rating <= 5) and (rating >= 0)),
 	location 				varchar(50) not null,
-	timedeparttorestaurant	DATE not null,
-	timearrivedatrestaurant	DATE not null,
-	timeorderdelivered		DATE not null,
+	timeDepartToRestaurant	DATE not null,
+	timeArrivedAtRestaurant	DATE not null,
+	timeOrderDelivered		DATE not null,
 	paymentmethodid			INTEGER, 			
 
 	primary key (orderid),
@@ -79,8 +79,8 @@ create table Delivers (
 create table CustomersStats (
     userid              INTEGER,
     monthid             INTEGER,
-    totalnumorders      INTEGER,
-    totalcostorders     INTEGER,
+    totalNumorders      INTEGER,
+    totalCostOfOrders     INTEGER,
 
     primary key (userid, monthid),
     foreign key (userid) from Customers
@@ -89,17 +89,17 @@ create table CustomersStats (
 -- for the FDS manager
 create table AllStats (
     monthid             INTEGER,
-    totalnewcust        INTEGER,
-    totalnumorders      INTEGER,  ## should be the total of all restaurant
-    totalorderscost     INTEGER,
+    totalNewCust        INTEGER,
+    totalNumOrders      INTEGER,  ## should be the total of all restaurant
+    totalCostOfOrders   INTEGER,
 
     primary key (monthid)
 )
 
 create table RestaurantsStats (
     restid              INTEGER,
-    numcompletedorders  INTEGER,
-    totalorderscost     INTEGER,
+    numCompletedOrders  INTEGER,
+    totalOrdersCost     INTEGER,
     month               INTEGER,
     year                INTEGER,
 
@@ -132,7 +132,7 @@ insert into Food(foodid, price, availability, category) values
 -----------------------------------------------
 create table Restaurants (
     restid      INTEGER
-    restname    varchar(50)
+    restName    varchar(50)
     minAmt      INTEGER not null
 
     primary key(restid)
@@ -240,7 +240,7 @@ CREATE TABLE DeliveryRiders (
 );
 
 --use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
-CREATE TABLE RiderStats (
+CREATE TABLE RidersStats (
 	userid 			INTEGER,
 
 	totalOrders		INTEGER,
@@ -267,9 +267,9 @@ CREATE TABLE PartTimeRiders (
 
 CREATE TABLE MonthlyWorkSchedule (
      mwsid              INTEGER,
-     startday           INTEGER NOT NULL
+     startDay           INTEGER NOT NULL
                         CHECK (startday in (1, 2, 3, 4, 5, 6, 7)),
-     mwshours           INTEGER NOT NULL
+     mwsHours           INTEGER NOT NULL
                         CHECK (totalhours = 40),
      fwsid              INTEGER NOT NULL,
 
@@ -302,13 +302,13 @@ CREATE TABLE WeeklyWorkSchedule (
 
 CREATE TABLE DailyWorkShift (
     dwsid               INTEGER,
-    starthour           INTEGER,
-                        CHECK (starthour >= 10 AND starthour <= 22)
+    startHour           INTEGER,
+                        CHECK (startHour >= 10 AND startHour <= 22)
     duration            INTEGER,
                         CHECK (duration in (1, 2, 3, 4))
     wwsid               INTEGER,
 
-    PRIMARY KEY (dwsid, starthour),
+    PRIMARY KEY (dwsid, startHour),
     FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
 )
 
@@ -320,8 +320,8 @@ begin
     select dws.dwsid into dwsid
         from DailyWorkShift dws 
         where new.dwsid = dws.dwsid
-        and   ((dws.starthour <= new.starthour and new.starthour <= dws.starthour + dws.duration)
-        or    (dws.starthour <= new.starthour + new.duration and new.starthour + new.duration <= dws.starthour + dws.duration))
+        and   ((dws.startHour <= new.startHour and new.startHour <= dws.startHour + dws.duration)
+        or    (dws.startHour <= new.startHour + new.startHour and new.startHour + new.duration <= dws.startHour + dws.duration))
     if dwsid is not null then
         raise exception 'Hours clash with an existing shift' 
         end if;
