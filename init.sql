@@ -13,10 +13,12 @@ create table Orders (
 	deliveryfee			INTEGER not null,
 	totalcost			INTEGER not null,
 	fdspromoid			INTEGER,
+    restid              INTEGER not null,
 
 	primary key (orderid),
 	foreign key (reid) references Reviews,
-	foreign key (customerid) references Customers
+	foreign key (customerid) references Customers,
+    foreign key (restid) references Restaurants,
 	foreign key (fdspromoid) references FDSPromo
 )
 
@@ -53,7 +55,7 @@ create table Locations (
 create table PaymentMethods (
 	paymentmethodid	INTEGER,
 	customerid 		INTEGER,
-	cardInfo		varchar(60),
+	cardinfo		varchar(60),
 
 	primary key (paymentmethodid),
 	foreign key (customerid) references Customers
@@ -101,14 +103,15 @@ create table RestaurantsStats (
 )
 
 create table Food ( 
-    foodid          integer
-    price           float not null
-    availability    integer not null
-    category        varchar(20)
-    restid          integer not null
+    foodid          integer,
+    description     varchar(50),
+    price           float not null,
+    availability    integer not null,
+    category        varchar(20),
+    restid          integer not null,
 
-    primary key(foodid, restid)
-
+    primary key(foodid, restid),
+    foreign key (restid) from Restaurants
 );
 
 insert into Food(foodid, price, availability, category) values
@@ -123,9 +126,9 @@ insert into Food(foodid, price, availability, category) values
 --insertion of food into Contains table has to decrease availability by one (use trigger under contains)
 -----------------------------------------------
 create table Restaurants (
-    restid      integer
-    restname    varchar(50)
-    minAmt      integer not null
+    restid      integer,
+    restname    varchar(50),
+    minAmt      integer not null,
 
     primary key(restid)
 );
@@ -142,11 +145,11 @@ insert into Restaurants(restid, restname, minAmt) values
 
 ----------------------------------------------
 create table RestaurantPromo (
-    description     varchar(50)
-    restpromoid     integer
-    startTime       DATE
-    endTime         DATE
-    restid          integer not null
+    description     varchar(50),
+    restpromoid     integer,
+    startTime       DATE,
+    endTime         DATE,
+    restid          integer not null,
 
     primary key(restpromoid)     
 );
@@ -160,12 +163,12 @@ insert into RestaurantPromo(restpromoid, restid, description, startTime, endTime
 
 ------------------------------------------------------
 create table Contains (
-    orderid     integer not null
-    restid      integer not null
-    foodid      integer not null
+    orderid     integer not null,
+    restid      integer not null,
+    foodid      integer not null,
 
 
-    foreign key(foodid, restid) references Food
+    foreign key(foodid, restid) references Food,
     foreign key(orderid) references Orders
 );
 
@@ -207,13 +210,13 @@ create trigger contains_trigger
 --insertion into from table needs to check if restid is same as all other restid
 ----------------------------------------------------
 create table FDSPromo (
-    description     varchar(50)
-    fdspromoid      integer
-    orderid         integer not null
-    startTime       DATE
-    endTime         DATE
+    description     varchar(50),
+    fdspromoid      integer,
+    orderid         integer not null,
+    startTime       DATE,
+    endTime         DATE,
 
-    primary key(fdspromoid)
+    primary key(fdspromoid),
     foreign key(orderid) references Campaigns
 );
 
@@ -245,7 +248,7 @@ CREATE TABLE PartTimeRiders (
 CREATE TABLE MonthlyWorkSchedule (
      mwsid              INTEGER,
      startday           INTEGER NOT NULL
-                        CHECK (startday in (1, 2, 3, 4, 5, 6, 7),
+                        CHECK (startday in (1, 2, 3, 4, 5, 6, 7)),
      mwshours           INTEGER NOT NULL
                         CHECK (totalhours = 40),
      fwsid              INTEGER NOT NULL,
