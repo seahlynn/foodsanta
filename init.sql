@@ -250,21 +250,31 @@ CREATE TABLE WeeklyWorkSchedule (
     PRIMARY KEY (wwsid)
 );
 
-CREATE TABLE DailyWorkSchedyle (
+CREATE TABLE DailyWorkShift (
     dwsid               INTEGER,
-    wwsid               INTEGER,
-    PRIMARY KEY (dwsid),
-    FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
-)
-
-CREATE TABLE WWSShift (
     starthour           INTEGER,
                         CHECK (starthour >= 10 AND starthour <= 22)
     duration            INTEGER,
                         CHECK (duration in (1, 2, 3, 4))
-    dwsid               INTEGER,
+    wwsid               INTEGER,
 
-    PRIMARY KEY (starthour),
-    FOREIGN KEY (dwsid) REFERENCES DailyWorkSchedule
+    PRIMARY KEY (dwsid),
+    FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
 )
 
+create or replace function check_dailyshift_constraint() returns trigger
+    as $$
+declare 
+    dwsid       integer;
+begin
+    select dws.dwsid into dwsid
+        from DailyWorkShift dws 
+        where new.dwsid = dws.dwsid
+        and   (dws.starthour <= new.starthour and new.starthour <= dws.starhour + dws.duration)
+        and   (dws.starthour + new.duration <= new.starthour and new.starthour + new.duration <= dws.starhour + dws.duration
+    if dwsid is null then
+        raise exception 'Hours clash with an existing shift' 
+        end if;
+        return null;
+end;
+%% language plpgsql;
