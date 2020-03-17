@@ -8,7 +8,7 @@ create table Uaers (
 
 create table Orders (
 	orderid				INTEGER,
-	customerid			INTEGER,
+	userid			    INTEGER,
 	ordercreatedtime	DATE, 
 	deliveryfee			INTEGER not null,
 	totalcost			INTEGER not null,
@@ -17,20 +17,20 @@ create table Orders (
 
 	primary key (orderid),
 	foreign key (reid) references Reviews,
-	foreign key (customerid) references Customers,
+	foreign key (userid) references Customers,
     foreign key (restid) references Restaurants,
 	foreign key (fdspromoid) references FDSPromo
 )
 
--- each customer has an entry in Locations but it uses customerid
+-- each customer has an entry in Locations but it uses userid
 create table Customers (
-	customerid		INTEGER,
+	userid		INTEGER,
 	points			INTEGER,
 
-	primary key (customerid)
+	primary key (userid)
 )
 
--- need to enforce that customerid has made the order that has the same orderid
+-- need to enforce that userid has made the order that has the same orderid
 create table Reviews (
 	orderid			INTEGER,
 	reviewdesc		varchar(100),
@@ -42,23 +42,23 @@ create table Reviews (
 -- before insertion, check that customers only has less than 5
 -- if not, delete the one with the earliest dateadded and add new one
 create table Locations (
-	customerid 		INTEGER,
+	userid 		    INTEGER,
 	location		varchar(50),
 	dateadded		DATE not null,
 
-	primary key (customerid),
-	foreign key (customerid) references Customers
+	primary key (userid),
+	foreign key (userid) references Customers
 )
 
 -- this is so that each customer can have multiple payment methods
--- for every order that requires payment, must look up this table and check customerid must be the same 
+-- for every order that requires payment, must look up this table and check userid must be the same 
 create table PaymentMethods (
 	paymentmethodid	INTEGER,
-	customerid 		INTEGER,
+	userid  		INTEGER,
 	cardinfo		varchar(60),
 
 	primary key (paymentmethodid),
-	foreign key (customerid) references Customers
+	foreign key (userid) references Customers
 )
 
 create table Delivers (
@@ -76,18 +76,20 @@ create table Delivers (
 )
 
 create table CustomersStats (
-    customerid          INTEGER,
+    userid              INTEGER,
+    monthid             INTEGER,
     totalnumorders      INTEGER,
     totalcostorders     INTEGER,
 
-    primary key (customerid),
-    foreign key (customerid) from Customers
+    primary key (userid, monthid),
+    foreign key (userid) from Customers
 )
 
 -- for the FDS manager
 create table AllStats (
     monthid             INTEGER,
     totalnewcust        INTEGER,
+    totalnumorders      INTEGER,  ## should be the total of all restaurant
     totalorderscost     INTEGER,
 
     primary key (monthid)
@@ -236,6 +238,7 @@ CREATE TABLE DeliveryRiders (
 --use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
 CREATE TABLE RiderStats (
 	userid 			INTEGER,
+
 	totalOrders		INTEGER,
 	totalHours		INTEGER,
 	totalSalary		INTEGER;

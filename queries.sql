@@ -45,7 +45,7 @@ create view seeLocations (location, dateadded) as
     order by dateadded asc;
 
 -- see current promotions acc to current time (t1) 
-create view seePromotions(promodesc) as
+create view seePromotions (promodesc) as
     select distinct description
     from FDSPromo
     where startTime <= t1
@@ -58,7 +58,7 @@ create view seePromotions(promodesc) as
 
 -- see current order being made acc to current time (t2) by customer (c5)
 -- if time delivered is not null, then order has been delivered
-create view seeCurrentOrder(orderid, ordercreatedtime, timedeparttorestaurant, 
+create view seeCurrentOrder (orderid, ordercreatedtime, timedeparttorestaurant, 
     timearrivedatrestaurant, cardinfo) as   
     select distinct Orders.orderid, Orders.ordercreatedtime, 
         Delivers.timedeparttorestaurant, Delivers.timearrivedatrestaurant,
@@ -68,7 +68,7 @@ create view seeCurrentOrder(orderid, ordercreatedtime, timedeparttorestaurant,
     and Orders.customer = c5;
 
 -- see all previous orders made by customer (c6)
-create view seePastOrders(orderid, ordercreatedtime, timedeparttorestaurant, 
+create view seePastOrders (orderid, ordercreatedtime, timedeparttorestaurant, 
     timearrivedatrestaurant, timeorderdelivered, cardinfo) as 
     select distinct Orders.orderid, Orders.ordercreatedtime, 
         Delivers.timedeparttorestaurant, Delivers.timearrivedatrestaurant,
@@ -86,4 +86,19 @@ create view allFood (foodid, price, availability) AS
 	from Food F
 	where F.restid = r1;
 
+
+-- FDS Manager
+
+-- see stats for the month (m1)
+create view seeMonthlyStats (totalnewcust, totalnumorders, 
+    totalorderscost) as
+    select totalnewcust, totalnumorders, totalorderscost
+    from AllStats
+    where monthid = m1;
+
+-- see each customer stats for the month (m2)
+create view seeEachCustomerStats (customerid, totalnumorders, totalorderscost) as
+    select customerid, totalnumorders, totalorderscost
+    from CustomersStats
+    where monthid = m2;
 
