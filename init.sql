@@ -233,6 +233,16 @@ CREATE TABLE DeliveryRiders (
     FOREIGN KEY (userid) REFERENCES Users
 );
 
+--use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
+CREATE TABLE RiderStats (
+	userid 			INTEGER,
+	totalOrders		INTEGER,
+	totalHours		INTEGER,
+	totalSalary		INTEGER;
+
+	foreign key(userid)	references DeliveryRiders
+);
+
 CREATE TABLE FullTimeRiders (
     userid              INTEGER,
     PRIMARY KEY (userid),
@@ -280,21 +290,31 @@ CREATE TABLE WeeklyWorkSchedule (
     PRIMARY KEY (wwsid)
 );
 
-CREATE TABLE DailyWorkSchedyle (
+CREATE TABLE DailyWorkShift (
     dwsid               INTEGER,
-    wwsid               INTEGER,
-    PRIMARY KEY (dwsid),
-    FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
-)
-
-CREATE TABLE WWSShift (
     starthour           INTEGER,
                         CHECK (starthour >= 10 AND starthour <= 22)
     duration            INTEGER,
                         CHECK (duration in (1, 2, 3, 4))
-    dwsid               INTEGER,
+    wwsid               INTEGER,
 
-    PRIMARY KEY (starthour),
-    FOREIGN KEY (dwsid) REFERENCES DailyWorkSchedule
+    PRIMARY KEY (dwsid, starthour),
+    FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
 )
 
+create or replace function check_dailyshift_constraint() returns trigger
+    as $$
+declare 
+    dwsid       integer;
+begin
+    select dws.dwsid into dwsid
+        from DailyWorkShift dws 
+        where new.dwsid = dws.dwsid
+        and   ((dws.starthour <= new.starthour and new.starthour <= dws.starthour + dws.duration)
+        or    (dws.starthour <= new.starthour + new.duration and new.starthour + new.duration <= dws.starthour + dws.duration))
+    if dwsid is not null then
+        raise exception 'Hours clash with an existing shift' 
+        end if;
+        return null;
+end;
+%% language plpgsql;
