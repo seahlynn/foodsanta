@@ -225,66 +225,73 @@ insert into FDSPromo(fdspromoid, orderid, description) values
 (5, 5, '20% more points from purchase');
 
 CREATE TABLE DeliveryRiders (
-    userid             INTEGER,
+    userid              INTEGER,
     PRIMARY KEY (userid),
     FOREIGN KEY (userid) REFERENCES Users
 );
 
 CREATE TABLE FullTimeRiders (
-    userid             INTEGER,
+    userid              INTEGER,
     PRIMARY KEY (userid),
     FOREIGN KEY (userid) REFERENCES DeliveryRiders
 );
 
 CREATE TABLE PartTimeRiders (
-    userid             INTEGER,
+    userid              INTEGER,
     PRIMARY KEY (userid),
     FOREIGN KEY (userid) REFERENCES DeliveryRiders
 );
 
 CREATE TABLE MonthlyWorkSchedule (
-     mwsid             INTEGER,
-     startday          INTEGER NOT NULL
-                       CHECK (startday in (1, 2, 3, 4, 5, 6, 7),
-     mwshours          INTEGER NOT NULL
-                       CHECK (totalhours = 40),
-     fwsid             INTEGER NOT NULL,
+     mwsid              INTEGER,
+     startday           INTEGER NOT NULL
+                        CHECK (startday in (1, 2, 3, 4, 5, 6, 7),
+     mwshours           INTEGER NOT NULL
+                        CHECK (totalhours = 40),
+     fwsid              INTEGER NOT NULL,
 
      PRIMARY KEY (mwsid),
      FOREIGN KEY (fwsid) REFERENCES FixedWeeklySchedule
 );
 
 CREATE TABLE FixedWeeklySchedule (
-    fwsid              INTEGER,
-    day1               INTEGER NOT NULL
-                       CHECK (day1 in (1, 2, 3, 4),
-    day2               INTEGER NOT NULL
-                       CHECK (day2 in (1, 2, 3, 4),
-    day3               INTEGER NOT NULL
-                       CHECK (day3 in (1, 2, 3, 4),
-    day4               INTEGER NOT NULL
-                       CHECK (day4 in (1, 2, 3, 4),
-    day5               INTEGER NOT NULL
-                       CHECK (day5 in (1, 2, 3, 4),
+    fwsid               INTEGER,
+    day1                INTEGER NOT NULL
+                        CHECK (day1 in (1, 2, 3, 4),
+    day2                INTEGER NOT NULL
+                        CHECK (day2 in (1, 2, 3, 4),
+    day3                INTEGER NOT NULL
+                        CHECK (day3 in (1, 2, 3, 4),
+    day4                INTEGER NOT NULL
+                        CHECK (day4 in (1, 2, 3, 4),
+    day5                INTEGER NOT NULL
+                        CHECK (day5 in (1, 2, 3, 4),
 
     PRIMARY KEY (fwsid)
 );
 
 CREATE TABLE WeeklyWorkSchedule (
-    wwsid              INTEGER,
-    wwshours           INTEGER,
+    wwsid               INTEGER,
+    wwshours            INTEGER,
 
     PRIMARY KEY (wwsid)
 );
 
+CREATE TABLE DailyWorkSchedyle (
+    dwsid               INTEGER,
+    wwsid               INTEGER,
+    PRIMARY KEY (dwsid),
+    FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
+)
+
 CREATE TABLE WWSShift (
-    starthour          INTEGER,
-                       CHECK (starthour >= 10 AND starthour <= 22)
-    duration           INTEGER,
-                       CHECK (duration in (1, 2, 3, 4))
-    wwsid              INTEGER,
+    starthour           INTEGER,
+                        CHECK (starthour >= 10 AND starthour <= 22)
+    duration            INTEGER,
+                        CHECK (duration in (1, 2, 3, 4))
+    dwsid               INTEGER,
 
     PRIMARY KEY (starthour),
-    FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
+    FOREIGN KEY (dwsid) REFERENCES DailyWorkSchedule
 )
 
