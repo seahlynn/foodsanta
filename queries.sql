@@ -132,19 +132,22 @@ create view durationCampaigns(restpromoid, duration) AS
 	and P.restpromoid = D.restpromoid;
 
 
-/*create view avgOrdersPerCampaign(restpromoid, avgOrders) AS
+create view avgOrdersPerCampaign(restpromoid, avgOrders) AS
 	with Duration as (
 		select P.restpromoid, datediff(day, P.startTime, P.endTime) as duration
 		from RestaurantPromo P
-		group by P.restpromoid)
+		group by P.restpromoid),
+	with TotalOrders as (
+		SELECT O.restpromoid, count(*) as totalOrders
+		from Orders
+		group by O.restpromoid)
 
 
+	select O.restpromoid, (T.totalOrders / D.duration) as avgOrders
+	from Duration D, TotalOrders T
+	where D.restpromoid = T.restpromoid
 
-	with AverageOrders as (
-		select P.restpromoid, count(*) as totalOrders, datediff(day, P.startTime, P.endTime) as totalTime
-		from RestaurantPromo P
-		where P.restid = r1
-		group by P.restpromoid)*/
+	
 
 -- FDS Manager
 
