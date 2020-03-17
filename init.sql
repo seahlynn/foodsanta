@@ -8,33 +8,33 @@ create table Uaers (
 
 create table Orders (
 	orderid				INTEGER,
-	customerid			INTEGER,
-	ordercreatedtime	DATE, 
-	deliveryfee			INTEGER not null,
-	totalcost			INTEGER not null,
+	userid			    INTEGER,
+	orderCreatedTime	DATE, 
+	deliveryFee			INTEGER not null,
+	totalCost			INTEGER not null,
 	fdspromoid			INTEGER,
-    preparedbyrest      boolean not null,
+    preparedByRest      boolean not null,
     restid              INTEGER not null,
 
 	primary key (orderid),
 	foreign key (reid) references Reviews,
-	foreign key (customerid) references Customers,
+	foreign key (userid) references Customers,
     foreign key (restid) references Restaurants,
 	foreign key (fdspromoid) references FDSPromo
 )
 
--- each customer has an entry in Locations but it uses customerid
+-- each customer has an entry in Locations but it uses userid
 create table Customers (
-	customerid		INTEGER,
+	userid		INTEGER,
 	points			INTEGER,
 
-	primary key (customerid)
+	primary key (userid)
 )
 
--- need to enforce that customerid has made the order that has the same orderid
+-- need to enforce that userid has made the order that has the same orderid
 create table Reviews (
 	orderid			INTEGER,
-	reviewdesc		varchar(100),
+	reviewDesc		varchar(100),
 
 	primary key (orderid),
 	foreign key (orderid) from Orders
@@ -43,32 +43,32 @@ create table Reviews (
 -- before insertion, check that customers only has less than 5
 -- if not, delete the one with the earliest dateadded and add new one
 create table Locations (
-	customerid 		INTEGER,
+	userid 		    INTEGER,
 	location		varchar(50),
-	dateadded		DATE not null,
+	dateAdded		DATE not null,
 
-	primary key (customerid),
-	foreign key (customerid) references Customers
+	primary key (userid),
+	foreign key (userid) references Customers
 )
 
 -- this is so that each customer can have multiple payment methods
--- for every order that requires payment, must look up this table and check customerid must be the same 
+-- for every order that requires payment, must look up this table and check userid must be the same 
 create table PaymentMethods (
 	paymentmethodid	INTEGER,
-	customerid 		INTEGER,
-	cardinfo		varchar(60),
+	userid  		INTEGER,
+	cardInfo		varchar(60),
 
 	primary key (paymentmethodid),
-	foreign key (customerid) references Customers
+	foreign key (userid) references Customers
 )
 
 create table Delivers (
 	orderid					INTEGER,
 	rating					INTEGER check ((rating <= 5) and (rating >= 0)),
 	location 				varchar(50) not null,
-	timedeparttorestaurant	DATE not null,
-	timearrivedatrestaurant	DATE not null,
-	timeorderdelivered		DATE not null,
+	timeDepartToRestaurant	DATE not null,
+	timeArrivedAtRestaurant	DATE not null,
+	timeOrderDelivered		DATE not null,
 	paymentmethodid			INTEGER, 			
 
 	primary key (orderid),
@@ -77,27 +77,29 @@ create table Delivers (
 )
 
 create table CustomersStats (
-    customerid          INTEGER,
-    totalnumorders      INTEGER,
-    totalcostorders     INTEGER,
+    userid              INTEGER,
+    monthid             INTEGER,
+    totalNumorders      INTEGER,
+    totalCostOfOrders     INTEGER,
 
-    primary key (customerid),
-    foreign key (customerid) from Customers
+    primary key (userid, monthid),
+    foreign key (userid) from Customers
 )
 
 -- for the FDS manager
 create table AllStats (
     monthid             INTEGER,
-    totalnewcust        INTEGER,
-    totalorderscost     INTEGER,
+    totalNewCust        INTEGER,
+    totalNumOrders      INTEGER,  ## should be the total of all restaurant
+    totalCostOfOrders   INTEGER,
 
     primary key (monthid)
 )
 
 create table RestaurantsStats (
     restid              INTEGER,
-    numcompletedorders  INTEGER,
-    totalorderscost     INTEGER,
+    numCompletedOrders  INTEGER,
+    totalOrdersCost     INTEGER,
     month               INTEGER,
     year                INTEGER,
 
@@ -131,7 +133,7 @@ insert into Food(foodid, price, availability, category) values
 -----------------------------------------------
 create table Restaurants (
     restid      INTEGER
-    restname    varchar(50)
+    restName    varchar(50)
     minAmt      INTEGER not null
 
     primary key(restid)
@@ -239,8 +241,9 @@ CREATE TABLE DeliveryRiders (
 );
 
 --use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
-CREATE TABLE RiderStats (
+CREATE TABLE RidersStats (
 	userid 			INTEGER,
+
 	totalOrders		INTEGER,
 	totalHours		INTEGER,
 	totalSalary		INTEGER,
@@ -265,9 +268,9 @@ CREATE TABLE PartTimeRiders (
 
 CREATE TABLE MonthlyWorkSchedule (
      mwsid              INTEGER,
-     startday           INTEGER NOT NULL
+     startDay           INTEGER NOT NULL
                         CHECK (startday in (1, 2, 3, 4, 5, 6, 7)),
-     mwshours           INTEGER NOT NULL
+     mwsHours           INTEGER NOT NULL
                         CHECK (totalhours = 40),
      fwsid              INTEGER NOT NULL,
 
@@ -300,13 +303,13 @@ CREATE TABLE WeeklyWorkSchedule (
 
 CREATE TABLE DailyWorkShift (
     dwsid               INTEGER,
-    starthour           INTEGER,
-                        CHECK (starthour >= 10 AND starthour <= 22)
+    startHour           INTEGER,
+                        CHECK (startHour >= 10 AND startHour <= 22)
     duration            INTEGER,
                         CHECK (duration in (1, 2, 3, 4))
     wwsid               INTEGER,
 
-    PRIMARY KEY (dwsid, starthour),
+    PRIMARY KEY (dwsid, startHour),
     FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
 )
 
@@ -318,8 +321,8 @@ begin
     select dws.dwsid into dwsid
         from DailyWorkShift dws 
         where new.dwsid = dws.dwsid
-        and   ((dws.starthour <= new.starthour and new.starthour <= dws.starthour + dws.duration)
-        or    (dws.starthour <= new.starthour + new.duration and new.starthour + new.duration <= dws.starthour + dws.duration))
+        and   ((dws.startHour <= new.startHour and new.startHour <= dws.startHour + dws.duration)
+        or    (dws.startHour <= new.startHour + new.startHour and new.startHour + new.duration <= dws.startHour + dws.duration))
     if dwsid is not null then
         raise exception 'Hours clash with an existing shift' 
         end if;
