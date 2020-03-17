@@ -65,3 +65,128 @@ create table Delivers (
 	foreign key (paymentmethodid) references PaymentMethods
 )
 
+create table Food ( 
+    foodid          integer
+    price           float not null
+    availability    integer not null
+    category        varchar(20)
+    restid          integer not null
+
+    primary key(foodid, restid)
+
+);
+
+insert into Food(foodid, price, availability, category) values
+(1, 5, 100, 'Western'),
+(2, 3.5, 100, 'Western'),
+(3, 4.2, 100, 'Chinese'),
+(4, 7.5, 100, 'Japanese'),
+(5, 2, 100, 'Korean'),
+(6, 3.6, 100, 'Chinese'),
+(7, 5, 100, 'Western');
+
+--insertion of food into Contains table has to decrease availability by one (use trigger under contains)
+-----------------------------------------------
+create table Restaurants (
+    restid      integer
+    restname    varchar(50)
+    minAmt      integer not null
+
+    primary key(restid)
+);
+
+insert into Restaurants(restid, restname, minAmt) values
+(1, '4Fingers', 15),
+(2, 'RiRi Mala', 15),
+(3, 'Yoogane', 25),
+(4, 'SushiTei', 40),
+(5, 'KFC', 10),
+(6, 'Ah Bear Mookata', 20),
+(7, 'Marche', 50),
+(8, 'HaiDiLao', 80);
+
+----------------------------------------------
+create table RestaurantPromo (
+    description     varchar(50)
+    restpromoid     integer
+    startTime       DATE
+    endTime         DATE
+    restid          integer not null
+
+    primary key(restpromoid)     
+);
+
+insert into RestaurantPromo(restpromoid, restid, description, startTime, endTime) values
+(1, 1, '20% off orders exceeding $50'),
+(2, 2, '50% off'),
+(3, 3, 'free delivery'),
+(4, 4, '$5 off min. purchase of $30'),
+(5, 5, 'buy 1 free 1 cheese fries');
+
+------------------------------------------------------
+create table Contains (
+    orderid     integer not null
+    restid      integer not null
+    foodid      integer not null
+
+
+    foreign key(foodid, restid) references Food
+    foreign key(orderid) references Orders
+);
+
+insert into Contains(orderid, restid, foodid) values
+(1, 2, 5),
+(1, 2, 7),
+(1, 2, 8),
+(2, 5, 9),
+(2, 5, 11),
+(2, 5, ),
+(3, 3, 5);
+
+create or replace function check_order_constraint() returns trigger
+    as $$
+declare 
+    restid  integer;
+    num   integer;
+begin
+    select C.restid into restid
+        from Contains C 
+        where C.restid = new.restid
+    select count(*) into num
+    from Contains C
+    group by C.restid
+    if restid is null && num != 0 then
+        raise exception 'Food can only be ordered from the same restaurant' 
+        end if;
+        return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists contains_trigger ON Contains CASCADE;
+create trigger contains_trigger
+    after update of restid, foodid, orderid OR insert on Contains
+    for each ROW
+    execute function check_order_constraint();
+
+
+--insertion into from table needs to check if restid is same as all other restid
+----------------------------------------------------
+create table FDSPromo (
+    description     varchar(50)
+    fdspromoid      integer
+    orderid         integer not null
+    startTime       DATE
+    endTime         DATE
+
+    primary key(fdspromoid)
+    foreign key(orderid) references Campaigns
+);
+
+insert into FDSPromo(fdspromoid, orderid, description) values
+(1, 1, '10% off first order'),
+(2, 2, '30% off minimum order $80'),
+(3, 3, 'free delivery from when to when'),
+(4, 4, '$5 off min. order of $30'),
+(5, 5, '20% more points from purchase');
+
+
