@@ -112,6 +112,7 @@ create table Food (
     availability    integer not null,
     category        varchar(20),
     restid          integer not null,
+    timesorderd     integer not null,
 
     primary key(foodid, restid),
     foreign key (restid) from Restaurants

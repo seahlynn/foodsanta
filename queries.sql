@@ -104,10 +104,47 @@ create view totalRevenue(revenue) AS
 	and year = 2020;
 
 --total orders for restaurant r1
-create view totalRevenue(revenue) AS
-	select S.totalorderscost
+create view totalOrders(numOrders) AS
+	select S.numcompletedorders
 	from RestaurantsStats S
 	where S.restid = r1
 	and month = 2
 	and year = 2020;
+
+--five most popular orders for restaurant r1
+create view mostPopularItems(foodid) AS
+	select F.foodid
+	from Foods F
+	where F.restid = r1
+	order by timesorderd
+	limit 5;
+
+-- campaigns and their durations for rest r1
+create view durationCampaigns(restpromoid, duration) AS
+	with Duration as (
+		select P.restpromoid, datediff(day, P.startTime, P.endTime) as duration
+		from RestaurantPromo P
+		group by P.restpromoid)
+
+	select P.restpromoid, D.duration
+	from RestaurantPromo P, D.duration
+	where P.restid = r1
+	and P.restpromoid = D.restpromoid;
+
+
+/*create view avgOrdersPerCampaign(restpromoid, avgOrders) AS
+	with Duration as (
+		select P.restpromoid, datediff(day, P.startTime, P.endTime) as duration
+		from RestaurantPromo P
+		group by P.restpromoid)
+
+
+
+	with AverageOrders as (
+		select P.restpromoid, count(*) as totalOrders, datediff(day, P.startTime, P.endTime) as totalTime
+		from RestaurantPromo P
+		where P.restid = r1
+		group by P.restpromoid)*/
+
+
 
