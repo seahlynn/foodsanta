@@ -13,6 +13,7 @@ create table Orders (
 	deliveryfee			INTEGER not null,
 	totalcost			INTEGER not null,
 	fdspromoid			INTEGER,
+    preparedbyrest      boolean not null,
     restid              INTEGER not null,
 
 	primary key (orderid),
@@ -99,8 +100,10 @@ create table RestaurantsStats (
     restid              INTEGER,
     numcompletedorders  INTEGER,
     totalorderscost     INTEGER,
+    month               INTEGER,
+    year                INTEGER,
 
-    primary key (restid),
+    primary key (restid, month, year),
     foreign key (restid) from Restaurants
 )
 
@@ -128,9 +131,9 @@ insert into Food(foodid, price, availability, category) values
 --insertion of food into Contains table has to decrease availability by one (use trigger under contains)
 -----------------------------------------------
 create table Restaurants (
-    restid      integer,
-    restname    varchar(50),
-    minAmt      integer not null,
+    restid      INTEGER
+    restname    varchar(50)
+    minAmt      INTEGER not null
 
     primary key(restid)
 );
@@ -147,11 +150,11 @@ insert into Restaurants(restid, restname, minAmt) values
 
 ----------------------------------------------
 create table RestaurantPromo (
-    description     varchar(50),
-    restpromoid     integer,
-    startTime       DATE,
-    endTime         DATE,
-    restid          integer not null,
+    description     varchar(50)
+    restpromoid     INTEGER
+    startTime       DATE
+    endTime         DATE
+    restid          INTEGER not null
 
     primary key(restpromoid)     
 );
@@ -165,10 +168,11 @@ insert into RestaurantPromo(restpromoid, restid, description, startTime, endTime
 
 ------------------------------------------------------
 create table Contains (
-    orderid     integer not null,
-    restid      integer not null,
-    foodid      integer not null,
-
+    orderid     INTEGER not null,
+    restid      INTEGER not null,
+    foodid      INTEGER not null,
+    description varchar(50) not null,
+    quantity    INTEGER not null,
 
     foreign key(foodid, restid) references Food,
     foreign key(orderid) references Orders
@@ -241,8 +245,11 @@ CREATE TABLE RiderStats (
 
 	totalOrders		INTEGER,
 	totalHours		INTEGER,
-	totalSalary		INTEGER;
+	totalSalary		INTEGER,
+    month           INTEGER,
+    year            INTEGER,
 
+    primary key(userid, month, year),
 	foreign key(userid)	references DeliveryRiders
 );
 
