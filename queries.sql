@@ -23,19 +23,19 @@ create view seeReviews (reviewdesc, ordercreatedtime) as
 create view seeOwnReviews (reviewdesc, ordercreatedtime) as
     select reviewdesc, ordercreatedtime
     from Reviews natural join Orders
-    where Orders.customerid = c3;
+    where Orders.userid = c3;
 
 -- see registered payment methods by customer (c1)
 create view custPaymentMethods (cardinfo) as
     select cardinfo
     from PaymentMethods 
-    where customerid = c1;
+    where userid = c1;
 
 -- see points of customer (c2)
 create view custPoints (points) as
     select points
     from Customers
-    where customerid = c2;
+    where userid = c2;
 
 -- see locations of customer (c4) 
 create view seeLocations (location, dateadded) as    
@@ -65,7 +65,7 @@ create view seeCurrentOrder (orderid, ordercreatedtime, timedeparttorestaurant,
         PaymentMethods.cardinfo 
     from (Orders natural join Delivers) natural join PaymentMethods
     where Delivers.timeorderdelivered = null
-    and Orders.customer = c5;
+    and Orders.userid = c5;
 
 -- see all previous orders made by customer (c6)
 create view seePastOrders (orderid, ordercreatedtime, timedeparttorestaurant, 
@@ -75,7 +75,7 @@ create view seePastOrders (orderid, ordercreatedtime, timedeparttorestaurant,
         Delivers.timeorderdelivered, PaymentMethods.cardinfo 
     from (Orders natural join Delivers) natural join PaymentMethods
     where Delivers.timeorderdelivered <> null
-    and Orders.customer = c6;
+    and Orders.userid = c6;
 
 
 --Restaurants    
@@ -121,8 +121,13 @@ create view seeMonthlyStats (totalnewcust, totalnumorders,
     where monthid = m1;
 
 -- see each customer stats for the month (m2)
-create view seeEachCustomerStats (customerid, totalnumorders, totalorderscost) as
-    select customerid, totalnumorders, totalorderscost
+create view seeEachCustomerStats (userid, totalnumorders, totalorderscost) as
+    select userid, totalnumorders, totalorderscost
     from CustomersStats
     where monthid = m2;
 
+-- see eacg rider stats for the month (m3)
+create view seeEachRiderStats (userid, totalOrders, totalHours, totalSalary) as
+    select userid, totalOrders, totalHours, totalSalary
+    from RiderStats
+    where monthid = m3;
