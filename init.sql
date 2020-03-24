@@ -128,6 +128,22 @@ create trigger increase_trigger
     for each STATEMENT
     execute function increase_customer();
 
+/*create or replace function update_overall_stats() returns trigger
+    as $$
+begin
+    update AllStats A
+    set totalNumOrders = totalNumOrders + 1,
+        totalCostOfOrders = totalCostOfOrders + new.totalCost (from orders help la how does new work)
+    return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists update_trigger ON AllStats;
+create trigger update_trigger
+    after update of preparedByRest on Orders
+    for each STATEMENT
+    execute function update_overall_stats();*/
+
 
 create table RestaurantsStats (
     restid              INTEGER,
@@ -143,9 +159,9 @@ create table RestaurantsStats (
 /*create or replace function update_rest_stats() returns trigger
     as $$
 begin
-    update RestaurantStats C
+    update RestaurantStats R
     set numCompletedOrders = NumCompletedOrders + 1,
-        totalCostOfOrders = totalCostOfOrders + select O.totalCost from Orders O where O.restid = C.restid
+        totalCostOfOrders = totalCostOfOrders + select O.totalCost from Orders O where O.restid = R.restid / new.totalCost
     return null;
 end;
 %% language plpgsql;
@@ -207,7 +223,7 @@ begin
         from Contains C 
         where F.restid = new.restid AND F.foodid = new.foodid
     if avail < quantity then
-        raise exception 'Item ' + description + 'is out of stock'
+        raise exception 'Item % is out of stock', description
         end if;
         return null;
 end;
