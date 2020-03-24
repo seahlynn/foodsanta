@@ -1,4 +1,4 @@
-create table Uaers (
+create table Users (
     userid              INTEGER,
     name                varchar(20),
     password            varchar(10),
@@ -79,12 +79,28 @@ create table Delivers (
 create table CustomersStats (
     userid              INTEGER,
     monthid             INTEGER,
-    totalNumorders      INTEGER,
+    totalNumOrders      INTEGER,
     totalCostOfOrders     INTEGER,
 
     primary key (userid, monthid),
     foreign key (userid) from Customers
 )
+
+/*create or replace function update_customer_stats() returns trigger
+    as $$
+begin
+    update CustomerStats C
+    set totalNumOrders = totalNumOrders + 1,
+        totalCostOfOrders = totalCostOfOrders + select O.totalCost from Orders O where O.userid = C.userid 
+    return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists update_trigger ON CustomerStats;
+create trigger update_trigger
+    after insert on Contains
+    for each STATEMENT
+    execute function update_customer_stats();*/
 
 -- for the FDS manager
 create table AllStats (
@@ -96,6 +112,23 @@ create table AllStats (
     primary key (monthid)
 )
 
+create or replace function increase_customer() returns trigger
+    as $$
+begin
+    update AllStats
+    set totalNewCust = totalNewCust + 1
+        
+    return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists increase_trigger ON AllStats;
+create trigger increase_trigger
+    after insert on Users
+    for each STATEMENT
+    execute function increase_customer();
+
+
 create table RestaurantsStats (
     restid              INTEGER,
     numCompletedOrders  INTEGER,
@@ -106,6 +139,23 @@ create table RestaurantsStats (
     primary key (restid, month, year),
     foreign key (restid) from Restaurants
 )
+
+/*create or replace function update_rest_stats() returns trigger
+    as $$
+begin
+    update RestaurantStats C
+    set numCompletedOrders = NumCompletedOrders + 1,
+        totalCostOfOrders = totalCostOfOrders + select O.totalCost from Orders O where O.restid = C.restid
+    return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists update_trigger ON RestaurantStats;
+create trigger update_trigger
+    after update of preparedByRest on Orders
+    for each STATEMENT
+    execute function update_rest_stats();*/
+
 
 create table Food ( 
     foodid          integer,
@@ -121,14 +171,53 @@ create table Food (
     foreign key (restid) from Restaurants
 );
 
-insert into Food(foodid, price, availability, category) values
-(1, 5, 100, 'Western'),
-(2, 3.5, 100, 'Western'),
-(3, 4.2, 100, 'Chinese'),
-(4, 7.5, 100, 'Japanese'),
-(5, 2, 100, 'Korean'),
-(6, 3.6, 100, 'Chinese'),
-(7, 5, 100, 'Western');
+create or replace function update_avail() returns trigger
+    as $$
+declare 
+    quantity integer
+begin
+    select C.quantity into quantity
+        from Contains C 
+        where F.restid = new.restid AND F.foodid = new.foodid
+
+    update Food F
+    set availability = availability - quantity
+    where F.foodid = NEW.foodid AND F.restid = NEW.restid 
+    return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists update_avail_trigger ON Food;
+create trigger update_avail_trigger
+    after insert on Contains
+    for each STATEMENT /*row??*/
+    execute function update_avail();
+
+create or replace function check_avail_constraint() returns trigger
+    as $$
+declare 
+    avail  integer;
+    quantity integer;
+    description varchar(50)
+begin
+    select F.availability into avail, F.description into description 
+        from Food F
+        where F.restid = new.restid AND F.foodid = new.foodid
+    select C.quantity into quantity
+        from Contains C 
+        where F.restid = new.restid AND F.foodid = new.foodid
+    if avail < quantity then
+        raise exception 'Item ' + description + 'is out of stock'
+        end if;
+        return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists check_avail_trigger ON Contains CASCADE;
+create trigger check_avail_trigger
+    after update of restid, foodid, orderid OR insert on Contains
+    for each ROW
+    execute function check_order_constraint();
 
 --insertion of food into Contains table has to decrease availability by one (use trigger under contains)
 -----------------------------------------------
