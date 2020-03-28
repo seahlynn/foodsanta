@@ -28,7 +28,37 @@ create table Users (
     password            varchar(10),
     dateCreated			CURRENT_DATE
     primary key (userid)
-)
+);
+
+-- each customer has an entry in Locations but it uses userid
+create table Customers (
+	userid		INTEGER,
+	points			INTEGER,
+
+	primary key (userid)
+);
+
+-- before insertion, check that customers only has less than 5
+-- if not, delete the one with the earliest dateadded and add new one
+create table Locations (
+	userid 		    INTEGER,
+	location		varchar(50),
+	dateAdded		DATE not null,
+
+	primary key (userid),
+	foreign key (userid) references Customers
+);
+
+-- this is so that each customer can have multiple payment methods
+-- for every order that requires payment, must look up this table and check userid must be the same 
+create table PaymentMethods (
+	paymentmethodid	INTEGER,
+	userid  		INTEGER,
+	cardInfo		varchar(60),
+
+	primary key (paymentmethodid),
+	foreign key (userid) references Customers
+);
 
 create table Orders (
 	orderid				INTEGER,
@@ -45,15 +75,20 @@ create table Orders (
 	foreign key (userid) references Customers,
     foreign key (restid) references Restaurants,
 	foreign key (fdspromoid) references FDSPromo
-)
+);
 
--- each customer has an entry in Locations but it uses userid
-create table Customers (
-	userid		INTEGER,
-	points			INTEGER,
+create table Contains (
+    orderid     INTEGER not null,
+    restid      INTEGER not null,
+    foodid      INTEGER not null,
+    userid 		INTEGER not null,
+    description varchar(50) not null,
+    quantity    INTEGER not null,
 
-	primary key (userid)
-)
+    primary key (orderid, foodid),
+    foreign key(foodid, restid) references Food,
+    foreign key(orderid, userid) references Orders
+);
 
 -- need to enforce that userid has made the order that has the same orderid
 create table Reviews (
@@ -62,46 +97,7 @@ create table Reviews (
 
 	primary key (orderid),
 	foreign key (orderid) from Orders
-)
-
--- need to check if it is a new location
-create or replace function add_new_address() returns trigger as $$
-begin
-	-- insert function for locations
-	return null;
-end;
-$$ language plpgsql;	
-
-drop trigger if exists add_new_address_trigger ON Locations	
-create trigger add_new_address_trigger
-	after insert on Locations
-	for each row 
-	when (NEW.location exists in 
-		select OLD.location
-		where OLD.userid = NEW.userid)
-	execute function add_new_address();
-
--- before insertion, check that customers only has less than 5
--- if not, delete the one with the earliest dateadded and add new one
-create table Locations (
-	userid 		    INTEGER,
-	location		varchar(50),
-	dateAdded		DATE not null,
-
-	primary key (userid),
-	foreign key (userid) references Customers
-)
-
--- this is so that each customer can have multiple payment methods
--- for every order that requires payment, must look up this table and check userid must be the same 
-create table PaymentMethods (
-	paymentmethodid	INTEGER,
-	userid  		INTEGER,
-	cardInfo		varchar(60),
-
-	primary key (paymentmethodid),
-	foreign key (userid) references Customers
-)
+);
 
 create table Delivers (
 	orderid					INTEGER,
@@ -117,116 +113,7 @@ create table Delivers (
 	foreign key (orderid) references Orders
     foreign key (userid) references DeliveryRiders
 	foreign key (paymentmethodid) references PaymentMethods
-)
-
-create table CustomersStats (
-    userid              INTEGER,
-    monthid             INTEGER,
-    totalNumOrders      INTEGER,
-    totalCostOfOrders     INTEGER,
-
-    primary key (userid, monthid),
-    foreign key (userid) from Customers
-)
-
-create or replace function update_customer_stats() returns trigger
-    as $$
-begin
-    update CustomerStats C
-    set totalNumOrders = totalNumOrders + 1,
-        totalCostOfOrders = totalCostOfOrders 
-        + select O.totalCost from Orders O where O.orderid = C.orderid 
-    where userid = NEW.userid
-    order by monthid desc
-    limit 1
-    return null;
-end;
-%% language plpgsql;
-
-drop trigger if exists update_trigger ON CustomerStats;
-create trigger update_trigger
-    after insert on Contains
-    for each row
-    execute function update_customer_stats();
-
--- for the FDS manager
-create table AllStats (
-    monthid             INTEGER,
-    totalNewCust        INTEGER,
-    totalNumOrders      INTEGER,  ## should be the total of all restaurant
-    totalCostOfOrders   INTEGER,
-
-    primary key (monthid)
-)
-
---have to update the most recent tuple
-create or replace function increase_customer() returns trigger
-    as $$
-begin
-    update AllStats
-    set totalNewCust = totalNewCust + 1
-    order by monthid desc
-    limit 1
-        
-    return null;
-end;
-$$ language plpgsql;
-
-
-drop trigger if exists increase_customer_trigger ON AllStats;
-create trigger increase_customer_trigger
-    after insert on Users
-    for each row
-    execute function increase_customer();
-
-/*create or replace function update_overall_stats() returns trigger
-    as $$
-begin
-    update AllStats A
-    set totalNumOrders = totalNumOrders + 1,
-        totalCostOfOrders = totalCostOfOrders + new.totalCost (from orders help la how does new work)
-    return null;
-end;
-%% language plpgsql;
-
-drop trigger if exists update_trigger ON AllStats;
-create trigger update_trigger
-    after update of preparedByRest on Orders
-    for each row
-    execute function update_overall_stats();*/
-
-
-create table RestaurantsStats (
-    restid              INTEGER,
-    numCompletedOrders  INTEGER,
-    totalOrdersCost     INTEGER,
-    month               INTEGER,
-    year                INTEGER,
-
-    primary key (restid, month, year),
-    foreign key (restid) from Restaurants
-)
-
-create or replace function update_rest_stats() returns trigger
-    as $$
-begin
-    update RestaurantStats R
-    set numCompletedOrders = NumCompletedOrders + 1,
-        totalCostOfOrders = totalCostOfOrders 
-        + select O.totalCost from Orders O where O.restid = R.restid order by order_created_time desc limit 1
-    where restid = NEW.restid
-    order by (month, year) desc
-    limit 1
-    return null;
-end;
-%% language plpgsql;
-
-drop trigger if exists update_trigger ON RestaurantStats;
-create trigger update_trigger
-    after update of preparedByRest on Orders
-    for each row
-    execute function update_rest_stats();
-
+);
 
 create table Food ( 
     foodid          integer,
@@ -242,56 +129,7 @@ create table Food (
     foreign key (restid) from Restaurants
 );
 
-create or replace function update_avail() returns trigger
-    as $$
-declare 
-    quantity integer
-begin
-    select C.quantity into quantity
-        from Contains C 
-        where F.restid = new.restid AND F.foodid = new.foodid
-
-    update Food F
-    set availability = availability - quantity
-    where F.foodid = NEW.foodid AND F.restid = NEW.restid 
-    return null;
-end;
-$$ language plpgsql;
-
-drop trigger if exists update_avail_trigger ON Food;
-create trigger update_avail_trigger
-    after insert on Contains
-    for each row /*row??*/
-    execute function update_avail();
-
-create or replace function check_avail_constraint() returns trigger
-    as $$
-declare 
-    avail  integer;
-    quantity integer;
-    description varchar(50)
-begin
-    select F.availability into avail, F.description into description 
-        from Food F
-        where F.restid = new.restid AND F.foodid = new.foodid
-    select C.quantity into quantity
-        from Contains C 
-        where F.restid = new.restid AND F.foodid = new.foodid
-    if avail < quantity then
-        raise exception 'Item % is out of stock', description
-        end if;
-        return null;
-end;
-$$ language plpgsql;
-
-drop trigger if exists check_avail_trigger ON Contains CASCADE;
-create trigger check_avail_trigger
-    after update of restid, foodid, orderid OR insert on Contains
-    for each ROW
-    execute function check_order_constraint();
-
 --insertion of food into Contains table has to decrease availability by one (use trigger under contains)
------------------------------------------------
 create table Restaurants (
     restid      INTEGER
     restName    varchar(50)
@@ -300,17 +138,6 @@ create table Restaurants (
     primary key(restid)
 );
 
-insert into Restaurants(restid, restname, minAmt) values
-(1, '4Fingers', 15),
-(2, 'RiRi Mala', 15),
-(3, 'Yoogane', 25),
-(4, 'SushiTei', 40),
-(5, 'KFC', 10),
-(6, 'Ah Bear Mookata', 20),
-(7, 'Marche', 50),
-(8, 'HaiDiLao', 80);
-
-----------------------------------------------
 create table RestaurantPromo (
     description     varchar(50)
     restpromoid     INTEGER
@@ -321,64 +148,7 @@ create table RestaurantPromo (
     primary key(restpromoid)     
 );
 
-insert into RestaurantPromo(restpromoid, restid, description, startTime, endTime) values
-(1, 1, '20% off orders exceeding $50'),
-(2, 2, '50% off'),
-(3, 3, 'free delivery'),
-(4, 4, '$5 off min. purchase of $30'),
-(5, 5, 'buy 1 free 1 cheese fries');
-
-------------------------------------------------------
-create table Contains (
-    orderid     INTEGER not null,
-    restid      INTEGER not null,
-    foodid      INTEGER not null,
-    userid 		INTEGER not null,
-    description varchar(50) not null,
-    quantity    INTEGER not null,
-
-    primary key (orderid, foodid),
-    foreign key(foodid, restid) references Food,
-    foreign key(orderid, userid) references Orders
-);
-
-insert into Contains(orderid, restid, foodid) values
-(1, 2, 5),
-(1, 2, 7),
-(1, 2, 8),
-(2, 5, 9),
-(2, 5, 11),
-(2, 5, ),
-(3, 3, 5);
-
-create or replace function check_order_constraint() returns trigger
-    as $$
-declare 
-    restid  integer;
-    num   integer;
-begin
-    select C.restid into restid
-        from Contains C 
-        where C.restid = new.restid
-    select count(*) into num
-    from Contains C
-    group by C.restid
-    if restid is null && num != 0 then
-        raise exception 'Food can only be ordered from the same restaurant' 
-        end if;
-        return null;
-end;
-$$ language plpgsql;
-
-drop trigger if exists contains_trigger ON Contains CASCADE;
-create trigger contains_trigger
-    after update of restid, foodid, orderid OR insert on Contains
-    for each ROW
-    execute function check_order_constraint();
-
-
 --insertion into from table needs to check if restid is same as all other restid
-----------------------------------------------------
 create table FDSPromo (
     description     varchar(50),
     fdspromoid      integer,
@@ -390,31 +160,10 @@ create table FDSPromo (
     foreign key(orderid) references Campaigns
 );
 
-insert into FDSPromo(fdspromoid, orderid, description) values
-(1, 1, '10% off first order'),
-(2, 2, '30% off minimum order $80'),
-(3, 3, 'free delivery from when to when'),
-(4, 4, '$5 off min. order of $30'),
-(5, 5, '20% more points from purchase');
-
 CREATE TABLE DeliveryRiders (
     userid              INTEGER,
     PRIMARY KEY (userid),
     FOREIGN KEY (userid) REFERENCES Users
-);
-
---use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
-CREATE TABLE RidersStats (
-	userid 			INTEGER,
-
-	totalOrders		INTEGER,
-	totalHours		INTEGER,
-	totalSalary		INTEGER,
-    month           INTEGER,
-    year            INTEGER,
-
-    primary key(userid, month, year),
-	foreign key(userid)	references DeliveryRiders
 );
 
 CREATE TABLE FullTimeRiders (
@@ -484,6 +233,74 @@ CREATE TABLE DailyWorkShift (
     FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
 )
 
+-- FDS Manager purposes
+
+create table CustomersStats (
+    userid              INTEGER,
+    monthid             INTEGER,
+    totalNumOrders      INTEGER,
+    totalCostOfOrders     INTEGER,
+
+    primary key (userid, monthid),
+    foreign key (userid) from Customers
+)
+
+create table RestaurantsStats (
+    restid              INTEGER,
+    numCompletedOrders  INTEGER,
+    totalOrdersCost     INTEGER,
+    month               INTEGER,
+    year                INTEGER,
+
+    primary key (restid, month, year),
+    foreign key (restid) from Restaurants
+)
+
+--use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
+CREATE TABLE RidersStats (
+	userid 			INTEGER,
+
+	totalOrders		INTEGER,
+	totalHours		INTEGER,
+	totalSalary		INTEGER,
+    month           INTEGER,
+    year            INTEGER,
+
+    primary key(userid, month, year),
+	foreign key(userid)	references DeliveryRiders
+);
+
+create table AllStats (
+    monthid             INTEGER,
+    totalNewCust        INTEGER,
+    totalNumOrders      INTEGER,  ## should be the total of all restaurant
+    totalCostOfOrders   INTEGER,
+
+    primary key (monthid)
+)
+
+------------------------- TRIGGER STATEMENTS -------------------------
+
+create or replace function update_customer_stats() returns trigger
+    as $$
+begin
+    update CustomerStats C
+    set totalNumOrders = totalNumOrders + 1,
+        totalCostOfOrders = totalCostOfOrders 
+        + select O.totalCost from Orders O where O.orderid = C.orderid 
+    where userid = NEW.userid
+    order by monthid desc
+    limit 1
+    return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists update_trigger ON CustomerStats;
+create trigger update_trigger
+    after insert on Contains
+    for each row
+    execute function update_customer_stats();    
+
 create or replace function check_dailyshift_constraint() returns trigger
     as $$
 declare 
@@ -506,3 +323,185 @@ create trigger dailyshift_trigger
     after update of dwsid, starthour, duration OR insert on DailyWorkShift
     for each ROW
     execute function check_dailyshift_constraint();
+
+-- need to check if it is a new location
+create or replace function add_new_address() returns trigger as $$
+begin
+	-- insert function for locations
+	return null;
+end;
+$$ language plpgsql;	
+
+drop trigger if exists add_new_address_trigger ON Locations	
+create trigger add_new_address_trigger
+	after insert on Locations
+	for each row 
+	when (NEW.location exists in 
+		select OLD.location
+		where OLD.userid = NEW.userid)
+	execute function add_new_address();
+
+--have to update the most recent tuple
+create or replace function increase_customer() returns trigger
+    as $$
+begin
+    update AllStats
+    set totalNewCust = totalNewCust + 1
+    order by monthid desc
+    limit 1
+        
+    return null;
+end;
+$$ language plpgsql;
+
+
+drop trigger if exists increase_customer_trigger ON AllStats;
+create trigger increase_customer_trigger
+    after insert on Users
+    for each row
+    execute function increase_customer();
+
+/*create or replace function update_overall_stats() returns trigger
+    as $$
+begin
+    update AllStats A
+    set totalNumOrders = totalNumOrders + 1,
+        totalCostOfOrders = totalCostOfOrders + new.totalCost (from orders help la how does new work)
+    return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists update_trigger ON AllStats;
+create trigger update_trigger
+    after update of preparedByRest on Orders
+    for each row
+    execute function update_overall_stats();*/	
+
+create or replace function update_rest_stats() returns trigger
+    as $$
+begin
+    update RestaurantStats R
+    set numCompletedOrders = NumCompletedOrders + 1,
+        totalCostOfOrders = totalCostOfOrders 
+        + select O.totalCost from Orders O where O.restid = R.restid order by order_created_time desc limit 1
+    where restid = NEW.restid
+    order by (month, year) desc
+    limit 1
+    return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists update_trigger ON RestaurantStats;
+create trigger update_trigger
+    after update of preparedByRest on Orders
+    for each row
+    execute function update_rest_stats();
+
+
+create or replace function update_avail() returns trigger
+    as $$
+declare 
+    quantity integer
+begin
+    select C.quantity into quantity
+        from Contains C 
+        where F.restid = new.restid AND F.foodid = new.foodid
+
+    update Food F
+    set availability = availability - quantity
+    where F.foodid = NEW.foodid AND F.restid = NEW.restid 
+    return null;
+end;
+$$ language plpgsql;
+
+drop trigger if exists update_avail_trigger ON Food;
+create trigger update_avail_trigger
+    after insert on Contains
+    for each row /*row??*/
+    execute function update_avail();
+
+create or replace function check_avail_constraint() returns trigger
+    as $$
+declare 
+    avail  integer;
+    quantity integer;
+    description varchar(50)
+begin
+    select F.availability into avail, F.description into description 
+        from Food F
+        where F.restid = new.restid AND F.foodid = new.foodid
+    select C.quantity into quantity
+        from Contains C 
+        where F.restid = new.restid AND F.foodid = new.foodid
+    if avail < quantity then
+        raise exception 'Item % is out of stock', description
+        end if;
+        return null;
+end;
+$$ language plpgsql;
+
+drop trigger if exists check_avail_trigger ON Contains CASCADE;
+create trigger check_avail_trigger
+    after update of restid, foodid, orderid OR insert on Contains
+    for each ROW
+    execute function check_order_constraint();
+
+create or replace function check_order_constraint() returns trigger
+    as $$
+declare 
+    restid  integer;
+    num   integer;
+begin
+    select C.restid into restid
+        from Contains C 
+        where C.restid = new.restid
+    select count(*) into num
+    from Contains C
+    group by C.restid
+    if restid is null && num != 0 then
+        raise exception 'Food can only be ordered from the same restaurant' 
+        end if;
+        return null;
+end;
+$$ language plpgsql;
+
+drop trigger if exists contains_trigger ON Contains CASCADE;
+create trigger contains_trigger
+    after update of restid, foodid, orderid OR insert on Contains
+    for each ROW
+    execute function check_order_constraint();
+
+------------------------- INSERT STATEMENTS -------------------------
+
+insert into Restaurants(restid, restname, minAmt) values
+(1, '4Fingers', 15),
+(2, 'RiRi Mala', 15),
+(3, 'Yoogane', 25),
+(4, 'SushiTei', 40),
+(5, 'KFC', 10),
+(6, 'Ah Bear Mookata', 20),
+(7, 'Marche', 50),
+(8, 'HaiDiLao', 80);    
+
+insert into RestaurantPromo(restpromoid, restid, description, startTime, endTime) values
+(1, 1, '20% off orders exceeding $50'),
+(2, 2, '50% off'),
+(3, 3, 'free delivery'),
+(4, 4, '$5 off min. purchase of $30'),
+(5, 5, 'buy 1 free 1 cheese fries');
+
+insert into Contains(orderid, restid, foodid) values
+(1, 2, 5),
+(1, 2, 7),
+(1, 2, 8),
+(2, 5, 9),
+(2, 5, 11),
+(2, 5, ),
+(3, 3, 5);
+
+insert into FDSPromo(fdspromoid, orderid, description) values
+(1, 1, '10% off first order'),
+(2, 2, '30% off minimum order $80'),
+(3, 3, 'free delivery from when to when'),
+(4, 4, '$5 off min. order of $30'),
+(5, 5, '20% more points from purchase');
