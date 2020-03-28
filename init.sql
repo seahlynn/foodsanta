@@ -81,6 +81,7 @@ create table PaymentMethods (
 
 create table Delivers (
 	orderid					INTEGER,
+    userid                  INTEGER,
 	rating					INTEGER check ((rating <= 5) and (rating >= 0)),
 	location 				varchar(50) not null,
 	timeDepartToRestaurant	DATE not null,
@@ -90,6 +91,7 @@ create table Delivers (
 
 	primary key (orderid),
 	foreign key (orderid) references Orders
+    foreign key (userid) references DeliveryRiders
 	foreign key (paymentmethodid) references PaymentMethods
 )
 
@@ -391,19 +393,22 @@ CREATE TABLE PartTimeRiders (
 );
 
 CREATE TABLE MonthlyWorkSchedule (
-     mwsid              INTEGER,
-     startDay           INTEGER NOT NULL
-                        CHECK (startday in (1, 2, 3, 4, 5, 6, 7)),
-     mwsHours           INTEGER NOT NULL
-                        CHECK (totalhours = 40),
-     fwsid              INTEGER NOT NULL,
+    mwsid              INTEGER,
+    userid             INTEGER,
+    mnthStartDay       DATE NOT NULL,
+    wkStartDay         INTEGER NOT NULL
+                       CHECK (startday in (1, 2, 3, 4, 5, 6, 7),
+    mwsHours           INTEGER NOT NULL
+                       CHECK (totalhours = 40),
+    completed          BOOLEAN NOT NULL,
 
-     PRIMARY KEY (mwsid),
-     FOREIGN KEY (fwsid) REFERENCES FixedWeeklySchedule
+    PRIMARY KEY (mwsid),
+    FOREIGN KEY (userid) REFERENCES FullTimeRiders
 );
 
 CREATE TABLE FixedWeeklySchedule (
     fwsid               INTEGER,
+    mwsid               INTEGER,
     day1                INTEGER NOT NULL
                         CHECK (day1 in (1, 2, 3, 4),
     day2                INTEGER NOT NULL
@@ -416,13 +421,18 @@ CREATE TABLE FixedWeeklySchedule (
                         CHECK (day5 in (1, 2, 3, 4),
 
     PRIMARY KEY (fwsid)
+    FOREIGN KEY (mwsid) REFERENCES MonthlyWorkSchedule
 );
 
 CREATE TABLE WeeklyWorkSchedule (
     wwsid               INTEGER,
-    wwshours            INTEGER,
+    userid              INTEGER,
+    startDate           DATE,
+    wwsHours            INTEGER,
+    completed          BOOLEAN NOT NULL,
 
     PRIMARY KEY (wwsid)
+    FOREIGN KEY (userid) REFERENCES PartTimeRiders
 );
 
 CREATE TABLE DailyWorkShift (
@@ -453,3 +463,9 @@ begin
         return null;
 end;
 %% language plpgsql;
+
+drop trigger if exists dailyshift_trigger ON DailyWorkShift CASCADE;
+create trigger dailyshift_trigger
+    after update of dwsid, starthour, duration OR insert on DailyWorkShift
+    for each ROW
+    execute function check_dailyshift_constraint();
