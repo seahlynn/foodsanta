@@ -1,4 +1,4 @@
-create table Uaers (
+create table Users (
     userid              INTEGER,
     name                varchar(20),
     password            varchar(10),
@@ -8,30 +8,33 @@ create table Uaers (
 
 create table Orders (
 	orderid				INTEGER,
-	customerid			INTEGER,
-	ordercreatedtime	DATE, 
-	deliveryfee			INTEGER not null,
-	totalcost			INTEGER not null,
+	userid			    INTEGER,
+	orderCreatedTime	DATE, 
+	deliveryFee			INTEGER not null,
+	totalCost			INTEGER not null,
 	fdspromoid			INTEGER,
+    preparedByRest      boolean not null,
+    restid              INTEGER not null,
 
 	primary key (orderid),
 	foreign key (reid) references Reviews,
-	foreign key (customerid) references Customers
+	foreign key (userid) references Customers,
+    foreign key (restid) references Restaurants,
 	foreign key (fdspromoid) references FDSPromo
 )
 
--- each customer has an entry in Locations but it uses customerid
+-- each customer has an entry in Locations but it uses userid
 create table Customers (
-	customerid		INTEGER,
+	userid		INTEGER,
 	points			INTEGER,
 
-	primary key (customerid)
+	primary key (userid)
 )
 
--- need to enforce that customerid has made the order that has the same orderid
+-- need to enforce that userid has made the order that has the same orderid
 create table Reviews (
 	orderid			INTEGER,
-	reviewdesc		varchar(100),
+	reviewDesc		varchar(100),
 
 	primary key (orderid),
 	foreign key (orderid) from Orders
@@ -40,23 +43,23 @@ create table Reviews (
 -- before insertion, check that customers only has less than 5
 -- if not, delete the one with the earliest dateadded and add new one
 create table Locations (
-	customerid 		INTEGER,
+	userid 		    INTEGER,
 	location		varchar(50),
-	dateadded		DATE not null,
+	dateAdded		DATE not null,
 
-	primary key (customerid),
-	foreign key (customerid) references Customers
+	primary key (userid),
+	foreign key (userid) references Customers
 )
 
 -- this is so that each customer can have multiple payment methods
--- for every order that requires payment, must look up this table and check customerid must be the same 
+-- for every order that requires payment, must look up this table and check userid must be the same 
 create table PaymentMethods (
 	paymentmethodid	INTEGER,
-	customerid 		INTEGER,
+	userid  		INTEGER,
 	cardInfo		varchar(60),
 
 	primary key (paymentmethodid),
-	foreign key (customerid) references Customers
+	foreign key (userid) references Customers
 )
 
 create table Delivers (
@@ -64,9 +67,9 @@ create table Delivers (
     userid                  INTEGER,
 	rating					INTEGER check ((rating <= 5) and (rating >= 0)),
 	location 				varchar(50) not null,
-	timedeparttolocation	DATE not null,
-	timearrivedatrestaurant	DATE not null,
-	timeorderdelivered		DATE not null,
+	timeDepartToRestaurant	DATE not null,
+	timeArrivedAtRestaurant	DATE not null,
+	timeOrderDelivered		DATE not null,
 	paymentmethodid			INTEGER, 			
 
 	primary key (orderid),
@@ -76,58 +79,170 @@ create table Delivers (
 )
 
 create table CustomersStats (
-    customerid          INTEGER,
-    totalnumorders      INTEGER,
-    totalcostorders     INTEGER,
+    userid              INTEGER,
+    monthid             INTEGER,
+    totalNumOrders      INTEGER,
+    totalCostOfOrders     INTEGER,
 
-    primary key (customerid),
-    foreign key (customerid) from Customers
+    primary key (userid, monthid),
+    foreign key (userid) from Customers
 )
+
+/*create or replace function update_customer_stats() returns trigger
+    as $$
+begin
+    update CustomerStats C
+    set totalNumOrders = totalNumOrders + 1,
+        totalCostOfOrders = totalCostOfOrders + select O.totalCost from Orders O where O.userid = C.userid 
+    return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists update_trigger ON CustomerStats;
+create trigger update_trigger
+    after insert on Contains
+    for each STATEMENT
+    execute function update_customer_stats();*/
 
 -- for the FDS manager
 create table AllStats (
     monthid             INTEGER,
-    totalnewcust        INTEGER,
-    totalorderscost     INTEGER,
+    totalNewCust        INTEGER,
+    totalNumOrders      INTEGER,  ## should be the total of all restaurant
+    totalCostOfOrders   INTEGER,
 
     primary key (monthid)
 )
 
+create or replace function increase_customer() returns trigger
+    as $$
+begin
+    update AllStats
+    set totalNewCust = totalNewCust + 1
+        
+    return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists increase_trigger ON AllStats;
+create trigger increase_trigger
+    after insert on Users
+    for each STATEMENT
+    execute function increase_customer();
+
+/*create or replace function update_overall_stats() returns trigger
+    as $$
+begin
+    update AllStats A
+    set totalNumOrders = totalNumOrders + 1,
+        totalCostOfOrders = totalCostOfOrders + new.totalCost (from orders help la how does new work)
+    return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists update_trigger ON AllStats;
+create trigger update_trigger
+    after update of preparedByRest on Orders
+    for each STATEMENT
+    execute function update_overall_stats();*/
+
+
 create table RestaurantsStats (
     restid              INTEGER,
-    numcompletedorders  INTEGER,
-    totalorderscost     INTEGER,
+    numCompletedOrders  INTEGER,
+    totalOrdersCost     INTEGER,
+    month               INTEGER,
+    year                INTEGER,
 
-    primary key (restid),
+    primary key (restid, month, year),
     foreign key (restid) from Restaurants
 )
 
+/*create or replace function update_rest_stats() returns trigger
+    as $$
+begin
+    update RestaurantStats R
+    set numCompletedOrders = NumCompletedOrders + 1,
+        totalCostOfOrders = totalCostOfOrders + select O.totalCost from Orders O where O.restid = R.restid / new.totalCost
+    return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists update_trigger ON RestaurantStats;
+create trigger update_trigger
+    after update of preparedByRest on Orders
+    for each STATEMENT
+    execute function update_rest_stats();*/
+
+
 create table Food ( 
-    foodid          integer
-    price           float not null
-    availability    integer not null
-    category        varchar(20)
-    restid          integer not null
+    foodid          integer,
+    description     varchar(50),
+    price           float not null,
+    availability    integer not null 
+                    check availability >= 0,
+    category        varchar(20),
+    restid          integer not null,
+    timesorderd     integer not null,
 
-    primary key(foodid, restid)
-
+    primary key(foodid, restid),
+    foreign key (restid) from Restaurants
 );
 
-insert into Food(foodid, price, availability, category) values
-(1, 5, 100, 'Western'),
-(2, 3.5, 100, 'Western'),
-(3, 4.2, 100, 'Chinese'),
-(4, 7.5, 100, 'Japanese'),
-(5, 2, 100, 'Korean'),
-(6, 3.6, 100, 'Chinese'),
-(7, 5, 100, 'Western');
+create or replace function update_avail() returns trigger
+    as $$
+declare 
+    quantity integer
+begin
+    select C.quantity into quantity
+        from Contains C 
+        where F.restid = new.restid AND F.foodid = new.foodid
+
+    update Food F
+    set availability = availability - quantity
+    where F.foodid = NEW.foodid AND F.restid = NEW.restid 
+    return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists update_avail_trigger ON Food;
+create trigger update_avail_trigger
+    after insert on Contains
+    for each STATEMENT /*row??*/
+    execute function update_avail();
+
+create or replace function check_avail_constraint() returns trigger
+    as $$
+declare 
+    avail  integer;
+    quantity integer;
+    description varchar(50)
+begin
+    select F.availability into avail, F.description into description 
+        from Food F
+        where F.restid = new.restid AND F.foodid = new.foodid
+    select C.quantity into quantity
+        from Contains C 
+        where F.restid = new.restid AND F.foodid = new.foodid
+    if avail < quantity then
+        raise exception 'Item % is out of stock', description
+        end if;
+        return null;
+end;
+%% language plpgsql;
+
+drop trigger if exists check_avail_trigger ON Contains CASCADE;
+create trigger check_avail_trigger
+    after update of restid, foodid, orderid OR insert on Contains
+    for each ROW
+    execute function check_order_constraint();
 
 --insertion of food into Contains table has to decrease availability by one (use trigger under contains)
 -----------------------------------------------
 create table Restaurants (
-    restid      integer
-    restname    varchar(50)
-    minAmt      integer not null
+    restid      INTEGER
+    restName    varchar(50)
+    minAmt      INTEGER not null
 
     primary key(restid)
 );
@@ -145,10 +260,10 @@ insert into Restaurants(restid, restname, minAmt) values
 ----------------------------------------------
 create table RestaurantPromo (
     description     varchar(50)
-    restpromoid     integer
+    restpromoid     INTEGER
     startTime       DATE
     endTime         DATE
-    restid          integer not null
+    restid          INTEGER not null
 
     primary key(restpromoid)     
 );
@@ -162,12 +277,14 @@ insert into RestaurantPromo(restpromoid, restid, description, startTime, endTime
 
 ------------------------------------------------------
 create table Contains (
-    orderid     integer not null
-    restid      integer not null
-    foodid      integer not null
+    orderid     INTEGER not null,
+    restid      INTEGER not null,
+    foodid      INTEGER not null,
+    description varchar(50) not null,
+    quantity    INTEGER not null,
 
-
-    foreign key(foodid, restid) references Food
+    primary key (orderid, foodid),
+    foreign key(foodid, restid) references Food,
     foreign key(orderid) references Orders
 );
 
@@ -209,13 +326,13 @@ create trigger contains_trigger
 --insertion into from table needs to check if restid is same as all other restid
 ----------------------------------------------------
 create table FDSPromo (
-    description     varchar(50)
-    fdspromoid      integer
-    orderid         integer not null
-    startTime       DATE
-    endTime         DATE
+    description     varchar(50),
+    fdspromoid      integer,
+    orderid         integer not null,
+    startTime       DATE,
+    endTime         DATE,
 
-    primary key(fdspromoid)
+    primary key(fdspromoid),
     foreign key(orderid) references Campaigns
 );
 
@@ -233,12 +350,16 @@ CREATE TABLE DeliveryRiders (
 );
 
 --use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
-CREATE TABLE RiderStats (
+CREATE TABLE RidersStats (
 	userid 			INTEGER,
+
 	totalOrders		INTEGER,
 	totalHours		INTEGER,
-	totalSalary		INTEGER;
+	totalSalary		INTEGER,
+    month           INTEGER,
+    year            INTEGER,
 
+    primary key(userid, month, year),
 	foreign key(userid)	references DeliveryRiders
 );
 
@@ -298,13 +419,13 @@ CREATE TABLE WeeklyWorkSchedule (
 
 CREATE TABLE DailyWorkShift (
     dwsid               INTEGER,
-    starthour           INTEGER,
-                        CHECK (starthour >= 10 AND starthour <= 22)
+    startHour           INTEGER,
+                        CHECK (startHour >= 10 AND startHour <= 22)
     duration            INTEGER,
                         CHECK (duration in (1, 2, 3, 4))
     wwsid               INTEGER,
 
-    PRIMARY KEY (dwsid, starthour),
+    PRIMARY KEY (dwsid, startHour),
     FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
 )
 
@@ -316,8 +437,8 @@ begin
     select dws.dwsid into dwsid
         from DailyWorkShift dws 
         where new.dwsid = dws.dwsid
-        and   ((dws.starthour <= new.starthour and new.starthour <= dws.starthour + dws.duration)
-        or    (dws.starthour <= new.starthour + new.duration and new.starthour + new.duration <= dws.starthour + dws.duration))
+        and   ((dws.startHour <= new.startHour and new.startHour <= dws.startHour + dws.duration)
+        or    (dws.startHour <= new.startHour + new.startHour and new.startHour + new.duration <= dws.startHour + dws.duration))
     if dwsid is not null then
         raise exception 'Hours clash with an existing shift' 
         end if;
