@@ -40,6 +40,23 @@ create table Reviews (
 	foreign key (orderid) from Orders
 )
 
+-- need to check if it is a new location
+create or replace function add_new_address() returns trigger as $$
+begin
+	-- insert function for locations
+	return null;
+end;
+$$ language plpgsql;	
+
+drop trigger if exists add_new_address_trigger ON Locations	
+create trigger add_new_address_trigger
+	after insert on Locations
+	for each row 
+	when (NEW.location exists in 
+		select OLD.location
+		where OLD.userid = NEW.userid)
+	execute function add_new_address();
+
 -- before insertion, check that customers only has less than 5
 -- if not, delete the one with the earliest dateadded and add new one
 create table Locations (
@@ -64,6 +81,7 @@ create table PaymentMethods (
 
 create table Delivers (
 	orderid					INTEGER,
+    userid                  INTEGER,
 	rating					INTEGER check ((rating <= 5) and (rating >= 0)),
 	location 				varchar(50) not null,
 	timeDepartToRestaurant	DATE not null,
@@ -73,6 +91,7 @@ create table Delivers (
 
 	primary key (orderid),
 	foreign key (orderid) references Orders
+    foreign key (userid) references DeliveryRiders
 	foreign key (paymentmethodid) references PaymentMethods
 )
 
@@ -127,9 +146,10 @@ begin
         
     return null;
 end;
-%% language plpgsql;
+$$ language plpgsql;
 
-drop trigger if exists increase_trigger ON AllStats;
+
+drop trigger if exists increase_customer_trigger ON AllStats;
 create trigger increase_customer_trigger
     after insert on Users
     for each row
@@ -162,27 +182,6 @@ create table RestaurantsStats (
     primary key (restid, month, year),
     foreign key (restid) from Restaurants
 )
-
-create or replace function update_customer_stats() returns trigger
-    as $$
-begin
-    update CustomerStats C
-    set totalNumOrders = totalNumOrders + 1,
-        totalCostOfOrders = totalCostOfOrders 
-        + select O.totalCost from Orders O where O.orderid = C.orderid 
-    where userid = NEW.userid
-    order by monthid desc
-    limit 1
-    return null;
-end;
-%% language plpgsql;
-
-drop trigger if exists update_trigger ON CustomerStats;
-create trigger update_trigger
-    after insert on Contains
-    for each row
-    execute function update_customer_stats();
-
 
 create or replace function update_rest_stats() returns trigger
     as $$
@@ -233,7 +232,7 @@ begin
     where F.foodid = NEW.foodid AND F.restid = NEW.restid 
     return null;
 end;
-%% language plpgsql;
+$$ language plpgsql;
 
 drop trigger if exists update_avail_trigger ON Food;
 create trigger update_avail_trigger
@@ -259,7 +258,7 @@ begin
         end if;
         return null;
 end;
-%% language plpgsql;
+$$ language plpgsql;
 
 drop trigger if exists check_avail_trigger ON Contains CASCADE;
 create trigger check_avail_trigger
@@ -345,7 +344,7 @@ begin
         end if;
         return null;
 end;
-%% language plpgsql;
+$$ language plpgsql;
 
 drop trigger if exists contains_trigger ON Contains CASCADE;
 create trigger contains_trigger
@@ -407,19 +406,22 @@ CREATE TABLE PartTimeRiders (
 );
 
 CREATE TABLE MonthlyWorkSchedule (
-     mwsid              INTEGER,
-     startDay           INTEGER NOT NULL
-                        CHECK (startday in (1, 2, 3, 4, 5, 6, 7)),
-     mwsHours           INTEGER NOT NULL
-                        CHECK (totalhours = 40),
-     fwsid              INTEGER NOT NULL,
+    mwsid              INTEGER,
+    userid             INTEGER,
+    mnthStartDay       DATE NOT NULL,
+    wkStartDay         INTEGER NOT NULL
+                       CHECK (startday in (1, 2, 3, 4, 5, 6, 7),
+    mwsHours           INTEGER NOT NULL
+                       CHECK (totalhours = 40),
+    completed          BOOLEAN NOT NULL,
 
-     PRIMARY KEY (mwsid),
-     FOREIGN KEY (fwsid) REFERENCES FixedWeeklySchedule
+    PRIMARY KEY (mwsid),
+    FOREIGN KEY (userid) REFERENCES FullTimeRiders
 );
 
 CREATE TABLE FixedWeeklySchedule (
     fwsid               INTEGER,
+    mwsid               INTEGER,
     day1                INTEGER NOT NULL
                         CHECK (day1 in (1, 2, 3, 4),
     day2                INTEGER NOT NULL
@@ -432,13 +434,18 @@ CREATE TABLE FixedWeeklySchedule (
                         CHECK (day5 in (1, 2, 3, 4),
 
     PRIMARY KEY (fwsid)
+    FOREIGN KEY (mwsid) REFERENCES MonthlyWorkSchedule
 );
 
 CREATE TABLE WeeklyWorkSchedule (
     wwsid               INTEGER,
-    wwshours            INTEGER,
+    userid              INTEGER,
+    startDate           DATE,
+    wwsHours            INTEGER,
+    completed          BOOLEAN NOT NULL,
 
     PRIMARY KEY (wwsid)
+    FOREIGN KEY (userid) REFERENCES PartTimeRiders
 );
 
 CREATE TABLE DailyWorkShift (
@@ -468,4 +475,10 @@ begin
         end if;
         return null;
 end;
-%% language plpgsql;
+$$ language plpgsql;
+
+drop trigger if exists dailyshift_trigger ON DailyWorkShift CASCADE;
+create trigger dailyshift_trigger
+    after update of dwsid, starthour, duration OR insert on DailyWorkShift
+    for each ROW
+    execute function check_dailyshift_constraint();
