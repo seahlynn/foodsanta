@@ -141,8 +141,8 @@ begin
 end;
 $$ language plpgsql;
 
-drop trigger if exists increase_trigger ON AllStats;
-create trigger increase_trigger
+drop trigger if exists increase_customer_trigger ON AllStats;
+create trigger increase_customer_trigger
     after insert on Users
     for each STATEMENT
     execute function increase_customer();
@@ -220,7 +220,7 @@ begin
     where F.foodid = NEW.foodid AND F.restid = NEW.restid 
     return null;
 end;
-%% language plpgsql;
+$$ language plpgsql;
 
 drop trigger if exists update_avail_trigger ON Food;
 create trigger update_avail_trigger
@@ -246,7 +246,7 @@ begin
         end if;
         return null;
 end;
-%% language plpgsql;
+$$ language plpgsql;
 
 drop trigger if exists check_avail_trigger ON Contains CASCADE;
 create trigger check_avail_trigger
@@ -331,7 +331,7 @@ begin
         end if;
         return null;
 end;
-%% language plpgsql;
+$$ language plpgsql;
 
 drop trigger if exists contains_trigger ON Contains CASCADE;
 create trigger contains_trigger
@@ -462,7 +462,7 @@ begin
         end if;
         return null;
 end;
-%% language plpgsql;
+$$ language plpgsql;
 
 drop trigger if exists dailyshift_trigger ON DailyWorkShift CASCADE;
 create trigger dailyshift_trigger
