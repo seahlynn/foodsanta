@@ -40,6 +40,23 @@ create table Reviews (
 	foreign key (orderid) from Orders
 )
 
+-- need to check if it is a new location
+create or replace function add_new_address() returns trigger as $$
+begin
+	-- insert function for locations
+	return null;
+end;
+$$ language plpgsql;	
+
+drop trigger if exists add_new_address_trigger ON Locations	
+create trigger add_new_address_trigger
+	after insert on Locations
+	for each row 
+	when (NEW.location exists in 
+		select OLD.location
+		where OLD.userid = NEW.userid)
+	execute function add_new_address();
+
 -- before insertion, check that customers only has less than 5
 -- if not, delete the one with the earliest dateadded and add new one
 create table Locations (
@@ -120,7 +137,7 @@ begin
         
     return null;
 end;
-%% language plpgsql;
+$$ language plpgsql;
 
 drop trigger if exists increase_trigger ON AllStats;
 create trigger increase_trigger
