@@ -225,9 +225,9 @@ create view monthlyDeliveryHistory (orderid) as
 	and   MONTH(D.timeorderdelivered) = m1
     
 -- see eacg rider stats for the month (m3)
-create view seeEachRiderStats (userid, totalOrders, totalHours, totalSalary) as
+create view seeEachRidersStats (userid, totalOrders, totalHours, totalSalary) as
     select userid, totalOrders, totalHours, totalSalary
-    from RiderStats
+    from RidersStats
     where monthid = m3;
 
     
@@ -244,11 +244,32 @@ create view monthlyDeliveryCount (orderid) as
 create view monthlyHoursWorked (hours) as
 	with
 	ptViews as (
-		select sum(duration) as hours
+		select sum(dws.duration) as hours
 		from WeeklyWorkSchedule wws, DailyWorkShift dws
 		where wws.userid = d1
-		and   dws.wwsid = wws.wwsid),
+		and   dws.wwsid = wws.wwsid
+		and   MONTH(wws.startDate) = m1
+		and   YEAR(wws.startDate) = y1),
 	ftViews as (
-		select mwshours as hours
+		select mws.mwsHours as hours
 		from MonthlyWorkSchedule mws
-		where mws.userid = d1)
+		where mws.userid = d1
+		and MONTH(mws.mnthStartDay) = m1
+		and YEAR(mws.mnthStartDay) = y1)
+	select (PT.hours + FT.hours) as hours
+	from ptViews PT, ftViews FT
+
+--salary of rider r1, month m1, year y1
+create view riderSalary (salary) as
+	select RS.totalSalary
+	from RidersStats RT
+	where RT.userid = r1
+	and RS.month = m1
+	and RS.year = y1
+
+--total salary earned in month m1, year y1
+create view montlySalary (salary) as
+	select sum(RS.totalSalary)
+	from RidersStats RT
+	where RS.month = m1
+	and RS.year = y1

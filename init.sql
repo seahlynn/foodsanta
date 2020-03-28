@@ -378,10 +378,10 @@ CREATE TABLE PartTimeRiders (
 CREATE TABLE MonthlyWorkSchedule (
     mwsid              INTEGER,
     userid             INTEGER,
-    mnthstartday       DATE NOT NULL,
-    wkstartday         INTEGER NOT NULL
+    mnthStartDay       DATE NOT NULL,
+    wkStartDay         INTEGER NOT NULL
                        CHECK (startday in (1, 2, 3, 4, 5, 6, 7),
-    mwshours           INTEGER NOT NULL
+    mwsHours           INTEGER NOT NULL
                        CHECK (totalhours = 40),
     completed          BOOLEAN NOT NULL,
 
@@ -410,7 +410,8 @@ CREATE TABLE FixedWeeklySchedule (
 CREATE TABLE WeeklyWorkSchedule (
     wwsid               INTEGER,
     userid              INTEGER,
-    wwshours            INTEGER,
+    startDate           DATE,
+    wwsHours            INTEGER,
     completed          BOOLEAN NOT NULL,
 
     PRIMARY KEY (wwsid)
