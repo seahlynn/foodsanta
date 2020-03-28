@@ -33,7 +33,7 @@ create table Users (
 -- each customer has an entry in Locations but it uses userid
 create table Customers (
 	userid		INTEGER,
-	points			INTEGER,
+	points		INTEGER,
 
 	primary key (userid)
 );
