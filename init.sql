@@ -26,7 +26,7 @@ create table Orders (
 -- each customer has an entry in Locations but it uses userid
 create table Customers (
 	userid		INTEGER,
-	points			INTEGER,
+	points		INTEGER,
 
 	primary key (userid)
 )
@@ -276,15 +276,6 @@ create table Restaurants (
     primary key(restid)
 );
 
-insert into Restaurants(restid, restname, minAmt) values
-(1, '4Fingers', 15),
-(2, 'RiRi Mala', 15),
-(3, 'Yoogane', 25),
-(4, 'SushiTei', 40),
-(5, 'KFC', 10),
-(6, 'Ah Bear Mookata', 20),
-(7, 'Marche', 50),
-(8, 'HaiDiLao', 80);
 
 ----------------------------------------------
 create table RestaurantPromo (
@@ -318,14 +309,7 @@ create table Contains (
     foreign key(orderid, userid) references Orders
 );
 
-insert into Contains(orderid, restid, foodid) values
-(1, 2, 5),
-(1, 2, 7),
-(1, 2, 8),
-(2, 5, 9),
-(2, 5, 11),
-(2, 5, ),
-(3, 3, 5);
+
 
 create or replace function check_order_constraint() returns trigger
     as $$
