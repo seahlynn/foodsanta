@@ -26,7 +26,7 @@ create table Users (
     userid              INTEGER,
     name                varchar(20),
     password            varchar(10),
-
+    dateCreated			CURRENT_DATE
     primary key (userid)
 )
 
@@ -129,12 +129,16 @@ create table CustomersStats (
     foreign key (userid) from Customers
 )
 
-/*create or replace function update_customer_stats() returns trigger
+create or replace function update_customer_stats() returns trigger
     as $$
 begin
     update CustomerStats C
     set totalNumOrders = totalNumOrders + 1,
-        totalCostOfOrders = totalCostOfOrders + select O.totalCost from Orders O where O.userid = C.userid 
+        totalCostOfOrders = totalCostOfOrders 
+        + select O.totalCost from Orders O where O.orderid = C.orderid 
+    where userid = NEW.userid
+    order by monthid desc
+    limit 1
     return null;
 end;
 %% language plpgsql;
@@ -142,8 +146,8 @@ end;
 drop trigger if exists update_trigger ON CustomerStats;
 create trigger update_trigger
     after insert on Contains
-    for each STATEMENT
-    execute function update_customer_stats();*/
+    for each row
+    execute function update_customer_stats();
 
 -- for the FDS manager
 create table AllStats (
@@ -155,20 +159,24 @@ create table AllStats (
     primary key (monthid)
 )
 
+--have to update the most recent tuple
 create or replace function increase_customer() returns trigger
     as $$
 begin
     update AllStats
     set totalNewCust = totalNewCust + 1
+    order by monthid desc
+    limit 1
         
     return null;
 end;
 $$ language plpgsql;
 
+
 drop trigger if exists increase_customer_trigger ON AllStats;
 create trigger increase_customer_trigger
     after insert on Users
-    for each STATEMENT
+    for each row
     execute function increase_customer();
 
 /*create or replace function update_overall_stats() returns trigger
@@ -184,7 +192,7 @@ end;
 drop trigger if exists update_trigger ON AllStats;
 create trigger update_trigger
     after update of preparedByRest on Orders
-    for each STATEMENT
+    for each row
     execute function update_overall_stats();*/
 
 
@@ -199,12 +207,16 @@ create table RestaurantsStats (
     foreign key (restid) from Restaurants
 )
 
-/*create or replace function update_rest_stats() returns trigger
+create or replace function update_rest_stats() returns trigger
     as $$
 begin
     update RestaurantStats R
     set numCompletedOrders = NumCompletedOrders + 1,
-        totalCostOfOrders = totalCostOfOrders + select O.totalCost from Orders O where O.restid = R.restid / new.totalCost
+        totalCostOfOrders = totalCostOfOrders 
+        + select O.totalCost from Orders O where O.restid = R.restid order by order_created_time desc limit 1
+    where restid = NEW.restid
+    order by (month, year) desc
+    limit 1
     return null;
 end;
 %% language plpgsql;
@@ -212,8 +224,8 @@ end;
 drop trigger if exists update_trigger ON RestaurantStats;
 create trigger update_trigger
     after update of preparedByRest on Orders
-    for each STATEMENT
-    execute function update_rest_stats();*/
+    for each row
+    execute function update_rest_stats();
 
 
 create table Food ( 
@@ -249,7 +261,7 @@ $$ language plpgsql;
 drop trigger if exists update_avail_trigger ON Food;
 create trigger update_avail_trigger
     after insert on Contains
-    for each STATEMENT /*row??*/
+    for each row /*row??*/
     execute function update_avail();
 
 create or replace function check_avail_constraint() returns trigger
@@ -321,12 +333,13 @@ create table Contains (
     orderid     INTEGER not null,
     restid      INTEGER not null,
     foodid      INTEGER not null,
+    userid 		INTEGER not null,
     description varchar(50) not null,
     quantity    INTEGER not null,
 
     primary key (orderid, foodid),
     foreign key(foodid, restid) references Food,
-    foreign key(orderid) references Orders
+    foreign key(orderid, userid) references Orders
 );
 
 insert into Contains(orderid, restid, foodid) values
