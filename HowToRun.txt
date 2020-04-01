@@ -1,8 +1,9 @@
 Ensure that you have the following installed:
-Install Python 3.8.2
-Install postgreSQL & pgAdmin
+Python 3.8.2
+postgreSQL & pgAdmin
+Node.js & npm command line tool
 
-Go to Command Prompt/Shell:
+Go to Command Prompt/Shell & run (dependencies that should be installed):
 pip install pipenv //Need a pipenv to generate piplock file (if not generated)
 pipenv shell //Start pipenv (virtual env) for python so that the modules are not installed globally
 pipenv install flask
@@ -10,10 +11,19 @@ pipenv install psycopg2
 pipenv install psycopg2-binary
 pipenv install flask-sqlalchemy
 pipenv install gunicorn (Not sure if needed yet) //for Heroku/Server, but not required unless we want to store the database somewhere
+npm install -g yarn
+yarn global add create-react-app //Installing of React library
+yarn global add react-scripts
+yarn add semnatic-ui-react
+yarn add semantic-ui-css
 
-In foodsanta, there is a settings.py file. Edit this file to your settings (since we using diff password)
+In foodsanta, there is a settings.py file in the backend folder. Edit this file to your settings (since we using diff password)
 
-To setup database, you need to create database called foodsanta and connect to it via psql
+To setup database, you need to create database called foodsanta and connect to it via psql.
+
+Next, you need to run the frontend, cd into the frontend folder and run 'npm run build'. This will setup the files and the pages 
+
+As for the Flask backend...
 
 --FOR TESTING--
 To test if the database is working, run \i testsetup.sql in psql and start the web application with python app.py in Terminal/Command Prompt
