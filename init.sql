@@ -483,12 +483,6 @@ insert into Restaurants(restid, restname, minAmt) values
 (7, 'Marche', 50),
 (8, 'HaiDiLao', 80);    
 
-insert into RestaurantPromo(restpromoid, restid, description, startTime, endTime) values
-(1, 1, '20% off orders exceeding $50'),
-(2, 2, '50% off'),
-(3, 3, 'free delivery'),
-(4, 4, '$5 off min. purchase of $30'),
-(5, 5, 'buy 1 free 1 cheese fries');
 
 insert into Contains(orderid, restid, foodid) values
 (1, 2, 5),
@@ -498,10 +492,3 @@ insert into Contains(orderid, restid, foodid) values
 (2, 5, 11),
 (2, 5, ),
 (3, 3, 5);
-
-insert into FDSPromo(fdspromoid, orderid, description) values
-(1, 1, '10% off first order'),
-(2, 2, '30% off minimum order $80'),
-(3, 3, 'free delivery from when to when'),
-(4, 4, '$5 off min. order of $30'),
-(5, 5, '20% more points from purchase');
