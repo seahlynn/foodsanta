@@ -1,0 +1,54 @@
+Ensure that you have the following installed:
+Install Python 3.8.2
+Install postgreSQL & pgAdmin
+
+Go to Command Prompt/Shell:
+pip install pipenv //Need a pipenv to generate piplock file (if not generated)
+pipenv shell //Start pipenv (virtual env) for python so that the modules are not installed globally
+pipenv install flask
+pipenv install psycopg2
+pipenv install psycopg2-binary
+pipenv install flask-sqlalchemy
+pipenv install gunicorn (Not sure if needed yet) //for Heroku/Server, but not required unless we want to store the database somewhere
+
+In foodsanta, there is a settings.py file. Edit this file to your settings (since we using diff password)
+
+To setup database, you need to create database called foodsanta and connect to it via psql
+
+--FOR TESTING--
+To test if the database is working, run \i testsetup.sql in psql and start the web application with python app.py in Terminal/Command Prompt
+
+So there's a form to put member name and rice purity score. If you add in a member that is already existing (case-sensitive), it will refresh the page 
+
+If you add in a member that's not within the Test table, it will render a success page. You can view if the member/score has been added by refreshing pgAdmin and checking.
+
+Do note that you need to refresh the browser and not the table.
+
+--FOR SETUP OF FOODSANTA--
+Run \i init.sql in psql
+
+If successful, you should see the tables being created under the database.
+
+In order to start the web application, run python app.py in Terminal/Command Prompt
+
+--TO CHECK--
+
+Ensure your pip file looks like this: (pylint is optional, only if you are using VSC)
+"""
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pylint = "*"
+
+[packages]
+flask = "*"
+psycopg2 = "*"
+psycopg2-binary = "*"
+flask-sqlalchemy = "*"
+
+[requires]
+python_version = "3.8"
+"""
