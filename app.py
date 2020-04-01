@@ -19,8 +19,8 @@ db = SQLAlchemy(app)
 @app.route('/')
 def index():
     if settings.test:
-        return render_template('test.html')
-    return render_template('index.html')
+        return render_template('test.html', token="Test")
+    return render_template('index.html', token="Landing")
 
 @app.route('/test_submit', methods=['POST'])
 def test_submit():
