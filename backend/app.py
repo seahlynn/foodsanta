@@ -7,11 +7,10 @@ app = Flask(__name__) #Initialize FoodSanta
 
 if settings.debug:
     app.debug = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = settings.URI
 else:
     app.debug = False
-    app.config['SQLALCHEMY_DATABASE_URI'] = settings.URI
 
+app.config['SQLALCHEMY_DATABASE_URI'] = settings.URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
