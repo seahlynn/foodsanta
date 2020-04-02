@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS Users CASCADE;
 DROP TABLE IF EXISTS Orders CASCADE;
+DROP TABLE IF EXISTS RestaurantStaff CASCADE;
 DROP TABLE IF EXISTS Customers CASCADE;
 DROP TABLE IF EXISTS CustomersStats CASCADE;
 DROP TABLE IF EXISTS Restaurants CASCADE;
@@ -30,12 +31,33 @@ create table Users (
     primary key (userid)
 );
 
+create table FDSManagers (
+    userid              INTEGER,
+    primary key (userid),
+    foreign key (userid) references Users
+);
+
+create table RestaurantStaff (
+    userid              INTEGER,
+    restid              INTEGER,
+    primary key (userid),
+    foreign key (userid) references Users
+    foreign key (restid) references Restaurants
+);
+
 -- each customer has an entry in Locations but it uses userid
 create table Customers (
 	userid		INTEGER,
-	points		INTEGER,
+	points		INTEGER not null default 0,
 
 	primary key (userid)
+    foreign key (userid) references Users
+);
+
+CREATE TABLE DeliveryRiders (
+    userid              INTEGER,
+    PRIMARY KEY (userid),
+    FOREIGN KEY (userid) REFERENCES Users
 );
 
 -- before insertion, check that customers only has less than 5
@@ -158,12 +180,6 @@ create table FDSPromo (
 
     primary key(fdspromoid),
     foreign key(orderid) references Campaigns
-);
-
-CREATE TABLE DeliveryRiders (
-    userid              INTEGER,
-    PRIMARY KEY (userid),
-    FOREIGN KEY (userid) REFERENCES Users
 );
 
 CREATE TABLE FullTimeRiders (
