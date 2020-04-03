@@ -26,7 +26,8 @@ create table Users (
     userid              INTEGER,
     name                varchar(20),
     password            varchar(10),
-    dateCreated			CURRENT_DATE
+    dateCreated			date,
+    
     primary key (userid)
 );
 
@@ -36,6 +37,13 @@ create table Customers (
 	points		INTEGER,
 
 	primary key (userid)
+);
+
+
+CREATE TABLE DeliveryRiders (
+    userid              INTEGER,
+    PRIMARY KEY (userid),
+    FOREIGN KEY (userid) REFERENCES Users
 );
 
 -- before insertion, check that customers only has less than 5
@@ -60,6 +68,41 @@ create table PaymentMethods (
 	foreign key (userid) references Customers
 );
 
+--insertion of food into Contains table has to decrease availability by one (use trigger under contains)
+create table Restaurants (
+    restid      INTEGER,
+    restName    varchar(50),
+    minAmt      INTEGER not null,
+
+    primary key(restid)
+);
+
+create table Food ( 
+    foodid          integer,
+    description     varchar(50),
+    price           float not null,
+    availability    integer not null
+                    check (availability >= 0),
+    category        varchar(20),
+    restid          integer not null,
+    timesorderd     integer not null,
+
+    primary key(foodid, restid),
+    foreign key (restid) references Restaurants
+);
+
+--insertion into from table needs to check if restid is same as all other restid
+create table FDSPromo (
+    description     varchar(50),
+    fdspromoid      integer,
+    orderid         integer not null,
+    startTime       DATE,
+    endTime         DATE,
+
+    primary key(fdspromoid)
+);
+
+
 create table Orders (
 	orderid				INTEGER,
 	userid			    INTEGER,
@@ -71,11 +114,22 @@ create table Orders (
     restid              INTEGER not null,
 
 	primary key (orderid),
-	foreign key (reid) references Reviews,
 	foreign key (userid) references Customers,
     foreign key (restid) references Restaurants,
 	foreign key (fdspromoid) references FDSPromo
 );
+
+
+-- need to enforce that userid has made the order that has the same orderid
+create table Reviews (
+	orderid			INTEGER,
+	reviewDesc		varchar(100),
+
+	primary key (orderid),
+	foreign key (orderid) references Orders
+);
+
+
 
 create table Contains (
     orderid     INTEGER not null,
@@ -86,18 +140,10 @@ create table Contains (
     quantity    INTEGER not null,
 
     primary key (orderid, foodid),
-    foreign key(foodid, restid) references Food,
-    foreign key(orderid, userid) references Orders
+    foreign key(foodid, restid) references Food(foodid, restid),
+    foreign key(orderid) references Orders
 );
 
--- need to enforce that userid has made the order that has the same orderid
-create table Reviews (
-	orderid			INTEGER,
-	reviewDesc		varchar(100),
-
-	primary key (orderid),
-	foreign key (orderid) from Orders
-);
 
 create table Delivers (
 	orderid					INTEGER,
@@ -110,61 +156,22 @@ create table Delivers (
 	paymentmethodid			INTEGER, 			
 
 	primary key (orderid),
-	foreign key (orderid) references Orders
-    foreign key (userid) references DeliveryRiders
+	foreign key (orderid) references Orders,
+    foreign key (userid) references DeliveryRiders,
 	foreign key (paymentmethodid) references PaymentMethods
 );
 
-create table Food ( 
-    foodid          integer,
-    description     varchar(50),
-    price           float not null,
-    availability    integer not null 
-                    check availability >= 0,
-    category        varchar(20),
-    restid          integer not null,
-    timesorderd     integer not null,
-
-    primary key(foodid, restid),
-    foreign key (restid) from Restaurants
-);
-
---insertion of food into Contains table has to decrease availability by one (use trigger under contains)
-create table Restaurants (
-    restid      INTEGER
-    restName    varchar(50)
-    minAmt      INTEGER not null
-
-    primary key(restid)
-);
 
 create table RestaurantPromo (
-    description     varchar(50)
-    restpromoid     INTEGER
-    startTime       DATE
-    endTime         DATE
-    restid          INTEGER not null
+    description     varchar(50),
+    restpromoid     INTEGER,
+    startTime       DATE,
+    endTime         DATE,
+    restid          INTEGER not null,
 
     primary key(restpromoid)     
 );
 
---insertion into from table needs to check if restid is same as all other restid
-create table FDSPromo (
-    description     varchar(50),
-    fdspromoid      integer,
-    orderid         integer not null,
-    startTime       DATE,
-    endTime         DATE,
-
-    primary key(fdspromoid),
-    foreign key(orderid) references Campaigns
-);
-
-CREATE TABLE DeliveryRiders (
-    userid              INTEGER,
-    PRIMARY KEY (userid),
-    FOREIGN KEY (userid) REFERENCES Users
-);
 
 CREATE TABLE FullTimeRiders (
     userid              INTEGER,
@@ -183,9 +190,9 @@ CREATE TABLE MonthlyWorkSchedule (
     userid             INTEGER,
     mnthStartDay       DATE NOT NULL,
     wkStartDay         INTEGER NOT NULL
-                       CHECK (startday in (1, 2, 3, 4, 5, 6, 7),
+                       CHECK (wkStartDay in (1, 2, 3, 4, 5, 6, 7)),
     mwsHours           INTEGER NOT NULL
-                       CHECK (totalhours = 40),
+                       CHECK (mwsHours = 40),
     completed          BOOLEAN NOT NULL,
 
     PRIMARY KEY (mwsid),
@@ -196,17 +203,17 @@ CREATE TABLE FixedWeeklySchedule (
     fwsid               INTEGER,
     mwsid               INTEGER,
     day1                INTEGER NOT NULL
-                        CHECK (day1 in (1, 2, 3, 4),
+                        CHECK (day1 in (1, 2, 3, 4)),
     day2                INTEGER NOT NULL
-                        CHECK (day2 in (1, 2, 3, 4),
+                        CHECK (day2 in (1, 2, 3, 4)),
     day3                INTEGER NOT NULL
-                        CHECK (day3 in (1, 2, 3, 4),
+                        CHECK (day3 in (1, 2, 3, 4)),
     day4                INTEGER NOT NULL
-                        CHECK (day4 in (1, 2, 3, 4),
+                        CHECK (day4 in (1, 2, 3, 4)),
     day5                INTEGER NOT NULL
-                        CHECK (day5 in (1, 2, 3, 4),
+                        CHECK (day5 in (1, 2, 3, 4)),
 
-    PRIMARY KEY (fwsid)
+    PRIMARY KEY (fwsid),
     FOREIGN KEY (mwsid) REFERENCES MonthlyWorkSchedule
 );
 
@@ -217,16 +224,16 @@ CREATE TABLE WeeklyWorkSchedule (
     wwsHours            INTEGER,
     completed          BOOLEAN NOT NULL,
 
-    PRIMARY KEY (wwsid)
+    PRIMARY KEY (wwsid),
     FOREIGN KEY (userid) REFERENCES PartTimeRiders
 );
 
 CREATE TABLE DailyWorkShift (
     dwsid               INTEGER,
-    startHour           INTEGER,
-                        CHECK (startHour >= 10 AND startHour <= 22)
-    duration            INTEGER,
-                        CHECK (duration in (1, 2, 3, 4))
+    startHour           INTEGER
+                        CHECK (startHour >= 10 AND startHour <= 22),
+    duration            INTEGER
+                        CHECK (duration in (1, 2, 3, 4)),
     wwsid               INTEGER,
 
     PRIMARY KEY (dwsid, startHour),
@@ -259,7 +266,6 @@ create table RestaurantsStats (
 --use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
 CREATE TABLE RidersStats (
 	userid 			INTEGER,
-
 	totalOrders		INTEGER,
 	totalHours		INTEGER,
 	totalSalary		INTEGER,
@@ -273,7 +279,7 @@ CREATE TABLE RidersStats (
 create table AllStats (
     monthid             INTEGER,
     totalNewCust        INTEGER,
-    totalNumOrders      INTEGER,  ## should be the total of all restaurant
+    totalNumOrders      INTEGER, --should be total num of restuarants--
     totalCostOfOrders   INTEGER,
 
     primary key (monthid)

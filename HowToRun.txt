@@ -2,7 +2,7 @@ Ensure that you have the following installed:
 Install Python 3.8.2
 Install postgreSQL & pgAdmin
 
-Go to Command Prompt/Shell:
+Go to Command Prompt/Shell:pip
 pip install pipenv //Need a pipenv to generate piplock file (if not generated)
 pipenv shell //Start pipenv (virtual env) for python so that the modules are not installed globally
 pipenv install flask
@@ -16,7 +16,7 @@ In foodsanta, there is a settings.py file. Edit this file to your settings (sinc
 To setup database, you need to create database called foodsanta and connect to it via psql
 
 --FOR TESTING--
-To test if the database is working, run \i testsetup.sql in psql and start the web application with python app.py in Terminal/Command Prompt
+To test if the database ispipenv install  working, run \i testsetup.sql in psql and start the web application with python app.py in Terminal/Command Prompt
 
 So there's a form to put member name and rice purity score. If you add in a member that is already existing (case-sensitive), it will refresh the page 
 
