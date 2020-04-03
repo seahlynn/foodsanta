@@ -38,6 +38,8 @@ create table Customers (
 	primary key (userid)
 );
 
+
+
 -- before insertion, check that customers only has less than 5
 -- if not, delete the one with the earliest dateadded and add new one
 create table Locations (
