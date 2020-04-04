@@ -514,12 +514,3 @@ insert into Food(foodid, description, restid, price, availability, category, tim
 (21, ‘prawn paste’, 8, 12, 100, ‘Chinese’, 0)
 (22, ‘golden man tou’, 8, 8, 100, ‘Chinese’, 0);
 
-
-insert into Contains(orderid, restid, foodid, userid, description, quantity) values
-(1, 2, 5),
-(1, 2, 7),
-(1, 2, 8),
-(2, 5, 9),
-(2, 5, 11),
-(2, 5, 7),
-(3, 3, 5);
