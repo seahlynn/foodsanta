@@ -293,14 +293,40 @@ begin
     update CustomerStats C
     set totalNumOrders = totalNumOrders + 1,
         totalCostOfOrders = totalCostOfOrders 
-        + select O.totalCost from Orders O where O.orderid = C.orderid 
-    where userid = NEW.userid
-    order by monthid desc
-    limit 1
+        + (select O.totalCost from Orders o where O.orderid = C.orderid) 
+    where userid = NEW.userid then
     return null;
 end;
-%% language plpgsql;
+$$ language plpgsql; */
 
+-- if there does not exist a customer in the orders table with that userid in customer
+-- then increment the total number of new customers
+
+create or replace function addNewCustomerStatsFunction()
+returns trigger as $$
+begin
+if (not exists(
+    select 1
+    from CustomerStats C
+    where C.userid = NEW.userid))
+then
+    insert into CustomerStats values(NEW.userid, NEW.totalCost);
+end if;
+update CustomerStats C1
+    set C1.totalNumOrders = C1.totalNumOrders + 1
+    where C1.userid = NEW.userid;
+update CustomerStats C2
+    set C2.totalCostOfOrders = C2.totalCostOfOrders + NEW.totalCostOfOrders
+    where C2.userid = NEW.userid;
+return new;
+end; $$ language plpgsql;        
+
+create trigger addNewCustomerStats
+    before insert on Orders
+    for each row
+    execute procedure addNewCustomerStatsFunction();
+
+/*
 drop trigger if exists update_trigger ON CustomerStats;
 create trigger update_trigger
     after insert on Contains
