@@ -1,8 +1,8 @@
 insert into Users(userid, name, password, dateCreated) values
-(1, 'Darren', 'darrencool', 04-04-2020),
-(2, 'Lynn', 'lynncool', 04/04/2020),
-(3, 'Leewah', 'leewahcool', 04/04/2020),
-(4, 'Sining', 'siningcool', 04/04/2020);
+(1, 'Darren', 'darrencool', '2020-04-04'),
+(2, 'Lynn', 'lynncool',  '2020-04-04'),
+(3, 'Leewah', 'leewahcool', '2020-04-04'),
+(4, 'Sining', 'siningcool', '2020-04-04');
 
 insert into Restaurants(restid, restname, minAmt) values
 (1, '4Fingers', 15),
