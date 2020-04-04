@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS Users CASCADE;
 DROP TABLE IF EXISTS Orders CASCADE;
 DROP TABLE IF EXISTS Customers CASCADE;
-DROP TABLE IF EXISTS CustomersStats CASCADE;
+DROP TABLE IF EXISTS CustomerStats CASCADE;
 DROP TABLE IF EXISTS Restaurants CASCADE;
 DROP TABLE IF EXISTS RestaurantStats CASCADE;
 DROP TABLE IF EXISTS RestaurantPromo CASCADE;
@@ -242,7 +242,7 @@ CREATE TABLE DailyWorkShift (
 
 -- FDS Manager purposes
 
-create table CustomersStats (
+create table CustomerStats (
     userid              INTEGER,
     monthid             INTEGER,
     totalNumOrders      INTEGER,
@@ -331,9 +331,9 @@ drop trigger if exists update_trigger ON CustomerStats;
 create trigger update_trigger
     after insert on Contains
     for each row
-    execute function update_customer_stats();    
+    execute function update_customer_stats();    */
 
-create or replace function check_dailyshift_constraint() returns trigger
+create or replace function dailyShiftConstraint() returns trigger
     as $$
 declare 
     dwsid       integer;
@@ -342,22 +342,21 @@ begin
         from DailyWorkShift dws 
         where new.dwsid = dws.dwsid
         and   ((dws.startHour <= new.startHour and new.startHour <= dws.startHour + dws.duration)
-        or    (dws.startHour <= new.startHour + new.startHour and new.startHour + new.duration <= dws.startHour + dws.duration))
+        or    (dws.startHour <= new.startHour + new.startHour and new.startHour + new.duration <= dws.startHour + dws.duration));
     if dwsid is not null then
-        raise exception 'Hours clash with an existing shift' 
-        end if;
-        return null;
+        raise exception 'Hours clash with an existing shift';
+    end if;
+    return null;
 end;
 $$ language plpgsql;
 
-drop trigger if exists dailyshift_trigger ON DailyWorkShift CASCADE;
-create trigger dailyshift_trigger
+create trigger dailyShiftConstraint_trigger
     after update of dwsid, starthour, duration OR insert on DailyWorkShift
     for each ROW
-    execute function check_dailyshift_constraint();
+    execute function dailyShiftConstraint();
 
 -- need to check if it is a new location
-create or replace function add_new_address() returns trigger as $$
+/*create or replace function add_new_address() returns trigger as $$
 begin
 	-- insert function for locations
 	return null;
