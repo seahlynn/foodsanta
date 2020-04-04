@@ -287,24 +287,12 @@ create table AllStats (
 
 ------------------------- TRIGGER STATEMENTS -------------------------
 
-/*create or replace function update_customer_stats() returns trigger
-    as $$
-begin
-    update CustomerStats C
-    set totalNumOrders = totalNumOrders + 1,
-        totalCostOfOrders = totalCostOfOrders 
-        + (select O.totalCost from Orders o where O.orderid = C.orderid) 
-    where userid = NEW.userid then
-    return null;
-end;
-$$ language plpgsql; */
-
--- if there does not exist a customer in the orders table with that userid in customer
--- then increment the total number of new customers
-
-create or replace function addNewCustomerStatsFunction()
+/* Updates customer's total number of orders and total cost spent on orders 
+or inserts new tuple if it is a new customer */
+create or replace function updateCustomerStatsFunction()
 returns trigger as $$
 begin
+/* if it is an existing customer */ 
 if (not exists(
     select 1
     from CustomerStats C
@@ -312,6 +300,7 @@ if (not exists(
 then
     insert into CustomerStats values(NEW.userid, NEW.totalCost);
 end if;
+/* if it is a new customer */
 update CustomerStats C1
     set C1.totalNumOrders = C1.totalNumOrders + 1
     where C1.userid = NEW.userid;
@@ -321,10 +310,32 @@ update CustomerStats C2
 return new;
 end; $$ language plpgsql;        
 
-create trigger addNewCustomerStats
+drop trigger if exists updateCustomerStatsTrigger on CustomerStats;
+create trigger updateCustomerStatsTrigger
     before insert on Orders
     for each row
-    execute procedure addNewCustomerStatsFunction();
+    execute function updateCustomerStatsFunction();
+
+/* Increments the total number of distinct customers */
+create or replace function addNewCustomer() 
+returns trigger as $$
+begin
+if (not exists(
+    select 1 
+    from CustomerStats C
+    where C.userid = NEW.userid))
+then 
+    update AllStats
+    set totalNewCust = totalNewCust + 1;
+end if;
+return new;
+end; $$ language plpgsql;
+
+drop trigger if exists addNewCustomerTrigger ON AllStats;
+create trigger addNewCustomerTrigger
+    after insert on Orders
+    for each row
+    execute function addNewCustomer();
 
 /*
 drop trigger if exists update_trigger ON CustomerStats;
@@ -356,6 +367,8 @@ create trigger dailyshift_trigger
     for each ROW
     execute function check_dailyshift_constraint();
 
+
+
 -- need to check if it is a new location
 create or replace function add_new_address() returns trigger as $$
 begin
@@ -373,26 +386,7 @@ create trigger add_new_address_trigger
 		where OLD.userid = NEW.userid)
 	execute function add_new_address();
 
---have to update the most recent tuple
-create or replace function increase_customer() returns trigger
-    as $$
-begin
-    update AllStats
-    set totalNewCust = totalNewCust + 1
-    order by monthid desc
-    limit 1
-        
-    return null;
-end;
-$$ language plpgsql;
-
-
-drop trigger if exists increase_customer_trigger ON AllStats;
-create trigger increase_customer_trigger
-    after insert on Users
-    for each row
-    execute function increase_customer();*/
-
+--have to update the most recent tuple */
 /*create or replace function update_overall_stats() returns trigger
     as $$
 begin
