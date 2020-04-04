@@ -24,9 +24,11 @@ DROP TABLE IF EXISTS DailyWorkShift CASCADE;
 
 create table Users (
     userid              INTEGER,
+    username            varchar(50),
     name                varchar(20),
     password            varchar(10),
-    dateCreated			CURRENT_DATE
+    dateCreated			date,
+    
     primary key (userid)
 );
 
@@ -34,11 +36,30 @@ create table Users (
 create table Customers (
 	userid		INTEGER,
 	points		INTEGER,
-
-	primary key (userid)
+	primary key (userid),
+    FOREIGN KEY (userid) REFERENCES Users
 );
 
 
+CREATE TABLE DeliveryRiders (
+    userid              INTEGER,
+    PRIMARY KEY (userid),
+    FOREIGN KEY (userid) REFERENCES Users
+);
+
+create table FDSManagers (
+    userid              INTEGER,
+    PRIMARY KEY (userid),
+    FOREIGN KEY (userid) REFERENCES Users
+);
+
+create table RestaurantStaff (
+    userid              INTEGER,
+    restid              INTEGER,
+    PRIMARY KEY (userid),
+    FOREIGN KEY (userid) REFERENCES Users,
+    FOREIGN KEY (restid) REFERENCES Restaurants
+);
 
 -- before insertion, check that customers only has less than 5
 -- if not, delete the one with the earliest dateadded and add new one
@@ -62,6 +83,41 @@ create table PaymentMethods (
 	foreign key (userid) references Customers
 );
 
+--insertion of food into Contains table has to decrease availability by one (use trigger under contains)
+create table Restaurants (
+    restid      INTEGER,
+    restName    varchar(50),
+    minAmt      INTEGER not null,
+
+    primary key(restid)
+);
+
+create table Food ( 
+    foodid          integer,
+    description     varchar(50),
+    price           float not null,
+    availability    integer not null
+                    check (availability >= 0),
+    category        varchar(20),
+    restid          integer not null,
+    timesorderd     integer not null,
+
+    primary key(foodid, restid),
+    foreign key (restid) references Restaurants
+);
+
+--insertion into from table needs to check if restid is same as all other restid
+create table FDSPromo (
+    description     varchar(50),
+    fdspromoid      integer,
+    orderid         integer not null,
+    startTime       DATE,
+    endTime         DATE,
+
+    primary key(fdspromoid)
+);
+
+
 create table Orders (
 	orderid				INTEGER,
 	userid			    INTEGER,
@@ -73,11 +129,22 @@ create table Orders (
     restid              INTEGER not null,
 
 	primary key (orderid),
-	foreign key (reid) references Reviews,
 	foreign key (userid) references Customers,
     foreign key (restid) references Restaurants,
 	foreign key (fdspromoid) references FDSPromo
 );
+
+
+-- need to enforce that userid has made the order that has the same orderid
+create table Reviews (
+	orderid			INTEGER,
+	reviewDesc		varchar(100),
+
+	primary key (orderid),
+	foreign key (orderid) references Orders
+);
+
+
 
 create table Contains (
     orderid     INTEGER not null,
@@ -88,18 +155,10 @@ create table Contains (
     quantity    INTEGER not null,
 
     primary key (orderid, foodid),
-    foreign key(foodid, restid) references Food,
-    foreign key(orderid, userid) references Orders
+    foreign key(foodid, restid) references Food(foodid, restid),
+    foreign key(orderid) references Orders
 );
 
--- need to enforce that userid has made the order that has the same orderid
-create table Reviews (
-	orderid			INTEGER,
-	reviewDesc		varchar(100),
-
-	primary key (orderid),
-	foreign key (orderid) from Orders
-);
 
 create table Delivers (
 	orderid					INTEGER,
@@ -112,61 +171,22 @@ create table Delivers (
 	paymentmethodid			INTEGER, 			
 
 	primary key (orderid),
-	foreign key (orderid) references Orders
-    foreign key (userid) references DeliveryRiders
+	foreign key (orderid) references Orders,
+    foreign key (userid) references DeliveryRiders,
 	foreign key (paymentmethodid) references PaymentMethods
 );
 
-create table Food ( 
-    foodid          integer,
-    description     varchar(50),
-    price           float not null,
-    availability    integer not null 
-                    check availability >= 0,
-    category        varchar(20),
-    restid          integer not null,
-    timesorderd     integer not null,
-
-    primary key(foodid, restid),
-    foreign key (restid) from Restaurants
-);
-
---insertion of food into Contains table has to decrease availability by one (use trigger under contains)
-create table Restaurants (
-    restid      INTEGER
-    restName    varchar(50)
-    minAmt      INTEGER not null
-
-    primary key(restid)
-);
 
 create table RestaurantPromo (
-    description     varchar(50)
-    restpromoid     INTEGER
-    startTime       DATE
-    endTime         DATE
-    restid          INTEGER not null
+    description     varchar(50),
+    restpromoid     INTEGER,
+    startTime       DATE,
+    endTime         DATE,
+    restid          INTEGER not null,
 
     primary key(restpromoid)     
 );
 
---insertion into from table needs to check if restid is same as all other restid
-create table FDSPromo (
-    description     varchar(50),
-    fdspromoid      integer,
-    orderid         integer not null,
-    startTime       DATE,
-    endTime         DATE,
-
-    primary key(fdspromoid),
-    foreign key(orderid) references Campaigns
-);
-
-CREATE TABLE DeliveryRiders (
-    userid              INTEGER,
-    PRIMARY KEY (userid),
-    FOREIGN KEY (userid) REFERENCES Users
-);
 
 CREATE TABLE FullTimeRiders (
     userid              INTEGER,
@@ -185,9 +205,9 @@ CREATE TABLE MonthlyWorkSchedule (
     userid             INTEGER,
     mnthStartDay       DATE NOT NULL,
     wkStartDay         INTEGER NOT NULL
-                       CHECK (startday in (1, 2, 3, 4, 5, 6, 7),
+                       CHECK (wkStartDay in (1, 2, 3, 4, 5, 6, 7)),
     mwsHours           INTEGER NOT NULL
-                       CHECK (totalhours = 40),
+                       CHECK (mwsHours = 40),
     completed          BOOLEAN NOT NULL,
 
     PRIMARY KEY (mwsid),
@@ -198,17 +218,17 @@ CREATE TABLE FixedWeeklySchedule (
     fwsid               INTEGER,
     mwsid               INTEGER,
     day1                INTEGER NOT NULL
-                        CHECK (day1 in (1, 2, 3, 4),
+                        CHECK (day1 in (1, 2, 3, 4)),
     day2                INTEGER NOT NULL
-                        CHECK (day2 in (1, 2, 3, 4),
+                        CHECK (day2 in (1, 2, 3, 4)),
     day3                INTEGER NOT NULL
-                        CHECK (day3 in (1, 2, 3, 4),
+                        CHECK (day3 in (1, 2, 3, 4)),
     day4                INTEGER NOT NULL
-                        CHECK (day4 in (1, 2, 3, 4),
+                        CHECK (day4 in (1, 2, 3, 4)),
     day5                INTEGER NOT NULL
-                        CHECK (day5 in (1, 2, 3, 4),
+                        CHECK (day5 in (1, 2, 3, 4)),
 
-    PRIMARY KEY (fwsid)
+    PRIMARY KEY (fwsid),
     FOREIGN KEY (mwsid) REFERENCES MonthlyWorkSchedule
 );
 
@@ -219,21 +239,21 @@ CREATE TABLE WeeklyWorkSchedule (
     wwsHours            INTEGER,
     completed          BOOLEAN NOT NULL,
 
-    PRIMARY KEY (wwsid)
+    PRIMARY KEY (wwsid),
     FOREIGN KEY (userid) REFERENCES PartTimeRiders
 );
 
 CREATE TABLE DailyWorkShift (
     dwsid               INTEGER,
-    startHour           INTEGER,
-                        CHECK (startHour >= 10 AND startHour <= 22)
-    duration            INTEGER,
-                        CHECK (duration in (1, 2, 3, 4))
+    startHour           INTEGER
+                        CHECK (startHour >= 10 AND startHour <= 22),
+    duration            INTEGER
+                        CHECK (duration in (1, 2, 3, 4)),
     wwsid               INTEGER,
 
     PRIMARY KEY (dwsid, startHour),
     FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
-)
+);
 
 -- FDS Manager purposes
 
@@ -244,10 +264,10 @@ create table CustomersStats (
     totalCostOfOrders     INTEGER,
 
     primary key (userid, monthid),
-    foreign key (userid) from Customers
-)
+    foreign key (userid) references Customers
+);
 
-create table RestaurantsStats (
+create table RestaurantStats (
     restid              INTEGER,
     numCompletedOrders  INTEGER,
     totalOrdersCost     INTEGER,
@@ -255,13 +275,12 @@ create table RestaurantsStats (
     year                INTEGER,
 
     primary key (restid, month, year),
-    foreign key (restid) from Restaurants
-)
+    foreign key (restid) references Restaurants
+);
 
 --use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
 CREATE TABLE RidersStats (
 	userid 			INTEGER,
-
 	totalOrders		INTEGER,
 	totalHours		INTEGER,
 	totalSalary		INTEGER,
@@ -275,15 +294,15 @@ CREATE TABLE RidersStats (
 create table AllStats (
     monthid             INTEGER,
     totalNewCust        INTEGER,
-    totalNumOrders      INTEGER,  ## should be the total of all restaurant
+    totalNumOrders      INTEGER, --should be total num of restuarants--
     totalCostOfOrders   INTEGER,
 
     primary key (monthid)
-)
+);
 
 ------------------------- TRIGGER STATEMENTS -------------------------
 
-create or replace function update_customer_stats() returns trigger
+/*create or replace function update_customer_stats() returns trigger
     as $$
 begin
     update CustomerStats C
@@ -361,7 +380,7 @@ drop trigger if exists increase_customer_trigger ON AllStats;
 create trigger increase_customer_trigger
     after insert on Users
     for each row
-    execute function increase_customer();
+    execute function increase_customer();*/
 
 /*create or replace function update_overall_stats() returns trigger
     as $$
@@ -379,7 +398,7 @@ create trigger update_trigger
     for each row
     execute function update_overall_stats();*/	
 
-create or replace function update_rest_stats() returns trigger
+/*create or replace function update_rest_stats() returns trigger
     as $$
 begin
     update RestaurantStats R
@@ -391,7 +410,7 @@ begin
     limit 1
     return null;
 end;
-%% language plpgsql;
+$$ language plpgsql;
 
 drop trigger if exists update_trigger ON RestaurantStats;
 create trigger update_trigger
@@ -419,7 +438,7 @@ $$ language plpgsql;
 drop trigger if exists update_avail_trigger ON Food;
 create trigger update_avail_trigger
     after insert on Contains
-    for each row /*row??*/
+    for each row 
     execute function update_avail();
 
 create or replace function check_avail_constraint() returns trigger
@@ -471,26 +490,51 @@ drop trigger if exists contains_trigger ON Contains CASCADE;
 create trigger contains_trigger
     after update of restid, foodid, orderid OR insert on Contains
     for each ROW
-    execute function check_order_constraint();
+    execute function check_order_constraint();*/
 
 ------------------------- INSERT STATEMENTS -------------------------
 
 insert into Restaurants(restid, restname, minAmt) values
 (1, '4Fingers', 15),
-(2, 'RiRi Mala', 15),
-(3, 'Yoogane', 25),
-(4, 'SushiTei', 40),
-(5, 'KFC', 10),
+(2, 'Yoogane', 25),
+(3, 'SushiTei', 40),
+(4, 'KFC', 10),
+(5, 'RiRi Mala', 15),
 (6, 'Ah Bear Mookata', 20),
 (7, 'Marche', 50),
 (8, 'HaiDiLao', 80);    
 
+--times ordered starts at 0 an availability at 100 for all food items currently)
+insert into Food(foodid, description, restid, price, availability, category, timesordered) values
+(1, ‘soy sauce wings’, 1, 12, 100, ‘Korean’, 0)
+(2, ‘spicy drumlets, 1, 12, 100, ‘Korean’, 0)
+(3, ‘army stew’, 2, 8, 24, ‘Korean’, 0)
+(4, ‘kimchi pancakes’, 6, 8, 100, ‘Korean’, 0)
+(5, ‘unagi sushi’, 3, 6, 100, ‘Japanese’, 0)
+(6, ‘chawanmushi’, 3, 3, 100, ‘Japanese’, 0)
+(7, ‘chicken katsu’, 3, 8, 100, ‘Japanese’, 0)
+(8, ‘cheese fries’, 4, 4.5, 100, ‘FastFood’, 0)
+(9, ‘popcorn chicken’, 4.2, 8, 100, ‘FastFood’, 0)
+(10, ‘lime froyo’, 4, 2, 100, ‘FastFood’, 0)
+(11, ‘zhong la mala hotpot’, 15, 8, 100, ‘Chinese’, 0)
+(12, ‘da la mala hotpot’, 5, 17, 100, ‘Chinese’, 0)
+(13, ‘smoked duck’, 6, 2.5, 100, ‘Sharing’, 0)
+(14, ‘luncheon meat’, 6, 2, 100, ‘Sharing’, 0)
+(15, ‘black pepper pork belly’, 6, 2, 100, ‘Sharing’, 0)
+(16, ‘thai milk tea’, 6, 3, 100, ‘Beverage’, 0)
+(17, ‘rosti’, 7, 8.90, 100, ‘Western’, 0)
+(18, ‘pork knuckles’, 7, 16.50, 100, ‘Western’, 0)
+(19, ‘smoked salmon pizza’, 7, 22.90, 100, ‘Western’, 0)
+(20, ‘beef schnitzel’, 7, 19.90, 100, ‘Western’, 0)
+(21, ‘prawn paste’, 8, 12, 100, ‘Chinese’, 0)
+(22, ‘golden man tou’, 8, 8, 100, ‘Chinese’, 0);
 
-insert into Contains(orderid, restid, foodid) values
+
+insert into Contains(orderid, restid, foodid, userid, description, quantity) values
 (1, 2, 5),
 (1, 2, 7),
 (1, 2, 8),
 (2, 5, 9),
 (2, 5, 11),
-(2, 5, ),
+(2, 5, 7),
 (3, 3, 5);
