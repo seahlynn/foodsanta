@@ -59,3 +59,4 @@ INSERT INTO Orders(orderid, userid, custLocation, orderCreatedTime, totalCost, f
 (12, 1, '5 Arts Link, 5 The, Block AS7, Level, Shaw Foundation Building, Singapore 117570', '1830', 13.10, NULL, 1, False, False, 1),
 (13, 1, '12 Kent Ridge Cresent Central Library Building, CLB01, 02, Singapore 119275', '1930', 19.80, NULL, 1, False, False, 1),
 (14, 1, '3 Science Drive 2, Singapore 117543', '1945', 23.80, NULL, 1, False, False, 1);
+

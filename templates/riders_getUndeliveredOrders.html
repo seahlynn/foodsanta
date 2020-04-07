@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<!--- this page shows him all possible orders that he can select from in this format 
+  things to be shown to rider after he has selected: orderid, restLocation, custLocation
+  after he selects, should he be in a different page? ---> 
+<html lang="en">
+    <head>
+        <title>FoodSantaTest-RidersToSeeOrders</title>
+    </head>
+    <body align = 'center'>
+        <div class="container" >
+          <h1> Choose an order to pick up and deliver! </h1>
+          <table style = "width:100%">
+            <tr>
+              <th> Order Number </th>
+              <th> Restaurant Location </th>
+              <th> Customer Location </th>
+            </tr>
+            {% for o in ordersToPickUp %}
+            <tr>
+              <td>{{ o.orderid }}</td>
+              <td>{{ o.restLocation }}</td>
+              <td>{{ o.custLocation }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
+      </body>  
+</html>      
