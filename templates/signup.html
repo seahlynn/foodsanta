@@ -2,50 +2,39 @@
 <html lang="en">
 <head>
     <link rel="stylesheet" href="../static/signup.css">
-    <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-    <div class="main">
-        <section class="signup">
-            <div class="container">
-                <div class="signup-content">
-                    <div class="signup-form">
-                        <h2 class="form-title">Sign up</h2>
-                        <form method="POST" class="register-form" id="register-form">
-                            <div class="form-group">
-                                <label for="name"><i class="zmdi zmdi-account material-icons-name"></i></label>
-                                <input type="text" name="name" id="name" placeholder="Your Name"/>
-                            </div>
-                            <div class="form-group">
-                                <label for="email"><i class="zmdi zmdi-email"></i></label>
-                                <input type="email" name="email" id="email" placeholder="Your Email"/>
-                            </div>
-                            <div class="form-group">
-                                <label for="pass"><i class="zmdi zmdi-lock"></i></label>
-                                <input type="password" name="pass" id="pass" placeholder="Password"/>
-                            </div>
-                            <div class="form-group">
-                                <label for="re-pass"><i class="zmdi zmdi-lock-outline"></i></label>
-                                <input type="password" name="re_pass" id="re_pass" placeholder="Repeat your password"/>
-                            </div>
-                            <div class="form-group">
-                                <input type="checkbox" name="agree-term" id="agree-term" class="agree-term" />
-                                <label for="agree-term" class="label-agree-term"><span><span></span></span>I agree all statements in  <a href="#" class="term-service">Terms of service</a></label>
-                            </div>
-                            <div class="form-group form-button">
-                                <input type="submit" name="signup" id="signup" class="form-submit" value="Register"/>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="signup-image">
-                        <figure><img src="images/signup-image.jpg" alt="sing up image"></figure>
-                        <a href="#" class="signup-image-link">I am already member</a>
-                    </div>
-                </div>
-            </div>
-        </section>
+
+<body style="background: url('{{ url_for('static', filename='signupbg.jpg') }}'); background-size: cover">
+    <div class="box">
+        <img class="image" src="{{ url_for('static', filename='FoodSantaTruckLogo.png') }}" />
+        <form class="" action="/signup" name="signup-form" method="POST">
+            <h2 class="text--centered text">Are you ready to join us?</h2>
+ 
+            <input type="text" placeholder="Username (Your unique username!)" class="input" name="username" />
+            <input type="text" placeholder="Name (How would you like to be addressed?)" class="input" name="name" />
+            <input type="text" placeholder="Password" class="input" name="password" />
+            <input type="text" placeholder="Retype Password" class="input" name="repassword" />
+
+            <h3 class="text--centered text">What do you wish to sign up as?</h3>
+            
+            <input type="radio" class="input--radio text--centered" id="customer" name="usertype" value="customer">
+            <label class="text--centered text--options" for="Customer"><b>Customer</b></label><br>
+            <input type="radio" class="input--radio text--centered" id="deliveryrider" name="usertype" value="deliveryrider">
+            <label class="text--centered text--options" for="DeliveryRider"><b>Delivery Rider</b></label><br>
+            <input type="radio" class="input--radio text--centered" id="restaurantstaff" name="usertype" value="restaurantstaff">
+            <label class="text--centered text--options" for="RestaurantStaff"><b>Staff</b></label><br>
+            
+            <input type="submit" value="Sign up" class="text--centered input--submit"/>
+
+        </form>
+        <a href="/login" class="text--login text--centered">I am already a user!</a>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <h2 class="text--centered text--flash"><b>{{ message }}</b></h2>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
     </div>
-    <script src="vendor/jquery/jquery.min.js"></script>
-    <script src="js/main.js"></script>
 </body>
 </html>
