@@ -147,6 +147,40 @@ create view avgOrdersPerCampaign(restpromoid, avgOrders) AS
 	from Duration D, TotalOrders T
 	where D.restpromoid = T.restpromoid
 
+-- RIDERS TO COLLECT ORDERS
+-- 1. to see the orders that they can deliver
+create view ordersToPickUp(orderid, custLocation, restLocation) AS
+	select orderid, custLocation, (select location from Restaurants where Restaurants.restid = Orders.restid)
+	from Orders 
+	where preparedByRest = TRUE 
+	and collectedByRider = FALSE;
+
+-- 2. after selecting particular order o1, update the order
+update Orders
+	set collectedByRider = TRUE
+	where Orders.orderid = o1.orderid;
+
+-- 3. create new entry in Delivers d31 for that particular order o1 by rider dr1
+-- currentTime for when it is collected
+-- other 2 times are null 
+insert into Delivers
+	values (o1.orderid, 'this rider id', null, o1.custLocation, 'currentTime', null, null, o1.paymentmethodid);
+
+-- 4. when order de1 is collected at restaurant
+update Delivers
+	set timeArrivedAtRestaurant = 'currentTime'
+	where Delivers.orderid = de1.orderid;
+
+-- 5. when order de1 is delivered to customer
+update Delivers
+	set timeOrderDelivered = 'currentTime'
+	where Delivers.orderid = de1.orderid;
+
+-- 6. update stats of driver who delivered it 	
+update RidersStats
+	set totalOrders = totalOrders + 1
+	where RidersStats.userid = dr1.userid;	
+
 -- FDS Manager
 
 -- see stats for the month (m1)
@@ -230,7 +264,6 @@ create view seeEachRidersStats (userid, totalOrders, totalHours, totalSalary) as
     from RidersStats
     where monthid = m3;
 
-    
 --monthly number of deliveries for rider d1, month m1, year y1
 create view monthlyDeliveryCount (orderid) as
 	select count(*)
