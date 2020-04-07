@@ -5,36 +5,53 @@
     </head>
     <body>
         <div class="container">
-            <form action="/test_submit" method="POST">
-                <label for="restaurant"> Choose a restaurant </label>
+          <form name="chosen" action="restresults" method='GET'>
+            <label for="restaurant"> Choose a restaurant </label>
+            <select name="restname">
+              <option value="KFC">KFC</option>
+              <option value="4Fingers">4Fingers</option>
+              <option value="Yoogane">Yoogane</option>
+              <option value="SushiTei">SushiTei</option>
+              <option value="RiRi Mala">RiRi Mala</option>   
+              <option value="Ah Bear Mookata">Ah Bear Mookata</option>
+              <option value="Marche">Marche</option>
+              <option value="HaiDiLao">HaiDiLao</option>    
+            </select>
+            <br>
+            <button type="submit"> Select </button>
+          </form>
+        </div>
 
-                <select id="restaurants">
-                    <option value="KFC">KFC</option>
-                    <option value="Four Fingers">Four Fingers</option>
-                    <option value="Marche">Marche</option>
-                    <option value="Haidilao">Haidilao</option>
-                </select>
-
-              <div class="row">
-                <div class="col-25">
-                  <label for="fname">Member name</label>
-                </div>
-                <div class="col-75">
-                  <input type="text" id="fname" name="name" placeholder="Add name">
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-25">
-                  <label for="lname">Rice Purity Score</label>
-                </div>
-                <div class="col-75">
-                  <input type="text" id="lname" name="score" placeholder="Add score">
-                </div>
-              </div>
-              <div class="row">
-                <input type="submit" value="Submit">
-              </div>
-            </form>
-          </div>
+        <div class="results">
+          {% block content %}
+          <h2> Food items in ... </h2>
+              <table border='1'>
+                  <tr>
+                  <th>Food</th>
+                  </tr>
+                  {% for p in posts %}
+                  <tr>
+                  <td>{{ p.food }}</td>
+                  </tr>
+                  {% endfor %}
+                  {% endblock %}
+              </table>
+        </div>
     </body>
 </html>
+
+<!---->
+
+<!--<form action="restresults" method="GET">
+            <div class="row">
+              <div class="col-25">
+                <label for="lname">Restaurant</label>
+              </div>
+              <div class="col-75">
+                <input type="text" id="lname" name="score" placeholder="Add restaurant">
+              </div>
+            </div>
+            <div class="row">
+              <input type="submit" value="Submit">
+            </div>
+          </form> -->

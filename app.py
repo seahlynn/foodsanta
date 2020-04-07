@@ -19,7 +19,7 @@ db = SQLAlchemy(app)
 @app.route('/')
 def index():
     if settings.test:
-        return render_template('test.html')
+        return render_template('restaurants.html')
     return render_template('index.html')
 
 @app.route('/test_submit', methods=['POST'])
@@ -36,7 +36,20 @@ def test_submit():
     db.session.execute(data)
     db.session.commit()
     return render_template('testsuccess.html')
+
+@app.route('/restresults', methods=['GET'])
+def restresults():
+    global db
+
+    restname = request.args['restname']
+    firstquery = f"(select restid from Restaurants where restName = '{restname}')"
     
+    query = f"SELECT * FROM Food WHERE restid = {firstquery}"
+    result = db.session.execute(query)
+        
+    posts = [dict(food= row[1]) for row in result.fetchall()]
+
+    return render_template('restaurants.html', posts=posts)
 
 #Check if server can be run, must be placed at the back of this file
 if __name__ == '__main__':

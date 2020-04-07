@@ -1,0 +1,25 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body>
+        {% block content %}
+        <h2>Results</h2>
+       
+            <table border='1'>
+                <tr>
+                <th>Food</th>
+                </tr>
+                {% for p in posts %}
+                <tr>
+                <td>{{ p.food }}</td>
+                </tr>
+                {% endfor %}
+                {% endblock %}
+            </table>
+
+        
+    </body>
+</html>
