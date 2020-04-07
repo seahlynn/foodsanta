@@ -15,57 +15,45 @@
             </select>
           </form>
         </div>
-
         <br>
-        <div class="results">
+        <div style="display: inline"> 
+          <div class="results" style="width:50%; float: left;">
           {% block content %}
           <h2> Menu </h2>
               <table border='1' align = 'center'>
                   <tr>
                     <th> Item </th>
                     <th> Price </th>
-                    <th>  </th>
                   </tr>
-                  {% for p in posts %}
+                  {% for p in foodlist %}
                   <tr>
                     <td>{{ p.food }}</td>
                     <td>{{ p.price }}</td>
-                    <td>
-                      <form action="addtocart" method="POST">
-                        <button type="submit"> Add to cart </button> 
-                      </form>
-                    </td>
                   </tr>
                   {% endfor %}
                   {% endblock %}
               </table>
 
-              
         </div>
+ 
+        <div class="choosefood" style="width:50%; display: inline-block;">
+          <h2> Add to Cart </h2>
+          <form name="restaurant" action="addtocart" method='POST'>
+            <select name="name" onchange="this.form.submit()">
+              {% for f in foodlist %}
+                <option value="{{f.foodid}}" SELECTED> {{f.food}} </option>
+              {% endfor %}
+              <option value="" disabled selected> Select your food </option>
+            </select>
+          </form>
+        </div>
+      </div>
+        
+
     </body>
 </html>
 
 <!--
-  <form action="/test_submit" method="POST">
-              <div class="row">
-                <div class="col-25">
-                  <label for="fname">Member name</label>
-                </div>
-                <div class="col-75">
-                  <input type="text" id="fname" name="name" placeholder="Add name">
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-25">
-                  <label for="lname">Rice Purity Score</label>
-                </div>
-                <div class="col-75">
-                  <input type="text" id="lname" name="score" placeholder="Add score">
-                </div>
-              </div>
-              <div class="row">
-                <input type="submit" value="Submit">
-              </div>
-            </form>
+  
 -->
 

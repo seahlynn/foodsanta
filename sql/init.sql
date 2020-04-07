@@ -77,7 +77,7 @@ CREATE TABLE Restaurants (
     restid      INTEGER,
     restName    varchar(50),
     minAmt      INTEGER NOT NULL,
-    locations   varchar(50) NOT NULL,
+    location   varchar(50) NOT NULL,
 
     PRIMARY KEY (restid)
 );

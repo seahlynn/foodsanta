@@ -4,8 +4,8 @@ INSERT INTO Users(userid, name, password, dateCreated) VALUES
 (3, 'Leewah', 'leewahcool', '2020-04-04'),
 (4, 'Sining', 'siningcool', '2020-04-04');
 
-INSERT INTO Restaurants(restid, restname, minAmt) VALUES
-(1, '4Fingers', 15),
+INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES
+(1, '4Fingers', 15,),
 (2, 'Yoogane', 25),
 (3, 'SushiTei', 40),
 (4, 'KFC', 10),
@@ -21,7 +21,7 @@ INSERT INTO Food(foodid, description, restid, price, availability, category, tim
 (1, 'soy sauce wings', 1, 12, 100, 'Korean', 0),
 (2, 'spicy drumlets', 1, 12, 100, 'Korean', 0),
 (3, 'army stew', 2, 8, 24, 'Korean', 0),
-(4, 'kimchi pancakes', 6, 8, 100, 'Korean', 0),
+(4, 'kimchi pancakes', 2, 8, 100, 'Korean', 0),
 (5, 'unagi sushi', 3, 6, 100, 'Japanese', 0),
 (6, 'chawanmushi', 3, 3, 100, 'Japanese', 0),
 (7, 'chicken katsu', 3, 8, 100, 'Japanese', 0),
@@ -44,7 +44,7 @@ INSERT INTO Food(foodid, description, restid, price, availability, category, tim
 -- order 1 has 3 items: cheese fries from kfc, soy sauce wings from four fingers, lime froyo from kfc
 
 
-INSERT INTO Orders(orderid, custid, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, collectedByRider, restid) VALUES 
+INSERT INTO Orders(orderid, userid, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, collectedByRider, restid) VALUES 
 (1, 1, '21 Lower Kent Ridge Rd, Singapore 119077', '1230', 13.80, NULL, 1, False, False, 1),
 (2, 1, '469 Bukit Timah Rd, Singapore 259756', '1230', 10.80, NULL, 1, False, False, 1),
 (3, 1, '20 Heng Mui Keng Terrace, Singapore 119618', '1320', 23.80, NULL, 1, False, False, 1),

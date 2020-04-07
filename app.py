@@ -50,29 +50,30 @@ def restresults():
     query = f"select * from Restaurants"
     result = db.session.execute(query)
     restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
+    
     restid = int(request.args['name'])
-    print(restid)
     query = f"SELECT * FROM Food WHERE restid = {restid}"
     result = db.session.execute(query)
         
-    posts = [dict(food= row[1], price = row[2]) for row in result.fetchall()]
+    foodlist = [dict(food= row[1], price = row[2], foodid = row[0]) for row in result.fetchall()]
+    
+    return render_template('restaurants.html', foodlist=foodlist, restlist=restlist)
 
-    return render_template('restaurants.html', posts=posts, restlist=restlist)
-
-'''@app.route('/addtocart', methods=['POST'])
+@app.route('/addtocart', methods=['POST'])
 def addtocart():
-    global db
-    if request.method == 'POST':
-        foodid = request.form['name']
-        score = int(request.form['score'])
-    query = f"select count(*) from TestingSetup TS where TS.memberName = '{name}'"
+
+    foodid = int(request.form['name'])
+    query = f"select * from Food where foodid = {foodid}"
     result = db.session.execute(query).fetchall()
-    if result[0][0]:
-        return render_template('test.html') #Name has already been added
-    data = f"insert into TestingSetup (memberName, ricePurityScore) values ('{name}', {score})"
+    userid = 1
+    orderid = 1 
+    description = result[0]
+    
+    data = f"insert into Contains (orderid, foodid, userid, description, quantity) values ('{orderid}', {foodid}, {userid}, {description}, 1)"
     db.session.execute(data)
     db.session.commit()
-    return render_template('testsuccess.html')'''
+
+    return render_template('cart.html')
 
 #Check if server can be run, must be placed at the back of this file
 if __name__ == '__main__':
