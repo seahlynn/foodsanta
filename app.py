@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import MetaData
 
 app = Flask(__name__) #Initialize FoodSanta
-orderid = 0
+
 
 if settings.debug:
     app.debug = True
@@ -20,19 +20,19 @@ db = SQLAlchemy(app)
 @app.route('/')
 def index():
     if settings.test:
-        query = f"select orderid, (select Restaurants.location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and collectedByRider = False"
-        result = db.session.execute(query)
+        #query = f"select orderid, (select Restaurants.location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and collectedByRider = False"
+        #result = db.session.execute(query)
 
-        ordersToPickUp = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in result.fetchall()]
+        #ordersToPickUp = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in result.fetchall()]
 
         # select a certain order to form the next page 
-        return render_template('riders_getUndeliveredOrders.html', ordersToPickUp=ordersToPickUp)
+        #return render_template('riders_getUndeliveredOrders.html', ordersToPickUp=ordersToPickUp)
 
-        #query = f"select * from Restaurants"
-        #result = db.session.execute(query)
+        query = f"select * from Restaurants"
+        result = db.session.execute(query)
         
-        #restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
-        #return render_template('restaurants.html', restlist = restlist)
+        restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
+        return render_template('restaurants.html', restlist = restlist)
 
     return render_template('index.html')
 
@@ -59,7 +59,7 @@ def restresults():
     result = db.session.execute(query)
     restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
     
-    restid = int(request.args['name'])
+    restid = int(request.args['chosen'])
     query = f"SELECT * FROM Food WHERE restid = {restid}"
     result = db.session.execute(query)
         
@@ -69,18 +69,33 @@ def restresults():
 
 @app.route('/addtocart', methods=['POST'])
 def addtocart():
-    foodid = int(request.form['name'])
+    global db
+    foodid = int(request.form['foodid'])
     query = f"select * from Food where foodid = {foodid}"
     result = db.session.execute(query).fetchall()
     userid = 1
     orderid = 1 
-    description = result[0]
+    description = result[0][1]
     
-    data = f"insert into Contains (orderid, foodid, userid, description, quantity) values ('{orderid}', {foodid}, {userid}, {description}, 1)"
+    data = f"insert into Contains (orderid, foodid, userid, description, quantity) values ('{orderid}', {foodid}, {userid}, '{description}', 1)"
     db.session.execute(data)
     db.session.commit()
 
-    return render_template('cart.html')
+    query = f"select * from Restaurants"
+    result = db.session.execute(query)
+    restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
+
+    return render_template('restaurants.html', restlist = restlist)
+
+@app.route('/viewcart', methods=['POST'])
+def viewcart():
+    global db
+    query = f"select C.description, F.price, C.quantity from Contains C, Food F where C.foodid = F.foodid and orderid = 1"
+    result = db.session.execute(query)
+
+    orderlist = [dict(food = row[0], price = row[1], quantity = row[2]) for row in result.fetchall()]
+
+    return render_template('cart.html', orderlist = orderlist)
 
 # Riders: to see and select undelivered orders 
 @app.route('/getUndeliveredOrders', methods=['GET'])

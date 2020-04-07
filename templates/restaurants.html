@@ -7,7 +7,7 @@
         <div class="container" >
           <form name="chosen" action="restresults" method='GET'>
             <h1 for="restaurant"> Choose a restaurant </h1>
-            <select name="name" onchange="this.form.submit()">
+            <select name="chosen" onchange="this.form.submit()">
               {% for r in restlist %}
                 <option value="{{r.restid}}" SELECTED> {{r.restname}} </option>
               {% endfor %}
@@ -33,21 +33,24 @@
                   {% endfor %}
                   {% endblock %}
               </table>
-
-        </div>
+          </div>
  
-        <div class="choosefood" style="width:50%; display: inline-block;">
-          <h2> Add to Cart </h2>
-          <form name="restaurant" action="addtocart" method='POST'>
-            <select name="name" onchange="this.form.submit()">
-              {% for f in foodlist %}
-                <option value="{{f.foodid}}" SELECTED> {{f.food}} </option>
-              {% endfor %}
-              <option value="" disabled selected> Select your food </option>
-            </select>
-          </form>
+          <div class="choosefood" style="width:50%; display: inline-block;">
+            <h2> Add to Cart </h2>
+            <form name="restaurant" action="addtocart" method='POST'>
+              <select name="foodid" onchange="this.form.submit()">
+                {% for f in foodlist %}
+                  <option value="{{f.foodid}}" SELECTED> {{f.food}} </option>
+                {% endfor %}
+                <option value="" disabled selected> Select your food </option>
+              </select>
+            </form>
+
+            <form method="POST" action="viewcart">
+              <button type="submit"> View Cart </button>         
+            </form>
+          </div>
         </div>
-      </div>
         
 
     </body>

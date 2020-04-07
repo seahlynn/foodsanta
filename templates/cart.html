@@ -4,8 +4,24 @@
         <title>FoodSantaTest</title>
     </head>
     <body align = 'center'>
-        <div class="container" >
-          added to cart
+        <div class="results" style="width:50%; float: left;">
+            {% block content %}
+            <h2> Cart </h2>
+                <table border='1' align = 'center'>
+                    <tr>
+                      <th> Item </th>
+                      <th> Price </th>
+                      <th> Quantity </th>
+                    </tr>
+                    
+                    {% for p in orderlist %}
+                    <tr>
+                      <td>{{ p.food }}</td>
+                      <td>{{ p.price }}</td>
+                      <td>{{ p.quantity }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% endblock %}
+                </table>
         </div>
-    </body>
 </html>
