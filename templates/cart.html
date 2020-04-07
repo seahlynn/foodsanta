@@ -10,14 +10,14 @@
                 <table border='1' align = 'center'>
                     <tr>
                       <th> Item </th>
-                      <th> Price </th>
+                      <th> Cost </th>
                       <th> Quantity </th>
                     </tr>
-                    
+
                     {% for p in orderlist %}
                     <tr>
                       <td>{{ p.food }}</td>
-                      <td>{{ p.price }}</td>
+                      <td>{{ p.price * p.quantity }}</td>
                       <td>{{ p.quantity }}</td>
                     </tr>
                     {% endfor %}

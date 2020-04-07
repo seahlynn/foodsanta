@@ -70,22 +70,34 @@ def restresults():
 @app.route('/addtocart', methods=['POST'])
 def addtocart():
     global db
+
+    #add record into Contains table
     foodid = int(request.form['foodid'])
     query = f"select * from Food where foodid = {foodid}"
     result = db.session.execute(query).fetchall()
     userid = 1
     orderid = 1 
     description = result[0][1]
+    check = f"select count(*) from Contains where foodid = {foodid} and orderid = 1"
+    checkresult = db.session.execute(check).fetchall()
+    todo = f""
+
+    if result[0][0]:
+        todo = f"update Contains set quantity = quantity + 1 where foodid = {foodid} and orderid = 1"
+    else:
+        todo = f"insert into Contains (orderid, foodid, userid, description, quantity) values ('{orderid}', {foodid}, {userid}, '{description}', 1)"
     
-    data = f"insert into Contains (orderid, foodid, userid, description, quantity) values ('{orderid}', {foodid}, {userid}, '{description}', 1)"
-    db.session.execute(data)
+    db.session.execute(todo)
     db.session.commit()
 
-    query = f"select * from Restaurants"
+    #ensures the page stays on the specific restaurant menu
+    restid = f"(select restid from Food where foodid = {foodid})"
+    query = f"SELECT * FROM Food WHERE restid = {restid}"
     result = db.session.execute(query)
-    restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
-
-    return render_template('restaurants.html', restlist = restlist)
+        
+    foodlist = [dict(food= row[1], price = row[2], foodid = row[0]) for row in result.fetchall()]
+    
+    return render_template('restaurants.html', foodlist = foodlist)
 
 @app.route('/viewcart', methods=['POST'])
 def viewcart():
