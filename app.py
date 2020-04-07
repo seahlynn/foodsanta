@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import MetaData
 
 app = Flask(__name__) #Initialize FoodSanta
+orderid = 0
 
 if settings.debug:
     app.debug = True
@@ -48,9 +49,7 @@ def restresults():
 
     query = f"select * from Restaurants"
     result = db.session.execute(query)
-        
     restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
-
     restid = int(request.args['name'])
     print(restid)
     query = f"SELECT * FROM Food WHERE restid = {restid}"
@@ -60,7 +59,20 @@ def restresults():
 
     return render_template('restaurants.html', posts=posts, restlist=restlist)
 
-
+'''@app.route('/addtocart', methods=['POST'])
+def addtocart():
+    global db
+    if request.method == 'POST':
+        foodid = request.form['name']
+        score = int(request.form['score'])
+    query = f"select count(*) from TestingSetup TS where TS.memberName = '{name}'"
+    result = db.session.execute(query).fetchall()
+    if result[0][0]:
+        return render_template('test.html') #Name has already been added
+    data = f"insert into TestingSetup (memberName, ricePurityScore) values ('{name}', {score})"
+    db.session.execute(data)
+    db.session.commit()
+    return render_template('testsuccess.html')'''
 
 #Check if server can be run, must be placed at the back of this file
 if __name__ == '__main__':

@@ -13,7 +13,8 @@ insert into Restaurants(restid, restname, minAmt) values
 (6, 'Ah Bear Mookata', 20),
 (7, 'Marche', 50),
 (8, 'HaiDiLao', 80),
-(9, 'Caesar Pizza', 30);    
+(9, 'Caesar Pizza', 30),
+(10, 'DinTaiFung', 40);  
 
 --times ordered starts at 0 an availability at 100 for all food items currently)
 insert into Food(foodid, description, restid, price, availability, category, timesordered) values
