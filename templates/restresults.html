@@ -5,21 +5,22 @@
         <title>FoodSantaTest</title>
     </head>
     <body>
-        {% block content %}
-        <h2>Results</h2>
-       
-            <table border='1'>
-                <tr>
-                <th>Food</th>
-                </tr>
-                {% for p in posts %}
-                <tr>
-                <td>{{ p.food }}</td>
-                </tr>
-                {% endfor %}
-                {% endblock %}
-            </table>
-
-        
+        <div class="results">
+          {% block content %}
+          <h2> Menu </h2>
+              <table border='1'>
+                  <tr>
+                  <th> Item </th>
+                  <th> Price </th>
+                  </tr>
+                  {% for p in posts %}
+                  <tr>
+                  <td>{{ p.food }}</td>
+                  <td>{{ p.price }}</td>
+                  </tr>
+                  {% endfor %}
+                  {% endblock %}
+              </table>
+        </div>
     </body>
 </html>
