@@ -1,6 +1,8 @@
 DROP TABLE IF EXISTS Users CASCADE;
 DROP TABLE IF EXISTS Orders CASCADE;
 DROP TABLE IF EXISTS Customers CASCADE;
+DROP TABLE IF EXISTS FDSManagers CASCADE;
+DROP TABLE IF EXISTS RestaurantStaff CASCADE;
 DROP TABLE IF EXISTS CustomersStats CASCADE;
 DROP TABLE IF EXISTS Restaurants CASCADE;
 DROP TABLE IF EXISTS RestaurantStats CASCADE;
@@ -23,64 +25,55 @@ DROP TABLE IF EXISTS MonthlyWorkSchedule CASCADE;
 DROP TABLE IF EXISTS DailyWorkShift CASCADE;
 
 create table Users (
-    userid              INTEGER,
-    username            varchar(50),
-    name                varchar(20),
-    password            varchar(10),
+    username            varchar(30),    
+    name                varchar(30),
+    password            varchar(15),
     dateCreated			date,
-    
-    primary key (userid)
+    primary key (username)
 );
 
--- each customer has an entry in Locations but it uses userid
+-- each customer has an entry in Locations but it uses username
 create table Customers (
-	userid		INTEGER,
-	points		INTEGER,
-	primary key (userid),
-    FOREIGN KEY (userid) REFERENCES Users
+	username            varchar(30),
+	points		        INTEGER,
+	primary key (username),
+    FOREIGN KEY (username) REFERENCES Users
 );
 
 
 CREATE TABLE DeliveryRiders (
-    userid              INTEGER,
-    PRIMARY KEY (userid),
-    FOREIGN KEY (userid) REFERENCES Users
+    username    varchar(30),
+    PRIMARY KEY (username),
+    FOREIGN KEY (username) REFERENCES Users
 );
 
 create table FDSManagers (
-    userid              INTEGER,
-    PRIMARY KEY (userid),
-    FOREIGN KEY (userid) REFERENCES Users
+    username              varchar(30),
+    PRIMARY KEY (username),
+    FOREIGN KEY (username) REFERENCES Users
 );
 
-create table RestaurantStaff (
-    userid              INTEGER,
-    restid              INTEGER,
-    PRIMARY KEY (userid),
-    FOREIGN KEY (userid) REFERENCES Users,
-    FOREIGN KEY (restid) REFERENCES Restaurants
-);
 
 -- before insertion, check that customers only has less than 5
 -- if not, delete the one with the earliest dateadded and add new one
 create table Locations (
-	userid 		    INTEGER,
+	username 		    varchar(30),
 	location		varchar(50),
 	dateAdded		DATE not null,
 
-	primary key (userid),
-	foreign key (userid) references Customers
+	primary key (username),
+	foreign key (username) references Customers
 );
 
 -- this is so that each customer can have multiple payment methods
--- for every order that requires payment, must look up this table and check userid must be the same 
+-- for every order that requires payment, must look up this table and check username must be the same 
 create table PaymentMethods (
 	paymentmethodid	INTEGER,
-	userid  		INTEGER,
+	username  		varchar(30),
 	cardInfo		varchar(60),
 
 	primary key (paymentmethodid),
-	foreign key (userid) references Customers
+	foreign key (username) references Customers
 );
 
 --insertion of food into Contains table has to decrease availability by one (use trigger under contains)
@@ -92,6 +85,14 @@ create table Restaurants (
     primary key(restid)
 );
 
+create table RestaurantStaff (
+    username              varchar(30),
+    restid              INTEGER,
+    PRIMARY KEY (username),
+    FOREIGN KEY (username) REFERENCES Users,
+    FOREIGN KEY (restid) REFERENCES Restaurants
+);
+
 create table Food ( 
     foodid          integer,
     description     varchar(50),
@@ -100,7 +101,7 @@ create table Food (
                     check (availability >= 0),
     category        varchar(20),
     restid          integer not null,
-    timesorderd     integer not null,
+    timesordered    integer not null,
 
     primary key(foodid, restid),
     foreign key (restid) references Restaurants
@@ -120,7 +121,7 @@ create table FDSPromo (
 
 create table Orders (
 	orderid				INTEGER,
-	userid			    INTEGER,
+	username			varchar(30),
 	orderCreatedTime	DATE, 
 	deliveryFee			INTEGER not null,
 	totalCost			INTEGER not null,
@@ -129,13 +130,13 @@ create table Orders (
     restid              INTEGER not null,
 
 	primary key (orderid),
-	foreign key (userid) references Customers,
+	foreign key (username) references Customers,
     foreign key (restid) references Restaurants,
 	foreign key (fdspromoid) references FDSPromo
 );
 
 
--- need to enforce that userid has made the order that has the same orderid
+-- need to enforce that username has made the order that has the same orderid
 create table Reviews (
 	orderid			INTEGER,
 	reviewDesc		varchar(100),
@@ -150,7 +151,7 @@ create table Contains (
     orderid     INTEGER not null,
     restid      INTEGER not null,
     foodid      INTEGER not null,
-    userid 		INTEGER not null,
+    username    varchar(30) not null,
     description varchar(50) not null,
     quantity    INTEGER not null,
 
@@ -162,7 +163,7 @@ create table Contains (
 
 create table Delivers (
 	orderid					INTEGER,
-    userid                  INTEGER,
+    username                varchar(30),
 	rating					INTEGER check ((rating <= 5) and (rating >= 0)),
 	location 				varchar(50) not null,
 	timeDepartToRestaurant	DATE not null,
@@ -172,7 +173,7 @@ create table Delivers (
 
 	primary key (orderid),
 	foreign key (orderid) references Orders,
-    foreign key (userid) references DeliveryRiders,
+    foreign key (username) references DeliveryRiders,
 	foreign key (paymentmethodid) references PaymentMethods
 );
 
@@ -189,20 +190,20 @@ create table RestaurantPromo (
 
 
 CREATE TABLE FullTimeRiders (
-    userid              INTEGER,
-    PRIMARY KEY (userid),
-    FOREIGN KEY (userid) REFERENCES DeliveryRiders
+    username              varchar(30),
+    PRIMARY KEY (username),
+    FOREIGN KEY (username) REFERENCES DeliveryRiders
 );
 
 CREATE TABLE PartTimeRiders (
-    userid              INTEGER,
-    PRIMARY KEY (userid),
-    FOREIGN KEY (userid) REFERENCES DeliveryRiders
+    username              varchar(30),
+    PRIMARY KEY (username),
+    FOREIGN KEY (username) REFERENCES DeliveryRiders
 );
 
 CREATE TABLE MonthlyWorkSchedule (
     mwsid              INTEGER,
-    userid             INTEGER,
+    username             varchar(30),
     mnthStartDay       DATE NOT NULL,
     wkStartDay         INTEGER NOT NULL
                        CHECK (wkStartDay in (1, 2, 3, 4, 5, 6, 7)),
@@ -211,7 +212,7 @@ CREATE TABLE MonthlyWorkSchedule (
     completed          BOOLEAN NOT NULL,
 
     PRIMARY KEY (mwsid),
-    FOREIGN KEY (userid) REFERENCES FullTimeRiders
+    FOREIGN KEY (username) REFERENCES FullTimeRiders
 );
 
 CREATE TABLE FixedWeeklySchedule (
@@ -234,13 +235,13 @@ CREATE TABLE FixedWeeklySchedule (
 
 CREATE TABLE WeeklyWorkSchedule (
     wwsid               INTEGER,
-    userid              INTEGER,
+    username              varchar(30),
     startDate           DATE,
     wwsHours            INTEGER,
     completed          BOOLEAN NOT NULL,
 
     PRIMARY KEY (wwsid),
-    FOREIGN KEY (userid) REFERENCES PartTimeRiders
+    FOREIGN KEY (username) REFERENCES PartTimeRiders
 );
 
 CREATE TABLE DailyWorkShift (
@@ -258,13 +259,13 @@ CREATE TABLE DailyWorkShift (
 -- FDS Manager purposes
 
 create table CustomersStats (
-    userid              INTEGER,
+    username              varchar(30),
     monthid             INTEGER,
     totalNumOrders      INTEGER,
     totalCostOfOrders     INTEGER,
 
-    primary key (userid, monthid),
-    foreign key (userid) references Customers
+    primary key (username, monthid),
+    foreign key (username) references Customers
 );
 
 create table RestaurantStats (
@@ -280,15 +281,15 @@ create table RestaurantStats (
 
 --use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
 CREATE TABLE RidersStats (
-	userid 			INTEGER,
+	username 			varchar(30),
 	totalOrders		INTEGER,
 	totalHours		INTEGER,
 	totalSalary		INTEGER,
     month           INTEGER,
     year            INTEGER,
 
-    primary key(userid, month, year),
-	foreign key(userid)	references DeliveryRiders
+    primary key(username, month, year),
+	foreign key(username)	references DeliveryRiders
 );
 
 create table AllStats (
@@ -309,7 +310,7 @@ begin
     set totalNumOrders = totalNumOrders + 1,
         totalCostOfOrders = totalCostOfOrders 
         + select O.totalCost from Orders O where O.orderid = C.orderid 
-    where userid = NEW.userid
+    where username = NEW.username
     order by monthid desc
     limit 1
     return null;
@@ -359,7 +360,7 @@ create trigger add_new_address_trigger
 	for each row 
 	when (NEW.location exists in 
 		select OLD.location
-		where OLD.userid = NEW.userid)
+		where OLD.username = NEW.username)
 	execute function add_new_address();
 
 --have to update the most recent tuple
@@ -504,33 +505,39 @@ insert into Restaurants(restid, restname, minAmt) values
 (7, 'Marche', 50),
 (8, 'HaiDiLao', 80);    
 
---times ordered starts at 0 an availability at 100 for all food items currently)
+insert into Users(username, name, password, dateCreated) values
+('just_sining', 'Sining', 'arthurbestie', null),
+('kalsyckorkor', 'Darren', 'password123', null),
+('lynnseah', 'Lynn', 'password456', null),
+('bakkwaverynice', 'Lee Wah', 'idontlikebakkwa', null);
+
+
 insert into Food(foodid, description, restid, price, availability, category, timesordered) values
-(1, ‘soy sauce wings’, 1, 12, 100, ‘Korean’, 0)
-(2, ‘spicy drumlets, 1, 12, 100, ‘Korean’, 0)
-(3, ‘army stew’, 2, 8, 24, ‘Korean’, 0)
-(4, ‘kimchi pancakes’, 6, 8, 100, ‘Korean’, 0)
-(5, ‘unagi sushi’, 3, 6, 100, ‘Japanese’, 0)
-(6, ‘chawanmushi’, 3, 3, 100, ‘Japanese’, 0)
-(7, ‘chicken katsu’, 3, 8, 100, ‘Japanese’, 0)
-(8, ‘cheese fries’, 4, 4.5, 100, ‘FastFood’, 0)
-(9, ‘popcorn chicken’, 4.2, 8, 100, ‘FastFood’, 0)
-(10, ‘lime froyo’, 4, 2, 100, ‘FastFood’, 0)
-(11, ‘zhong la mala hotpot’, 15, 8, 100, ‘Chinese’, 0)
-(12, ‘da la mala hotpot’, 5, 17, 100, ‘Chinese’, 0)
-(13, ‘smoked duck’, 6, 2.5, 100, ‘Sharing’, 0)
-(14, ‘luncheon meat’, 6, 2, 100, ‘Sharing’, 0)
-(15, ‘black pepper pork belly’, 6, 2, 100, ‘Sharing’, 0)
-(16, ‘thai milk tea’, 6, 3, 100, ‘Beverage’, 0)
-(17, ‘rosti’, 7, 8.90, 100, ‘Western’, 0)
-(18, ‘pork knuckles’, 7, 16.50, 100, ‘Western’, 0)
-(19, ‘smoked salmon pizza’, 7, 22.90, 100, ‘Western’, 0)
-(20, ‘beef schnitzel’, 7, 19.90, 100, ‘Western’, 0)
-(21, ‘prawn paste’, 8, 12, 100, ‘Chinese’, 0)
-(22, ‘golden man tou’, 8, 8, 100, ‘Chinese’, 0);
+(1, 'soy sauce wings', 1, 12, 100, 'Korean', 0),
+(2, 'spicy drumlets', 1, 12, 100, 'Korean', 0),
+(3, 'army stew', 2, 8, 24, 'Korean', 0),
+(4, 'kimchi pancakes', 6, 8, 100, 'Korean', 0),
+(5, 'unagi sushi', 3, 6, 100, 'Japanese', 0),
+(6, 'chawanmushi', 3, 3, 100, 'Japanese', 0),
+(7, 'chicken katsu', 3, 8, 100, 'Japanese', 0),
+(8, 'cheese fries', 4, 4.5, 100, 'FastFood', 0),
+(9, 'popcorn chicken', 4.2, 8, 100, 'FastFood', 0),
+(10, 'lime froyo', 4, 2, 100, 'FastFood', 0),
+(11, 'zhong la mala hotpot', 5, 8, 100, 'Chinese', 0),
+(12, 'da la mala hotpot', 5, 17, 100, 'Chinese', 0),
+(13, 'smoked duck', 6, 2.5, 100, 'Sharing', 0),
+(14, 'luncheon meat', 6, 2, 100, 'Sharing', 0),
+(15, 'black pepper pork belly', 6, 2, 100, 'Sharing', 0),
+(16, 'thai milk tea', 6, 3, 100, 'Beverage', 0),
+(17, 'rosti', 7, 8.90, 100, 'Western', 0),
+(18, 'pork knuckles', 7, 16.50, 100, 'Western', 0),
+(19, 'smoked salmon pizza', 7, 22.90, 100, 'Western', 0),
+(20, 'beef schnitzel', 7, 19.90, 100, 'Western', 0),
+(21, 'prawn paste', 8, 12, 100, 'Chinese', 0),
+(22, 'golden man tou', 8, 8, 100, 'Chinese', 0);
 
-
-insert into Contains(orderid, restid, foodid, userid, description, quantity) values
+/*
+insert into Contains(orderid, restid, foodid, username, description, quantity) values
 (1, 2, 5),
 (1, 2, 7),
 (1, 2, 8),
@@ -538,3 +545,4 @@ insert into Contains(orderid, restid, foodid, userid, description, quantity) val
 (2, 5, 11),
 (2, 5, 7),
 (3, 3, 5);
+*/
