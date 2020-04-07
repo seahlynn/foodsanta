@@ -3,35 +3,16 @@
     <head>
         <title>FoodSantaTest</title>
     </head>
-    <body>
-        <!--<div class="container">
+    <body align = 'center'>
+        <div class="container" >
           <form name="chosen" action="restresults" method='GET'>
-            <label for="restaurant"> Choose a restaurant </label>
-            <select name="name" onchange="this.form.submit()">
-              <option value="" disabled selected> Select your restaurant </option>
-              <option value="KFC">KFC</option>
-              <option value="4Fingers">4Fingers</option>
-              <option value="Yoogane">Yoogane</option>
-              <option value="SushiTei">SushiTei</option>
-              <option value="RiRi Mala">RiRi Mala</option>   
-              <option value="Ah Bear Mookata">Ah Bear Mookata</option>
-              <option value="Marche">Marche</option>
-              <option value="HaiDiLao">HaiDiLao</option>    
-            </select>
-
-          </form>
-        </div>-->
-
-        <div class="container">
-          <form name="chosen" action="restresults" method='GET'>
-            <label for="restaurant"> Choose a restaurant </label>
+            <h1 for="restaurant"> Choose a restaurant </h1>
             <select name="name" onchange="this.form.submit()">
               {% for r in restlist %}
                 <option value="{{r.restid}}" SELECTED> {{r.restname}} </option>
               {% endfor %}
               <option value="" disabled selected> Select your restaurant </option>
             </select>
-
           </form>
         </div>
 
@@ -39,7 +20,7 @@
         <div class="results">
           {% block content %}
           <h2> Menu </h2>
-              <table border='1'>
+              <table border='1' align = 'center'>
                   <tr>
                   <th> Item </th>
                   <th> Price </th>
