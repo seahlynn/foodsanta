@@ -19,11 +19,19 @@ db = SQLAlchemy(app)
 @app.route('/')
 def index():
     if settings.test:
-        query = f"select * from Restaurants"
+        query = f"select orderid, (select Restaurants.location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and collectedByRider = False"
         result = db.session.execute(query)
+
+        ordersToPickUp = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in result.fetchall()]
+
+        # select a certain order to form the next page 
+        return render_template('riders_getUndeliveredOrders.html', ordersToPickUp=ordersToPickUp)
+
+        #query = f"select * from Restaurants"
+        #result = db.session.execute(query)
         
-        restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
-        return render_template('restaurants.html', restlist = restlist)
+        #restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
+        #return render_template('restaurants.html', restlist = restlist)
 
     return render_template('index.html')
 
@@ -60,7 +68,18 @@ def restresults():
 
     return render_template('restaurants.html', posts=posts, restlist=restlist)
 
+# Riders: to see and select undelivered orders 
+@app.route('/getUndeliveredOrders', methods=['GET'])
+def getUndeliveredOrders():
+    global db
 
+    query = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation, from Orders where preparedByRest = False and collectedByRider = False"
+    result = db.session.execute(query)
+
+    ordersToPickUp = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in result.fetchall()]
+
+    # select a certain order to form the next page 
+    return render_template('riders_getUndeliveredOrders.html', ordersToPickUp=ordersToPickUp)
 
 #Check if server can be run, must be placed at the back of this file
 if __name__ == '__main__':
