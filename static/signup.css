@@ -21,11 +21,6 @@
   font-family: 'Open Sans', sans-serif;
 }
 
-.text-flash {
-  color: rgba(0, 0, 0, 1);
-  font-family: 'Open Sans', sans-serif;
-}
-
 .text--options {
   color: rgb(0, 0, 0);
   font-family: 'Open Sans', sans-serif;
@@ -39,7 +34,12 @@
 .text--login {
   padding-top: 3.5rem;
 }
-  
+
+.text--success {
+  vertical-align: middle;
+  top: 50%;
+}
+
 .input {
   -moz-box-sizing: border-box;
        box-sizing: border-box;
@@ -76,4 +76,15 @@
   border-color: rgba(0,0,0,1);
   border: 1rem;
   border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
+}
+
+.button {
+  background-color: #4CAF50; /* Green */
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
 }

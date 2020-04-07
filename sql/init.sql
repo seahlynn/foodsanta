@@ -35,7 +35,7 @@ create table Users (
 -- each customer has an entry in Locations but it uses username
 create table Customers (
 	username            varchar(30),
-	points		        INTEGER,
+	points		        INTEGER default 0,
 	primary key (username),
     FOREIGN KEY (username) REFERENCES Users
 );
@@ -87,7 +87,7 @@ create table Restaurants (
 
 create table RestaurantStaff (
     username              varchar(30),
-    restid              INTEGER,
+    restid                INTEGER default null,
     PRIMARY KEY (username),
     FOREIGN KEY (username) REFERENCES Users,
     FOREIGN KEY (restid) REFERENCES Restaurants
