@@ -1,9 +1,8 @@
-INSERT INTO Users(userid, name, password, dateCreated) VALUES
-(1, 'Darren', 'darrencool', '2020-04-04'),
-(2, 'Lynn', 'lynncool',  '2020-04-04'),
-(3, 'Leewah', 'leewahcool', '2020-04-04'),
-(4, 'Sining', 'siningcool', '2020-04-04');
-
+INSERT INTO Users(userid, name, password, phoneNumber, dateCreated) VALUES
+(1, 'Darren', 'darrencool', '91718716', '2020-04-04'),
+(2, 'Lynn', 'lynncool', '91718716',  '2020-04-04'),
+(3, 'Leewah', 'leewahcool', '91718716', '2020-04-04'),
+(4, 'Sining', 'siningcool', '91718716', '2020-04-04');
 
 
 INSERT INTO Customers(userid, points) VALUES
@@ -21,6 +20,13 @@ INSERT INTO Customers(userid, points) VALUES
 (12, 0),
 (13, 0),
 (14, 0);
+
+INSERT INTO Locations(userid, location, dateAdded) VALUES
+(1, '21 Lower Kent Ridge Rd, Singapore 119077', '2020-04-04'),
+(1, '469 Bukit Timah Rd, Singapore 259756', '2020-04-04'),
+(1, '20 Heng Mui Keng Terrace, Singapore 119618', '2020-04-04'),
+(1, '12 Kent Ridge Dr, Singapore 119243', '2020-04-04'),
+(1, '2 College Ave West, Stephen Riady Centre, Singapore 138607', '2020-04-04');
 
 INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES (1, '4Fingers', 15, '68 Orchard Rd #B1-07, Plaza, Singapore 238839');
 INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES (2, 'Yoogane', 25, '3, #03-08 Gateway Dr, Westgate, Singapore 608532');
@@ -60,7 +66,8 @@ INSERT INTO Food(foodid, description, restid, price, availability, category, tim
 -- order 1 has 3 items: cheese fries from kfc, soy sauce wings from four fingers, lime froyo from kfc
 
 
-INSERT INTO Orders(orderid, userid, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, collectedByRider, restid) VALUES (1, 1, '21 Lower Kent Ridge Rd, Singapore 119077', '04/07/2020 1230', 13.80, NULL, 1, False, False, 1);
+--- INSERT INTO Orders(orderid, userid, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, collectedByRider, restid) VALUES (1, 1, '21 Lower Kent Ridge Rd, Singapore 119077', '04/07/2020 1230', 13.80, NULL, 1, False, False, 1);
+
 INSERT INTO Orders(orderid, userid, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, collectedByRider, restid) VALUES (2, 1, '469 Bukit Timah Rd, Singapore 259756', '04/07/2020 1230', 10.80, NULL, 1, False, False, 1);
 INSERT INTO Orders(orderid, userid, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, collectedByRider, restid) VALUES (3, 1, '20 Heng Mui Keng Terrace, Singapore 119618', '04/07/2020 1320', 23.80, NULL, 1, False, False, 1);
 INSERT INTO Orders(orderid, userid, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, collectedByRider, restid) VALUES (4, 1, '12 Kent Ridge Dr, Singapore 119243', '04/07/2020 1330', 18.80, NULL, 1, False, False, 1);

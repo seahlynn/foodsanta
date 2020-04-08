@@ -26,6 +26,7 @@ CREATE TABLE Users (
     userid              INTEGER,
     name                varchar(20),
     password            varchar(10),
+    phoneNumber			varchar(8),
     dateCreated			DATE,
     
     PRIMARY KEY (userid)
@@ -52,10 +53,10 @@ CREATE TABLE DeliveryRiders (
 -- if not, delete the one with the earliest dateadded and add new one
 CREATE TABLE Locations (
 	userid 		    INTEGER,
-	location		varchar(50),
+	location		varchar(100),
 	dateAdded		DATE NOT NULL,
 
-	PRIMARY KEY (userid),
+	PRIMARY KEY (userid, location),
 
 	FOREIGN KEY (userid) REFERENCES Customers
 );
@@ -111,7 +112,7 @@ CREATE TABLE Orders (
 	orderid				INTEGER,
 	userid			    INTEGER,
     custLocation        varchar(100) NOT NULL,
-	orderCreatedTime	DATE, 
+	orderCreatedTime	TIMESTAMP, 
 	totalCost			INTEGER NOT NULL,
 	fdspromoid			INTEGER,
     paymentmethodid     INTEGER,
@@ -146,7 +147,6 @@ CREATE TABLE Contains (
     PRIMARY KEY (orderid, foodid),
 
     FOREIGN KEY (foodid) REFERENCES Food,
-    FOREIGN KEY (orderid) REFERENCES Orders,
     FOREIGN KEY (userid) REFERENCES Users
 );
 
