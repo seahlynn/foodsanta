@@ -3,7 +3,7 @@ DROP TABLE IF EXISTS Orders CASCADE;
 DROP TABLE IF EXISTS Customers CASCADE;
 DROP TABLE IF EXISTS FDSManagers CASCADE;
 DROP TABLE IF EXISTS RestaurantStaff CASCADE;
-DROP TABLE IF EXISTS CustomersStats CASCADE;
+DROP TABLE IF EXISTS CustomerStats CASCADE;
 DROP TABLE IF EXISTS Restaurants CASCADE;
 DROP TABLE IF EXISTS RestaurantStats CASCADE;
 DROP TABLE IF EXISTS RestaurantPromo CASCADE;
@@ -28,6 +28,7 @@ create table Users (
     username            varchar(30),    
     name                varchar(30),
     password            varchar(15),
+    phoneNumber         varchar(8),
     dateCreated			date,
     primary key (username)
 );
@@ -57,11 +58,11 @@ create table FDSManagers (
 -- before insertion, check that customers only has less than 5
 -- if not, delete the one with the earliest dateadded and add new one
 create table Locations (
-	username 		    varchar(30),
-	location		varchar(50),
+	username 		varchar(30),
+	location		varchar(100),
 	dateAdded		DATE not null,
 
-	primary key (username),
+	primary key (username, location),
 	foreign key (username) references Customers
 );
 
@@ -77,12 +78,13 @@ create table PaymentMethods (
 );
 
 --insertion of food into Contains table has to decrease availability by one (use trigger under contains)
-create table Restaurants (
+CREATE TABLE Restaurants (
     restid      INTEGER,
     restName    varchar(50),
-    minAmt      INTEGER not null,
+    minAmt      INTEGER NOT NULL,
+    location    varchar(100) NOT NULL,
 
-    primary key(restid)
+    PRIMARY KEY (restid)
 );
 
 create table RestaurantStaff (
@@ -96,38 +98,37 @@ create table RestaurantStaff (
 create table Food ( 
     foodid          integer,
     description     varchar(50),
-    price           float not null,
-    availability    integer not null
-                    check (availability >= 0),
+    price           float NOT NULL,
+    availability    INTEGER NOT NULL CHECK (availability >= 0),
     category        varchar(20),
-    restid          integer not null,
-    timesordered    integer not null,
-
-    primary key(foodid, restid),
-    foreign key (restid) references Restaurants
+    restid          INTEGER NOT NULL,
+    timesordered    INTEGER NOT NULL,
+    PRIMARY KEY (foodid),
+    FOREIGN KEY (restid) REFERENCES Restaurants
 );
 
 --insertion into from table needs to check if restid is same as all other restid
-create table FDSPromo (
+CREATE TABLE FDSPromo (
     description     varchar(50),
-    fdspromoid      integer,
-    orderid         integer not null,
+    fdspromoid      INTEGER,
+    orderid         INTEGER NOT NULL,
     startTime       DATE,
     endTime         DATE,
 
-    primary key(fdspromoid)
+    PRIMARY KEY (fdspromoid)
 );
 
-
-create table Orders (
+CREATE TABLE Orders (
 	orderid				INTEGER,
-	username			varchar(30),
-	orderCreatedTime	DATE, 
-	deliveryFee			INTEGER not null,
-	totalCost			INTEGER not null,
+    username			varchar(30),
+    custLocation        varchar(100) NOT NULL,
+	orderCreatedTime	TIMESTAMP, 
+	totalCost			INTEGER NOT NULL,
 	fdspromoid			INTEGER,
-    preparedByRest      boolean not null,
-    restid              INTEGER not null,
+    paymentmethodid     INTEGER,
+    preparedByRest      boolean NOT NULL default False,
+    collectedByRider    boolean NOT NULL default False,
+    restid              INTEGER NOT NULL,
 
 	primary key (orderid),
 	foreign key (username) references Customers,
@@ -135,40 +136,37 @@ create table Orders (
 	foreign key (fdspromoid) references FDSPromo
 );
 
-
 -- need to enforce that username has made the order that has the same orderid
-create table Reviews (
+CREATE TABLE Reviews (
 	orderid			INTEGER,
 	reviewDesc		varchar(100),
 
-	primary key (orderid),
-	foreign key (orderid) references Orders
+	PRIMARY KEY (orderid),
+
+	FOREIGN KEY (orderid) REFERENCES Orders
 );
-
-
 
 create table Contains (
     orderid     INTEGER not null,
-    restid      INTEGER not null,
     foodid      INTEGER not null,
     username    varchar(30) not null,
     description varchar(50) not null,
     quantity    INTEGER not null,
-
-    primary key (orderid, foodid),
-    foreign key(foodid, restid) references Food(foodid, restid),
-    foreign key(orderid) references Orders
+    PRIMARY KEY (orderid, foodid),
+    FOREIGN KEY (foodid) REFERENCES Food,
+    FOREIGN KEY (username) REFERENCES Users
 );
 
 
-create table Delivers (
+CREATE TABLE Delivers (
 	orderid					INTEGER,
     username                varchar(30),
 	rating					INTEGER check ((rating <= 5) and (rating >= 0)),
-	location 				varchar(50) not null,
-	timeDepartToRestaurant	DATE not null,
-	timeArrivedAtRestaurant	DATE not null,
-	timeOrderDelivered		DATE not null,
+	location 				varchar(50) NOT NULL,
+    deliveryFee             INTEGER NOT NULL,
+	timeDepartToRestaurant	DATE NOT NULL,
+	timeArrivedAtRestaurant	DATE NOT NULL,
+	timeOrderDelivered		DATE NOT NULL,
 	paymentmethodid			INTEGER, 			
 
 	primary key (orderid),
@@ -178,14 +176,14 @@ create table Delivers (
 );
 
 
-create table RestaurantPromo (
+CREATE TABLE RestaurantPromo (
     description     varchar(50),
     restpromoid     INTEGER,
     startTime       DATE,
     endTime         DATE,
-    restid          INTEGER not null,
+    restid          INTEGER NOT NULL,
 
-    primary key(restpromoid)     
+    PRIMARY KEY (restpromoid)     
 );
 
 
@@ -230,6 +228,7 @@ CREATE TABLE FixedWeeklySchedule (
                         CHECK (day5 in (1, 2, 3, 4)),
 
     PRIMARY KEY (fwsid),
+
     FOREIGN KEY (mwsid) REFERENCES MonthlyWorkSchedule
 );
 
@@ -238,7 +237,7 @@ CREATE TABLE WeeklyWorkSchedule (
     username              varchar(30),
     startDate           DATE,
     wwsHours            INTEGER,
-    completed          BOOLEAN NOT NULL,
+    completed           BOOLEAN NOT NULL,
 
     PRIMARY KEY (wwsid),
     FOREIGN KEY (username) REFERENCES PartTimeRiders
@@ -253,30 +252,32 @@ CREATE TABLE DailyWorkShift (
     wwsid               INTEGER,
 
     PRIMARY KEY (dwsid, startHour),
+
     FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
 );
 
 -- FDS Manager purposes
 
-create table CustomersStats (
+create table CustomerStats (
     username              varchar(30),
     monthid             INTEGER,
     totalNumOrders      INTEGER,
-    totalCostOfOrders     INTEGER,
+    totalCostOfOrders   INTEGER,
 
     primary key (username, monthid),
     foreign key (username) references Customers
 );
 
-create table RestaurantStats (
+CREATE TABLE RestaurantStats (
     restid              INTEGER,
     numCompletedOrders  INTEGER,
     totalOrdersCost     INTEGER,
     month               INTEGER,
     year                INTEGER,
 
-    primary key (restid, month, year),
-    foreign key (restid) references Restaurants
+    PRIMARY KEY (restid, month, year),
+
+    FOREIGN KEY (restid) REFERENCES Restaurants
 );
 
 --use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
@@ -292,19 +293,22 @@ CREATE TABLE RidersStats (
 	foreign key(username)	references DeliveryRiders
 );
 
-create table AllStats (
+CREATE TABLE AllStats (
     monthid             INTEGER,
     totalNewCust        INTEGER,
     totalNumOrders      INTEGER, --should be total num of restuarants--
     totalCostOfOrders   INTEGER,
 
-    primary key (monthid)
+    PRIMARY KEY (monthid)
 );
 
 ------------------------- TRIGGER STATEMENTS -------------------------
 
-/*create or replace function update_customer_stats() returns trigger
-    as $$
+/* Updates customer's total number of orders and total cost spent on orders 
+or inserts new tuple if it is a new customer */
+/*
+create or replace function updateCustomerStatsFunction()
+returns trigger as $$
 begin
     update CustomerStats C
     set totalNumOrders = totalNumOrders + 1,
@@ -316,14 +320,50 @@ begin
     return null;
 end;
 %% language plpgsql;
+# if it is a new customer
+if (not exists(
+    select 1
+    from CustomerStats C
+    where C.username = NEW.username)) then
+    insert into CustomerStats values(NEW.username, NEW.totalCost);
+else 
+# if it is a nn existing customer 
+    update CustomerStats
+        set CustomerStats.totalNumOrders = CustomerStats.totalNumOrders + 1,
+            CustomerStats.totalCostOfOrders = CustomerStats.totalCostOfOrders + NEW.totalCostOfOrders
+        where CustomerStats.username = NEW.username;
+    return new;
+endif;    
+end; $$ language plpgsql;        
 
-drop trigger if exists update_trigger ON CustomerStats;
-create trigger update_trigger
-    after insert on Contains
+drop trigger if exists updateCustomerStatsTrigger on CustomerStats;
+create trigger updateCustomerStatsTrigger
+    before insert on Orders
     for each row
-    execute function update_customer_stats();    
+    execute function updateCustomerStatsFunction();
 
-create or replace function check_dailyshift_constraint() returns trigger
+# Increments the total number of distinct customers 
+create or replace function addNewCustomer() 
+returns trigger as $$
+begin
+if (not exists(
+    select 1 
+    from CustomerStats C
+    where C.username = NEW.username))
+then 
+    update AllStats
+    set totalNewCust = totalNewCust + 1;
+end if;
+return new;
+end; $$ language plpgsql;
+
+drop trigger if exists addNewCustomerTrigger ON AllStats;
+create trigger addNewCustomerTrigger
+    after insert on Orders
+    for each row
+    execute function addNewCustomer();
+
+create or replace function dailyShiftConstraint() returns trigger
     as $$
 declare 
     dwsid       integer;
@@ -332,22 +372,24 @@ begin
         from DailyWorkShift dws 
         where new.dwsid = dws.dwsid
         and   ((dws.startHour <= new.startHour and new.startHour <= dws.startHour + dws.duration)
-        or    (dws.startHour <= new.startHour + new.startHour and new.startHour + new.duration <= dws.startHour + dws.duration))
+        or    (dws.startHour <= new.startHour + new.startHour and new.startHour + new.duration <= dws.startHour + dws.duration));
     if dwsid is not null then
-        raise exception 'Hours clash with an existing shift' 
-        end if;
-        return null;
+        raise exception 'Hours clash with an existing shift';
+    end if;
+    return null;
 end;
 $$ language plpgsql;
 
-drop trigger if exists dailyshift_trigger ON DailyWorkShift CASCADE;
-create trigger dailyshift_trigger
+create trigger dailyShiftConstraint_trigger
     after update of dwsid, starthour, duration OR insert on DailyWorkShift
     for each ROW
-    execute function check_dailyshift_constraint();
+    execute function dailyShiftConstraint();
 
+*/
+
+/* NOTE THAT ALL THESE TRIGGERS HAVE NOT BEEN EDITED*/
 -- need to check if it is a new location
-create or replace function add_new_address() returns trigger as $$
+/*create or replace function add_new_address() returns trigger as $$
 begin
 	-- insert function for locations
 	return null;
@@ -363,26 +405,7 @@ create trigger add_new_address_trigger
 		where OLD.username = NEW.username)
 	execute function add_new_address();
 
---have to update the most recent tuple
-create or replace function increase_customer() returns trigger
-    as $$
-begin
-    update AllStats
-    set totalNewCust = totalNewCust + 1
-    order by monthid desc
-    limit 1
-        
-    return null;
-end;
-$$ language plpgsql;
-
-
-drop trigger if exists increase_customer_trigger ON AllStats;
-create trigger increase_customer_trigger
-    after insert on Users
-    for each row
-    execute function increase_customer();*/
-
+--have to update the most recent tuple */
 /*create or replace function update_overall_stats() returns trigger
     as $$
 begin
@@ -495,54 +518,4 @@ create trigger contains_trigger
 
 ------------------------- INSERT STATEMENTS -------------------------
 
-insert into Restaurants(restid, restname, minAmt) values
-(1, '4Fingers', 15),
-(2, 'Yoogane', 25),
-(3, 'SushiTei', 40),
-(4, 'KFC', 10),
-(5, 'RiRi Mala', 15),
-(6, 'Ah Bear Mookata', 20),
-(7, 'Marche', 50),
-(8, 'HaiDiLao', 80);    
 
-insert into Users(username, name, password, dateCreated) values
-('just_sining', 'Sining', 'arthurbestie', null),
-('kalsyckorkor', 'Darren', 'password123', null),
-('lynnseah', 'Lynn', 'password456', null),
-('bakkwaverynice', 'Lee Wah', 'idontlikebakkwa', null);
-
-
-insert into Food(foodid, description, restid, price, availability, category, timesordered) values
-(1, 'soy sauce wings', 1, 12, 100, 'Korean', 0),
-(2, 'spicy drumlets', 1, 12, 100, 'Korean', 0),
-(3, 'army stew', 2, 8, 24, 'Korean', 0),
-(4, 'kimchi pancakes', 6, 8, 100, 'Korean', 0),
-(5, 'unagi sushi', 3, 6, 100, 'Japanese', 0),
-(6, 'chawanmushi', 3, 3, 100, 'Japanese', 0),
-(7, 'chicken katsu', 3, 8, 100, 'Japanese', 0),
-(8, 'cheese fries', 4, 4.5, 100, 'FastFood', 0),
-(9, 'popcorn chicken', 4.2, 8, 100, 'FastFood', 0),
-(10, 'lime froyo', 4, 2, 100, 'FastFood', 0),
-(11, 'zhong la mala hotpot', 5, 8, 100, 'Chinese', 0),
-(12, 'da la mala hotpot', 5, 17, 100, 'Chinese', 0),
-(13, 'smoked duck', 6, 2.5, 100, 'Sharing', 0),
-(14, 'luncheon meat', 6, 2, 100, 'Sharing', 0),
-(15, 'black pepper pork belly', 6, 2, 100, 'Sharing', 0),
-(16, 'thai milk tea', 6, 3, 100, 'Beverage', 0),
-(17, 'rosti', 7, 8.90, 100, 'Western', 0),
-(18, 'pork knuckles', 7, 16.50, 100, 'Western', 0),
-(19, 'smoked salmon pizza', 7, 22.90, 100, 'Western', 0),
-(20, 'beef schnitzel', 7, 19.90, 100, 'Western', 0),
-(21, 'prawn paste', 8, 12, 100, 'Chinese', 0),
-(22, 'golden man tou', 8, 8, 100, 'Chinese', 0);
-
-/*
-insert into Contains(orderid, restid, foodid, username, description, quantity) values
-(1, 2, 5),
-(1, 2, 7),
-(1, 2, 8),
-(2, 5, 9),
-(2, 5, 11),
-(2, 5, 7),
-(3, 3, 5);
-*/

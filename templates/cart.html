@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+        <div style="display:inline;"> 
+            <div class="cart" style="width:50%; float:left">
+                {% block content %}
+                <h2> Cart </h2>
+                    <table border='1' align = 'center'>
+                        <tr>
+                          <th> Item </th>
+                          <th> Cost </th>
+                          <th> Quantity </th>
+                        </tr>
+    
+                        {% for p in orderlist %}
+                        <tr>
+                          <td>{{ p.food }}</td>
+                          <td>{{ p.price * p.quantity }}</td>
+                          <td>{{ p.quantity }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% endblock %}
+                    </table>
+    
+                    {% for t in totalprice %}
+                    <p> total price : {{t.total}} </p>
+                    {% endfor %}
+    
+                    <form method="POST" action="backto">
+                        <button type="submit"> Back to Order Page </button>         
+                    </form>
+            </div>
+
+            <div style="width:50%; display:inline-block;">
+                {% block details %}
+                <h2> Details </h2>
+                <form method="POST" action="placeorder">
+                    <table  align = 'center'>
+                        {% for p in custdetails %}
+                        <tr>
+                            <td> Name: </td>
+                            <td> {{p.name}} </td>
+                        </tr>
+                        <tr>
+                            <td> Contact: </td>
+                            <td> {{p.number}} </td>
+                        </tr>
+                        <tr>
+                            <td> Location: </td>
+                            <td> <input name="location" list="locations"> </td>
+                        </tr>
+                        <tr style="padding: 10px"> 
+                            <td> </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"> <input type="Submit" value="Place Order"> </td>
+                        </tr>
+                        {% endfor %}
+                        {% endblock %}
+                    </table>  
+                </form>
+            </div>
+
+            <datalist id="locations">
+                {% for r in locationlist %}
+                  <option value="{{r.location}}">
+                {% endfor %}
+            </datalist>
+
+        </div>
+       
+</html>

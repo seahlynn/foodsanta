@@ -4,7 +4,7 @@ debug = True
 test = True
 #Your credentials
 username = 'postgres'
-password = 'klassiccat97'
+password = ''
 host_name = 'localhost'
 port_number = 5432 #default
 database_name = 'foodsanta'
