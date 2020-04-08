@@ -23,5 +23,13 @@
                     {% endfor %}
                     {% endblock %}
                 </table>
+
+                {% for t in totalprice %}
+                <p> total price : {{t.total}} </p>
+                {% endfor %}
+
+                <form method="POST" action="backto">
+                    <button type="submit"> Back to Order Page </button>         
+                </form>
         </div>
 </html>

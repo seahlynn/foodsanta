@@ -33,7 +33,8 @@ def index():
         
         restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
         return render_template('restaurants.html', restlist = restlist)
-
+        #return render_template('test.html') 
+        
     return render_template('index.html')
 
 @app.route('/test_submit', methods=['POST'])
@@ -80,9 +81,10 @@ def addtocart():
     description = result[0][1]
     check = f"select count(*) from Contains where foodid = {foodid} and orderid = 1"
     checkresult = db.session.execute(check).fetchall()
-    todo = f""
+    
+    todo = f"insert into Contains (orderid, foodid, userid, description, quantity) values ('1', 1, 1, 'test', 1)"
 
-    if result[0][0]:
+    if checkresult[0][0]:
         todo = f"update Contains set quantity = quantity + 1 where foodid = {foodid} and orderid = 1"
     else:
         todo = f"insert into Contains (orderid, foodid, userid, description, quantity) values ('{orderid}', {foodid}, {userid}, '{description}', 1)"
@@ -102,12 +104,29 @@ def addtocart():
 @app.route('/viewcart', methods=['POST'])
 def viewcart():
     global db
+
     query = f"select C.description, F.price, C.quantity from Contains C, Food F where C.foodid = F.foodid and orderid = 1"
     result = db.session.execute(query)
+    total = f"select sum(F.price * C.quantity) from Contains C, Food F where C.foodid = F.foodid and orderid = 1"
+    totalresult = db.session.execute(total)
 
     orderlist = [dict(food = row[0], price = row[1], quantity = row[2]) for row in result.fetchall()]
+    totalprice = [dict(total = row[0]) for row in totalresult.fetchall()]
 
-    return render_template('cart.html', orderlist = orderlist)
+    return render_template('cart.html', orderlist = orderlist, totalprice = totalprice)
+
+@app.route('/backto', methods=['POST'])
+def backto():
+
+    #ensures the page stays on the specific restaurant menu
+    randomfoodid = f"(select foodid from Contains where userid = 1 and orderid = 1 limit 1)"
+    restid = f"(select restid from Food where foodid = {randomfoodid})"
+    query = f"SELECT * FROM Food WHERE restid = {restid}"
+    result = db.session.execute(query)
+        
+    foodlist = [dict(food= row[1], price = row[2], foodid = row[0]) for row in result.fetchall()]
+    
+    return render_template('restaurants.html', foodlist = foodlist)
 
 # Riders: to see and select undelivered orders 
 @app.route('/getUndeliveredOrders', methods=['GET'])
