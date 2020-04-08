@@ -11,7 +11,11 @@ flask = "*"
 psycopg2 = "*"
 psycopg2-binary = "*"
 flask-sqlalchemy = "*"
+<<<<<<< HEAD
+flask-login = "*"
+=======
 gunicorn = "*"
+>>>>>>> 4c492ed11c0a7ea33a8fc7233fb21109ea280a48
 
 [requires]
 python_version = "3.8"

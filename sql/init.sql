@@ -1,6 +1,8 @@
 DROP TABLE IF EXISTS Users CASCADE;
 DROP TABLE IF EXISTS Orders CASCADE;
 DROP TABLE IF EXISTS Customers CASCADE;
+DROP TABLE IF EXISTS FDSManagers CASCADE;
+DROP TABLE IF EXISTS RestaurantStaff CASCADE;
 DROP TABLE IF EXISTS CustomerStats CASCADE;
 DROP TABLE IF EXISTS Restaurants CASCADE;
 DROP TABLE IF EXISTS RestaurantStats CASCADE;
@@ -22,55 +24,57 @@ DROP TABLE IF EXISTS FixedWeeklySchedule CASCADE;
 DROP TABLE IF EXISTS MonthlyWorkSchedule CASCADE;
 DROP TABLE IF EXISTS DailyWorkShift CASCADE;
 
-CREATE TABLE Users (
-    userid              INTEGER,
-    name                varchar(20),
-    password            varchar(10),
-    phoneNumber			varchar(8),
-    dateCreated			DATE,
-    
-    PRIMARY KEY (userid)
+create table Users (
+    username            varchar(30),    
+    name                varchar(30),
+    password            varchar(15),
+    phoneNumber         varchar(8),
+    dateCreated			date,
+    primary key (username)
 );
 
--- each customer has an entry in Locations but it uses userid
-CREATE TABLE Customers (
-	userid		INTEGER,
-	points		INTEGER DEFAULT 0,
-
-	PRIMARY KEY (userid)
+-- each customer has an entry in Locations but it uses username
+create table Customers (
+	username            varchar(30),
+	points		        INTEGER default 0,
+	primary key (username),
+    FOREIGN KEY (username) REFERENCES Users
 );
 
 
 CREATE TABLE DeliveryRiders (
-    userid          INTEGER,
-    
-    PRIMARY KEY (userid),
-
-    FOREIGN KEY (userid) REFERENCES Users
+    username    varchar(30),
+    PRIMARY KEY (username),
+    FOREIGN KEY (username) REFERENCES Users
 );
+
+create table FDSManagers (
+    username              varchar(30),
+    PRIMARY KEY (username),
+    FOREIGN KEY (username) REFERENCES Users
+);
+
 
 -- before insertion, check that customers only has less than 5
 -- if not, delete the one with the earliest dateadded and add new one
-CREATE TABLE Locations (
-	userid 		    INTEGER,
+create table Locations (
+	username 		varchar(30),
 	location		varchar(100),
-	dateAdded		DATE NOT NULL,
+	dateAdded		DATE not null,
 
-	PRIMARY KEY (userid, location),
-
-	FOREIGN KEY (userid) REFERENCES Customers
+	primary key (username, location),
+	foreign key (username) references Customers
 );
 
 -- this is so that each customer can have multiple payment methods
--- for every order that requires payment, must look up this table and check userid must be the same 
-CREATE TABLE PaymentMethods (
+-- for every order that requires payment, must look up this table and check username must be the same 
+create table PaymentMethods (
 	paymentmethodid	INTEGER,
-	userid  		INTEGER,
+	username  		varchar(30),
 	cardInfo		varchar(60),
 
-	PRIMARY KEY (paymentmethodid),
-
-	FOREIGN KEY (userid) REFERENCES Customers
+	primary key (paymentmethodid),
+	foreign key (username) references Customers
 );
 
 --insertion of food into Contains table has to decrease availability by one (use trigger under contains)
@@ -83,17 +87,23 @@ CREATE TABLE Restaurants (
     PRIMARY KEY (restid)
 );
 
-CREATE TABLE Food ( 
-    foodid          INTEGER,
+create table RestaurantStaff (
+    username              varchar(30),
+    restid                INTEGER default null,
+    PRIMARY KEY (username),
+    FOREIGN KEY (username) REFERENCES Users,
+    FOREIGN KEY (restid) REFERENCES Restaurants
+);
+
+create table Food ( 
+    foodid          integer,
     description     varchar(50),
     price           float NOT NULL,
     availability    INTEGER NOT NULL CHECK (availability >= 0),
     category        varchar(20),
     restid          INTEGER NOT NULL,
     timesordered    INTEGER NOT NULL,
-
     PRIMARY KEY (foodid),
-
     FOREIGN KEY (restid) REFERENCES Restaurants
 );
 
@@ -110,7 +120,7 @@ CREATE TABLE FDSPromo (
 
 CREATE TABLE Orders (
 	orderid				INTEGER,
-	userid			    INTEGER,
+    username			varchar(30),
     custLocation        varchar(100) NOT NULL,
 	orderCreatedTime	TIMESTAMP, 
 	totalCost			INTEGER NOT NULL,
@@ -120,14 +130,13 @@ CREATE TABLE Orders (
     collectedByRider    boolean NOT NULL default False,
     restid              INTEGER NOT NULL,
 
-	PRIMARY KEY (orderid),
-
-	FOREIGN KEY (userid) REFERENCES Customers,
-    FOREIGN KEY (restid) REFERENCES Restaurants,
-	FOREIGN KEY (fdspromoid) REFERENCES FDSPromo
+	primary key (orderid),
+	foreign key (username) references Customers,
+    foreign key (restid) references Restaurants,
+	foreign key (fdspromoid) references FDSPromo
 );
 
--- need to enforce that userid has made the order that has the same orderid
+-- need to enforce that username has made the order that has the same orderid
 CREATE TABLE Reviews (
 	orderid			INTEGER,
 	reviewDesc		varchar(100),
@@ -137,23 +146,21 @@ CREATE TABLE Reviews (
 	FOREIGN KEY (orderid) REFERENCES Orders
 );
 
-CREATE TABLE Contains (
-    orderid         INTEGER NOT NULL,
-    foodid          INTEGER NOT NULL,
-    userid 		    INTEGER NOT NULL,
-    description     varchar(50) NOT NULL,
-    quantity        INTEGER NOT NULL,
-
+create table Contains (
+    orderid     INTEGER not null,
+    foodid      INTEGER not null,
+    username    varchar(30) not null,
+    description varchar(50) not null,
+    quantity    INTEGER not null,
     PRIMARY KEY (orderid, foodid),
-
     FOREIGN KEY (foodid) REFERENCES Food,
-    FOREIGN KEY (userid) REFERENCES Users
+    FOREIGN KEY (username) REFERENCES Users
 );
 
 
 CREATE TABLE Delivers (
 	orderid					INTEGER,
-    userid                  INTEGER,
+    username                varchar(30),
 	rating					INTEGER check ((rating <= 5) and (rating >= 0)),
 	location 				varchar(50) NOT NULL,
     deliveryFee             INTEGER NOT NULL,
@@ -162,11 +169,10 @@ CREATE TABLE Delivers (
 	timeOrderDelivered		DATE NOT NULL,
 	paymentmethodid			INTEGER, 			
 
-	PRIMARY KEY (orderid),
-
-	FOREIGN KEY (orderid) REFERENCES Orders,
-    FOREIGN KEY (userid) REFERENCES DeliveryRiders,
-	FOREIGN KEY (paymentmethodid) REFERENCES PaymentMethods
+	primary key (orderid),
+	foreign key (orderid) references Orders,
+    foreign key (username) references DeliveryRiders,
+	foreign key (paymentmethodid) references PaymentMethods
 );
 
 
@@ -182,24 +188,20 @@ CREATE TABLE RestaurantPromo (
 
 
 CREATE TABLE FullTimeRiders (
-    userid              INTEGER,
-
-    PRIMARY KEY (userid),
-
-    FOREIGN KEY (userid) REFERENCES DeliveryRiders
+    username              varchar(30),
+    PRIMARY KEY (username),
+    FOREIGN KEY (username) REFERENCES DeliveryRiders
 );
 
 CREATE TABLE PartTimeRiders (
-    userid              INTEGER,
-
-    PRIMARY KEY (userid),
-
-    FOREIGN KEY (userid) REFERENCES DeliveryRiders
+    username              varchar(30),
+    PRIMARY KEY (username),
+    FOREIGN KEY (username) REFERENCES DeliveryRiders
 );
 
 CREATE TABLE MonthlyWorkSchedule (
     mwsid              INTEGER,
-    userid             INTEGER,
+    username             varchar(30),
     mnthStartDay       DATE NOT NULL,
     wkStartDay         INTEGER NOT NULL
                        CHECK (wkStartDay in (1, 2, 3, 4, 5, 6, 7)),
@@ -208,8 +210,7 @@ CREATE TABLE MonthlyWorkSchedule (
     completed          BOOLEAN NOT NULL,
 
     PRIMARY KEY (mwsid),
-
-    FOREIGN KEY (userid) REFERENCES FullTimeRiders
+    FOREIGN KEY (username) REFERENCES FullTimeRiders
 );
 
 CREATE TABLE FixedWeeklySchedule (
@@ -233,14 +234,13 @@ CREATE TABLE FixedWeeklySchedule (
 
 CREATE TABLE WeeklyWorkSchedule (
     wwsid               INTEGER,
-    userid              INTEGER,
+    username              varchar(30),
     startDate           DATE,
     wwsHours            INTEGER,
     completed           BOOLEAN NOT NULL,
 
     PRIMARY KEY (wwsid),
-
-    FOREIGN KEY (userid) REFERENCES PartTimeRiders
+    FOREIGN KEY (username) REFERENCES PartTimeRiders
 );
 
 CREATE TABLE DailyWorkShift (
@@ -258,15 +258,14 @@ CREATE TABLE DailyWorkShift (
 
 -- FDS Manager purposes
 
-CREATE TABLE CustomerStats (
-    userid              INTEGER,
+create table CustomerStats (
+    username              varchar(30),
     monthid             INTEGER,
     totalNumOrders      INTEGER,
     totalCostOfOrders   INTEGER,
 
-    PRIMARY KEY (userid, monthid),
-
-    FOREIGN KEY (userid) REFERENCES Customers
+    primary key (username, monthid),
+    foreign key (username) references Customers
 );
 
 CREATE TABLE RestaurantStats (
@@ -283,16 +282,15 @@ CREATE TABLE RestaurantStats (
 
 --use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
 CREATE TABLE RidersStats (
-	userid 			INTEGER,
+	username 			varchar(30),
 	totalOrders		INTEGER,
 	totalHours		INTEGER,
 	totalSalary		INTEGER,
     month           INTEGER,
     year            INTEGER,
 
-    PRIMARY KEY (userid, month, year),
-    
-	FOREIGN KEY (userid)	REFERENCES DeliveryRiders
+    primary key(username, month, year),
+	foreign key(username)	references DeliveryRiders
 );
 
 CREATE TABLE AllStats (
@@ -312,18 +310,28 @@ or inserts new tuple if it is a new customer */
 create or replace function updateCustomerStatsFunction()
 returns trigger as $$
 begin
+    update CustomerStats C
+    set totalNumOrders = totalNumOrders + 1,
+        totalCostOfOrders = totalCostOfOrders 
+        + select O.totalCost from Orders O where O.orderid = C.orderid 
+    where username = NEW.username
+    order by monthid desc
+    limit 1
+    return null;
+end;
+%% language plpgsql;
 # if it is a new customer
 if (not exists(
     select 1
     from CustomerStats C
-    where C.userid = NEW.userid)) then
-    insert into CustomerStats values(NEW.userid, NEW.totalCost);
+    where C.username = NEW.username)) then
+    insert into CustomerStats values(NEW.username, NEW.totalCost);
 else 
 # if it is a nn existing customer 
     update CustomerStats
         set CustomerStats.totalNumOrders = CustomerStats.totalNumOrders + 1,
             CustomerStats.totalCostOfOrders = CustomerStats.totalCostOfOrders + NEW.totalCostOfOrders
-        where CustomerStats.userid = NEW.userid;
+        where CustomerStats.username = NEW.username;
     return new;
 endif;    
 end; $$ language plpgsql;        
@@ -341,7 +349,7 @@ begin
 if (not exists(
     select 1 
     from CustomerStats C
-    where C.userid = NEW.userid))
+    where C.username = NEW.username))
 then 
     update AllStats
     set totalNewCust = totalNewCust + 1;
@@ -394,7 +402,7 @@ create trigger add_new_address_trigger
 	for each row 
 	when (NEW.location exists in 
 		select OLD.location
-		where OLD.userid = NEW.userid)
+		where OLD.username = NEW.username)
 	execute function add_new_address();
 
 --have to update the most recent tuple */
@@ -507,4 +515,7 @@ create trigger contains_trigger
     after update of restid, foodid, orderid OR insert on Contains
     for each ROW
     execute function check_order_constraint();*/
+
+------------------------- INSERT STATEMENTS -------------------------
+
 

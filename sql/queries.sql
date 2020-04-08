@@ -5,16 +5,16 @@ create view allRestaurants (restid) as
     select distinct restid
     from Restaurants;
 
--- view menu of particular restaurant (r1) with price 
+-- view menu of particular restaurant (r1) with price
 create view restaurantMenuItems (foodid) as
     select distinct foodid, description, price
-    from Food 
+    from Food
     where restid = r1
     and availability > 0;
 
 -- see reviews of a particular restaurant (r2) written by others 
 -- and when it was created
-create view seeReviews (reviewDesc, orderCreatedTime) as 
+create view seeReviews (reviewDesc, orderCreatedTime) as
     select reviewDesc, orderCreatedTime
     from Reviews natural join Orders
     where Orders.restid = r2;

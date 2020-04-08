@@ -10,6 +10,7 @@ pipenv install psycopg2
 pipenv install psycopg2-binary
 pipenv install flask-sqlalchemy
 pipenv install gunicorn (Not sure if needed yet) //for Heroku/Server, but not required unless we want to store the database somewhere
+pipenv install flask-login
 
 In foodsanta, there is a settings.py file. Edit this file to your settings (since we using diff password)
 
@@ -52,3 +53,10 @@ flask-sqlalchemy = "*"
 [requires]
 python_version = "3.8"
 """
+
+
+Images/Templates derived from, all rights go to the following webpages and their respective owners:
+
+https://cdn.hipwallpaper.com/i/78/82/FYATtm.jpg (Login background page)
+https://www.jing.fm/iclip/u2q8y3q8u2i1u2q8_santa-claus-food-christmas-dinner-chef-santa-claus/ (foodsanta logo)
+https://colorlib.com/wp/free-bootstrap-registration-forms/ (signup form page)

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../static/signup.css">
+</head>
+
+<body style="background: url('{{ url_for('static', filename='signupbg.jpg') }}'); background-size: cover">
+    <div class="box">
+        <img class="image" src="{{ url_for('static', filename='FoodSantaTruckLogo.png') }}" />
+        <form class="" action="/signup" name="signup-form" method="POST">
+            <h2 class="text--centered text">Are you ready to join us?</h2>
+ 
+            <input type="text" placeholder="Username (Your unique username!)" class="input" name="username" maxlength="30"/>
+            <input type="text" placeholder="Name (How would you like to be addressed?)" class="input" name="name" maxlength="30" />
+            <input type="text" placeholder="Password (Maximum 15 characters)" class="input" name="password" maxlength="15"/>
+            <input type="text" placeholder="Retype Password" class="input" name="repassword" maxlength="15"/>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <h2 class="text--centered text">{{ message }}</h2>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <h3 class="text--centered text">What do you wish to sign up as?</h3>
+
+            <input type="radio" class="input--radio text--centered" id="customer" name="usertype" value="Customers" checked="checked">
+            <label class="text--centered text--options" for="Customer"><b>Customer</b></label><br>
+            <input type="radio" class="input--radio text--centered" id="deliveryrider" name="usertype" value="DeliveryRiders">
+            <label class="text--centered text--options" for="DeliveryRider"><b>Delivery Rider</b></label><br>
+            <input type="radio" class="input--radio text--centered" id="restaurantstaff" name="usertype" value="RestaurantStaff">
+            <label class="text--centered text--options" for="RestaurantStaff"><b>Staff</b></label><br>
+            
+            <input type="submit" value="Sign up" class="text--centered input--submit"/>
+
+        </form>
+        <a href="/login" class="text--login text--centered">I am already a user!</a>
+
+    </div>
+</body>
+</html>
