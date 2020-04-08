@@ -19,14 +19,20 @@ db = SQLAlchemy(app)
 @app.route('/')
 def index():
     if settings.test:
+
+        # Sining: shows rider available orders to pick up 
         query = f"select orderid, (select Restaurants.location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and collectedByRider = False"
         result = db.session.execute(query)
 
         ordersToPickUp = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in result.fetchall()]
 
+        #for order in ordersToPickUp:
+             #order.addEventListener("click", lambda : alert(this.html))
+
         # select a certain order to form the next page 
         return render_template('riders_getUndeliveredOrders.html', ordersToPickUp=ordersToPickUp)
 
+        # Lynn: shows user available restaurants to get food from 
         #query = f"select * from Restaurants"
         #result = db.session.execute(query)
         
