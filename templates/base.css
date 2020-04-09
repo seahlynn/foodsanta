@@ -1,0 +1,70 @@
+html {
+	height: 100%;
+    font-family: Palatino Linotype, Book Antiqua, Palatino, serif;
+    background-color:white;
+}
+
+.top {
+	height: 7.6%;
+    background-color: #01015B;
+}
+
+.links > a {
+    font-weight: bold;
+}
+
+body {
+	margin: 0;
+    height: 100%;
+}
+
+
+.links {
+    width: auto;
+    height: 40px;
+}
+
+.links > div, .indiv-link > a {
+    display: inline;
+    text-align: center;
+
+}
+
+#profile {
+    float: left;
+    padding-left: 12px;
+    padding-top: 15px;
+}
+
+#order {
+    float: right;
+    padding-right: 12px;
+    padding-top: 15px;
+}
+
+
+
+.indiv-link {
+    text-decoration: none;
+}
+
+.links > div > p:hover, .indiv-link:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.links > div > p, .indiv-link {
+    color: white;
+    font-size: 12pt;
+    font-weight: bold;
+}
+
+/*#greeting {
+    text-align: center;
+    font-size: 30pt;
+}
+
+#greeting:hover {
+    font-style: italic;
+    color: royalblue;
+}*/

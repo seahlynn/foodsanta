@@ -1,9 +1,13 @@
+
 <!DOCTYPE html>
+
 <html lang="en">
     <head>
         <title>FoodSantaTest</title>
     </head>
     <body align = 'center'>
+    {% extends 'base.html' %}
+      {% block overall %}
         <div class="container" >
           <form name="chosen" action="restresults" method='GET'>
             <h1 for="restaurant"> Choose a restaurant </h1>
@@ -18,7 +22,7 @@
         <br>
         <div style="display: inline"> 
           <div class="results" style="width:50%; float: left;">
-          {% block content %}
+            {% block content %}
           <h2> Menu </h2>
               <table border='1' align = 'center'>
                   <tr>
@@ -31,7 +35,7 @@
                     <td>{{ p.price }}</td>
                   </tr>
                   {% endfor %}
-                  {% endblock %}
+              {% endblock %}
               </table>
           </div>
  
@@ -53,7 +57,7 @@
           </div>
         </div>
         
-
+      {% endblock %}
     </body>
 </html>
 

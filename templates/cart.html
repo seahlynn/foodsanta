@@ -4,6 +4,8 @@
         <title>FoodSantaTest</title>
     </head>
     <body align = 'center'>
+    {% extends 'base.html' %}
+      {% block overall %}
         <div style="display:inline;"> 
             <div class="cart" style="width:50%; float:left">
                 {% block content %}
@@ -37,7 +39,7 @@
             <div style="width:50%; display:inline-block;">
                 {% block details %}
                 <h2> Details </h2>
-                <form method="POST" action="placeorder">
+                <form method="POST" action="placeorder" autocomplete="off">
                     <table  align = 'center'>
                         {% for p in custdetails %}
                         <tr>
@@ -51,6 +53,10 @@
                         <tr>
                             <td> Location: </td>
                             <td> <input name="location" list="locations"> </td>
+                        </tr>
+                        <tr>
+                            <td> Payment Method: </td>
+                            <td> <input name="location" list="payments"> </td>
                         </tr>
                         <tr style="padding: 10px"> 
                             <td> </td>
@@ -70,6 +76,12 @@
                 {% endfor %}
             </datalist>
 
+            <datalist id="payments">
+                {% for r in paymentlist %}
+                  <option value="{{r.method}}">
+                {% endfor %}
+            </datalist>
         </div>
-       
+        {% endblock %}
+    </body>
 </html>

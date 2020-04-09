@@ -68,6 +68,7 @@ create table Locations (
 
 -- this is so that each customer can have multiple payment methods
 -- for every order that requires payment, must look up this table and check username must be the same 
+-- but payment method can also be cash.. then how? can set paymentmethodid = 1 for cash? 2 onwards is for card
 create table PaymentMethods (
 	paymentmethodid	INTEGER,
 	username  		varchar(30),
