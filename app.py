@@ -158,17 +158,22 @@ def editprofile():
 
     contact = request.form['contact']
     cardInfo = request.form['card']
+    deleteCard = request.form['delete']
 
     if contact != '':
         update_contact = f"update Users set phoneNumber = {contact} where username = '{username}'"
         db.session.execute(update_contact)
 
     if cardInfo != '':
-        pmiquery = "select count(*) from PaymentMethods"
+        pmiquery = f"select count(*) from PaymentMethods"
         pmiresult = db.session.execute(pmiquery).fetchall()
         paymentmethodid = int(pmiresult[0][0]) + 1
         update_card = f"insert into PaymentMethods(paymentmethodid, username, cardInfo) values ({paymentmethodid}, '{username}', '{cardInfo}');"
         db.session.execute(update_card)
+
+    if deleteCard != '':
+        delete_card = f"delete from PaymentMethods where username = '{username}' and cardInfo = '{deleteCard}'"
+        db.session.execute(delete_card)
     
     db.session.commit()
 
@@ -226,16 +231,16 @@ def addtocart():
     
     return render_template('restaurants.html', foodlist = foodlist)
 
-@app.route('/viewcart', methods=['POST'])
+@app.route('/viewcart', methods=['POST', 'GET'])
 def viewcart():
     global db
 
     orderid = session['orderid']
     username = 'justning'
     #for cart 
-    orderquery = f"select C.description, F.price, C.quantity from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid}"
+    orderquery = f"select C.description, F.price, C.quantity, F.foodid from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid}"
     orderresult = db.session.execute(orderquery)
-    orderlist = [dict(food = row[0], price = row[1], quantity = row[2]) for row in orderresult.fetchall()]
+    orderlist = [dict(food = row[0], price = row[1], quantity = row[2], foodid = row[3]) for row in orderresult.fetchall()]
 
     totalquery = f"select sum(F.price * C.quantity) from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid}"
     totalresult = db.session.execute(totalquery)
@@ -257,6 +262,27 @@ def viewcart():
     paymentlist = [dict(method = row[0]) for row in paymentresult.fetchall()]
 
     return render_template('cart.html', orderlist = orderlist, totalprice = totalprice, custdetails = custdetails, locationlist = locationlist, paymentlist = paymentlist)
+
+@app.route('/deletefromcart', methods=['POST'])
+def deletefromcart():
+    global db
+
+    orderid = session['orderid']
+    username = 'justning'
+    foodid = int(request.form['foodid'])
+    quantityquery = f"select quantity from Contains where foodid = {foodid} and orderid = {orderid}"
+    result = db.session.execute(quantityquery).fetchall()
+    quantity = int(result[0][0])
+
+    if quantity == 1:
+        todo = f"delete from Contains where foodid = {foodid} and orderid = {orderid}"
+    else :
+        newquantity = quantity - 1
+        todo = f"update Contains set quantity = {newquantity} where foodid = {foodid} and orderid = {orderid}"
+
+    db.session.execute(todo)
+    db.session.commit()
+    return redirect('viewcart')
 
 @app.route('/backto', methods=['POST'])
 def backto():

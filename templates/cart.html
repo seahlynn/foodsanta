@@ -31,9 +31,22 @@
                     <p> total price : {{t.total}} </p>
                     {% endfor %}
     
-                    <form method="POST" action="backto">
-                        <button type="submit"> Back to Order Page </button>         
-                    </form>
+                    <div class="choosefood" style="width:50%; display: inline-block;">
+                        <h4> Delete from Cart </h4>
+                        <form name="restaurant" action="deletefromcart" method='POST'>
+                          <select name="foodid" onchange="this.form.submit()">
+                            {% for f in orderlist %}
+                              <option value="{{f.foodid}}" SELECTED> {{f.food}} </option>
+                            {% endfor %}
+                            <option value="" disabled selected> Choose an item to delete </option>
+                          </select>
+                        </form>
+            
+                        <br>
+                        <form method="POST" action="backto">
+                            <button type="submit"> Back to Order Page </button>         
+                        </form>
+                    </div>
             </div>
 
             <div style="width:50%; display:inline-block;">
