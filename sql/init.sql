@@ -276,7 +276,7 @@ CREATE TABLE DailyWorkShift (
 -- FDS Manager purposes
 
 CREATE TABLE CustomerStats (
-    username              varchar(30),
+    username            varchar(30),
     monthid             INTEGER,
     totalNumOrders      INTEGER,
     totalCostOfOrders   INTEGER,
@@ -300,7 +300,7 @@ CREATE TABLE RestaurantStats (
 
 --use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
 CREATE TABLE RidersStats (
-	username 			varchar(30),
+	username 	    varchar(30),
 	totalOrders		INTEGER,
 	totalHours		INTEGER,
 	totalSalary		INTEGER,
@@ -323,22 +323,22 @@ CREATE TABLE AllStats (
 
 ------------------------- TRIGGER STATEMENTS -------------------------
 
-/* Updates customer's total number of orders and total cost spent on orders or inserts new tuple if it is a new customer */
+/* Updates customer's total number of orders and total cost spent on orders or inserts new tuple if it is a new customer */ 
 create or replace function updateCustomerStatsFunction()
 returns trigger as $$
 begin
     /* new customer  */
     if (not exists(
         select 1
-        from CustomerStats C
-        where C.username = NEW.username)) then
+        from CustomerStats C1
+        where C1.username = NEW.username)) then
         insert into CustomerStats values(NEW.username, NEW.totalCost);
     /* existing customer */
     else 
-        update CustomerStats
-        set CustomerStats.totalNumOrders = CustomerStats.totalNumOrders + 1,
-            CustomerStats.totalCostOfOrders = CustomerStats.totalCostOfOrders + NEW.totalCostOfOrders
-        where CustomerStats.username = NEW.username;
+        update CustomerStats C2
+        set totalNumOrders = totalNumOrders + 1,
+            totalCostOfOrders = totalCostOfOrders + NEW.totalCost
+        where C2.username = NEW.username;
         /* and CustomerStats.monthid = ; // TO CHECK FOR CURRENT MONTH */
 end if;    
 return new;

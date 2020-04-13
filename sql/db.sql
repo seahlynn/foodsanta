@@ -11,6 +11,8 @@ INSERT INTO Customers(username, points) VALUES
 ('Bakkwa', 0),
 ('justning', 0);
 
+INSERT INTO CustomerStats("username", monthid, totalNumOrders, totalCostOfOrders) VALUES ('justning', 4, 1, 13.20);
+
 INSERT INTO Locations(username, location, dateAdded) VALUES
 ('justning', '21 Lower Kent Ridge Rd, Singapore 119077', '2020-04-04'),
 ('justning', '469 Bukit Timah Rd, Singapore 259756', '2020-04-04'),

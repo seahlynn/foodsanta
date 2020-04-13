@@ -1,25 +1,6 @@
 
 /*
-# Increments the total number of distinct customers 
-create or replace function addNewCustomer() 
-returns trigger as $$
-begin
-if (not exists(
-    select 1 
-    from CustomerStats C
-    where C.username = NEW.username))
-then 
-    update AllStats
-    set totalNewCust = totalNewCust + 1;
-end if;
-return new;
-end; $$ language plpgsql;
 
-drop trigger if exists addNewCustomerTrigger ON AllStats;
-create trigger addNewCustomerTrigger
-    after insert on Orders
-    for each row
-    execute function addNewCustomer(); 
 
 create or replace function dailyShiftConstraint() returns trigger
     as $$
