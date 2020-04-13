@@ -3,7 +3,7 @@ import os
 from flask import Flask, render_template, request, session, flash, redirect
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import MetaData
-from flask_login import LoginManager
+#from flask_login import LoginManager
 from datetime import datetime
 
 app = Flask(__name__) #Initialize FoodSanta
@@ -19,7 +19,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = b'random123456789'
 
 db = SQLAlchemy(app)
-login_manager = LoginManager()
+#login_manager = LoginManager()
 
 @app.route('/', methods=['GET'])
 def index():
@@ -106,7 +106,7 @@ def registration_success():
 def register_user(username, name, password, user_type):
     global db
     date = datetime.today().strftime("%d/%m/%Y")
-    insert_users = f"insert into Users(username, name, password, dateCreated) values ('{username}','{name}','{password}', '{date}');"
+    insert_users = f"insert into Users(username, name, password, phoneNumber, dateCreated) values ('{username}','{name}','{password}', '{98782507}' '{date}');"
     insert_type = f"insert into {user_type}(username) values ('{username}');"
     db.session.execute(insert_users)
     db.session.execute(insert_type)
@@ -343,7 +343,6 @@ def getUndeliveredOrders():
 
     # select a certain order to form the next page 
     return render_template('riders_getUndeliveredOrders.html', ordersToPickUp=ordersToPickUp)
-
 
 #Check if server can be run, must be placed at the back of this file
 if __name__ == '__main__':
