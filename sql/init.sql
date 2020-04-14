@@ -141,7 +141,7 @@ CREATE TABLE Orders (
 	fdspromoid			INTEGER,
     paymentmethodid     INTEGER,
     preparedByRest      BOOLEAN NOT NULL DEFAULT False,
-    selectedByRider    BOOLEAN NOT NULL DEFAULT False,
+    selectedByRider     BOOLEAN NOT NULL DEFAULT False,
     restid              INTEGER NOT NULL,
 
 	PRIMARY KEY (orderid),
@@ -176,9 +176,9 @@ CREATE TABLE Contains (
 
 CREATE TABLE Delivers (
 	orderid					INTEGER,
-    username                VARCHAR(30), # rider who delivered it
+    username                VARCHAR(30), 
 	rating					INTEGER CHECK ((rating <= 5) AND (rating >= 0)),
-	location 				VARCHAR(50) NOT NULL,
+	location 				VARCHAR(100) NOT NULL,
     deliveryFee             INTEGER NOT NULL,
 	timeDepartToRestaurant	DATE NOT NULL,
 	timeArrivedAtRestaurant	DATE,

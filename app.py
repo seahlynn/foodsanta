@@ -147,8 +147,6 @@ def gotoprofile():
 
 @app.route('/gotodelivery', methods=['GET'])
 def gotodelivery():
-    username = 'justning'
-
     undeliveredOrdersQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False"
     undeliveredOrdersResult = db.session.execute(undeliveredOrdersQuery)
     ordersToPickUp = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in undeliveredOrdersResult.fetchall()]
@@ -344,12 +342,12 @@ Riders select existing undelivered orders to pick up and deliver
 
 '''
  
-@app.route('/selectUndeliveredOrders', methods=['POST', 'GET'])
+@app.route('/getUndeliveredOrders', methods=['POST', 'GET'])
 def getUndeliveredOrders():
     global db
 
     # orders available for pick up are displayed in a table with orderid, restaurant location and customer location
-    undeliveredOrdersQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation, from Orders where preparedByRest = False and selectedByRider = False"
+    undeliveredOrdersQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False"
     undeliveredOrdersResult = db.session.execute(undeliveredOrdersQuery)
     ordersToPickUp = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in undeliveredOrdersResult.fetchall()]
 
@@ -358,14 +356,14 @@ def getUndeliveredOrders():
     session['deliveringOrderId'] = chosenOrderId
 
     # display order chosen
-    chosenOrderQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False and orderid = {orderid}"
+    chosenOrderQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False and orderid = {chosenOrderId}"
     chosenOrderResult = db.session.execute(chosenOrderQuery)
 
     chosenOrderInfo = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in chosenOrderResult.fetchall()]
     
-    return render_template('riders_selectUndeliveredOrders.html', ordersToPickUp = ordersToPickUp, chosenOrderInfo = chosenOrderInfo)
+    return render_template('riders_selectUndeliveredOrders.html', chosenOrderInfo = chosenOrderInfo, ordersToPickUp = ordersToPickUp)
 
-@app.route('/orderSelected', methods=['GET'])
+@app.route('/processOrderSelectedForDelivery', methods=['POST', 'GET'])
 def processOrderSelectedForDelivery():
     global db
 
@@ -378,60 +376,61 @@ def processOrderSelectedForDelivery():
 
     # add into delivery table
     username = 'justning'
-    chosenOrderQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False and orderid = {orderid}"
-    chosenOrderResult = db.session.execute(chosenOrderQuery)
-    custLocation = chosenOrderResult[0][2]
-    currentTime = datetime.today().strftime("%d/%m/%Y %H%M")
+    chosenOrderQuery = f"select custLocation from Orders where preparedByRest = False and selectedByRider = True and orderid = {deliveringOrderId}"
+    chosenOrderResult = db.session.execute(chosenOrderQuery).fetchall()
+    custLocation = str(chosenOrderResult[0][0])
+
+    currentTime = datetime.now().strftime("%d/%m/%Y %H%M")
     deliveryFee = 3 # to be edited later
-    addDelivery = f'insert into Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered, paymentmethodid) values ({deliveringOrderId}, {username}, null, {custLocation}, 3, currentTime, null, null, null)'
+    addDelivery = f"insert into Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered, paymentmethodid) values ({deliveringOrderId}, '{username}', null, '{custLocation}', 3, '{currentTime}', null, null, null)"
     db.session.execute(addDelivery)
     db.session.commit()
 
     return redirect('collectFromRestaurant')
 
 @app.route('/collectFromRestaurant', methods=['GET'])
-def collectionAtRestaurant():
+def collectFromRestaurant():
     global db
 
     deliveringOrderId = session['deliveringOrderId']
     username = 'justning'
 
     # retrieve restaurant address to display
-    restLocationQuery = f'select distinct restid from Orders where Orders.orderid = {deliveringOrderId}'
-    restLocationResult = db.session.execute(restAddressQuery)
-    restLocation = restLocation[0][0]
+    restLocationQuery = f'select location from Restaurants where restid in (select distinct restid from Orders where Orders.orderid = {deliveringOrderId})'
+    restLocationResult = db.session.execute(restLocationQuery).fetchall()
+    restLocation = restLocationResult[0][0]
 
-    return render_template('rider_orderToCollectAtRestaurant.html', restLocation = restLocation)
+    return render_template('riders_orderToCollectAtRestaurant.html', restLocation = restLocation)
 
 @app.route('/collectedFromRestaurant', methods=['POST'])
-def collectedNowDelivery():
+def collectedFromRestaurant():
     global db
 
     deliveringOrderId = session['deliveringOrderId']
     username = 'justning'
-    currentTime = datetime.today().strftime("%d/%m/%Y %H%M")
+    currentTime = datetime.now().strftime("%d/%m/%Y %H%M")
     
     # handle functionality of button
     # 1. update the timeArrivedAtRestaurant
     # 2. move to the next page 
-    updateDeliveryStatus = f'update Delivers set timeArrivedAtRestaurant = {currentTime} where orderid = {deliveringOrderId}'
+    updateDeliveryStatus = f"update Delivers set timeArrivedAtRestaurant = '{currentTime}' where orderid = {deliveringOrderId}"
     db.session.execute(updateDeliveryStatus)
     db.session.commit()
 
     return redirect('deliverToCustomer')
 
 @app.route('/deliverToCustomer', methods=['GET'])    
-def deliveryToCustomer():
+def deliverToCustomer():
     global db
 
     deliveringOrderId = session['deliveringOrderId']
     username = 'justning'
 
-    custLocationQuery = f'select distinct custLocation from Orders where Orders.orderid = {deliveringOrderId}'
-    custLocationResult = db.session.execute(custLocationQuery)
-    custLocation = custLocation[0][0]
+    custLocationQuery = f'select custLocation from Orders where Orders.orderid = {deliveringOrderId}'
+    custLocationResult = db.session.execute(custLocationQuery).fetchall()
+    custLocation = custLocationResult[0][0]
 
-    return render_template('rider_orderToDeliverToCustomer.html', custLocation = custLocation)
+    return render_template('riders_orderToDeliverToCustomer.html', custLocation = custLocation)
 
 @app.route('/orderDelivered', methods=['POST', 'GET'])
 def orderDelivered():
@@ -442,25 +441,33 @@ def orderDelivered():
     currentTime = datetime.today().strftime("%d/%m/%Y %H%M")
 
     # update delivery
-    updateDeliveryStatus = f'update Delivers set timeOrderDelivered = {currentTime} where orderid = {deliveringOrderId}'
+    updateDeliveryStatus = f"update Delivers set timeOrderDelivered = '{currentTime}' where orderid = {deliveringOrderId}"
     db.session.execute(updateDeliveryStatus)
     db.session.commit()
 
     # update rider stats
-    updateRiderStats = f'update RiderStats set totalOrders = totalOrders + 1 where username = {username}'
+    # check if rider has stats or not
+    checkRiderStatsExistQuery = f"select count(*) from RiderStats where username = '{username}' and month = 4"
+    checkResult = db.session.execute(checkRiderStatsExistQuery).fetchall()
+
+    if (checkResult[0][0]):
+        updateRiderStats = f"update RiderStats set totalOrders = totalOrders + 1 where username = '{username}'"
+    else: # by right, rider's stats should be added when the rider takes up his shift
+        updateRiderStats = f"insert into RiderStats (username, totalOrders, totalHours, totalSalary, month, year) values ('{username}', 1, null, null, 4, 2020)"    
+
     db.session.execute(updateRiderStats)
     db.session.commit()
 
     # check current rider stats
-    numOrdersQuery = f'select distinct totalOrders from RiderStats where username = {username} and month = 4'
-    numOrdersResult = db.session.execute(numOrdersQuery)
+    numOrdersQuery = f"select distinct totalOrders from RiderStats where username = '{username}' and month = 4"
+    numOrdersResult = db.session.execute(numOrdersQuery).fetchall()
     numOrders = numOrdersResult[0][0]
 
-    return render_template('riders_deliveryCompleted', numOrders = numOrders)    
+    return render_template('riders_deliveryCompleted.html', numOrders = numOrders)    
 
 @app.route('/newDelivery', methods=['POST'])
 def newDelivery():
-    return redirect('selectUndeliveredOrders')
+    return redirect('gotodelivery')
     
 #Check if server can be run, must be placed at the back of this file
 if __name__ == '__main__':

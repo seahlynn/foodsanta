@@ -4,10 +4,15 @@
         <title>FoodSantaTest</title>
     </head>
     <body align = 'center' action="orderDelivered">
-        This delivery is completed! You have completed {numOrders} deliveries so far!
-    </body>
+    	{% extends 'base.html' %}
+      	{% block overall %}
+        <h1> This delivery is completed. </h1>
+        <h2> You have completed {{ numOrders }} deliveries so far! </h2>
+    	<form method="POST" action="newDelivery">
+        	<button type="submit"> Make another delivery </button>         
+    	</form>
+    	{% endblock %}
+	</body>
 
-    <form method="POST" action="newDelivery">
-        <button type="submit"> Make another delivery </button>         
-    </form>
+    
 </html>

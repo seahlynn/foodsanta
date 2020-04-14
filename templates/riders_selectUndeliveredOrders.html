@@ -42,9 +42,16 @@
             {% block content %}
               <h2> You have selected this order: </h2>
               <table style = "width:100%">
+                <tr>
+                <th> Order Number </th>
+                <th> Restaurant Location </th>
+                <th> Customer Location </th>
+                </tr>
                 {% for c in chosenOrderInfo %}
                 <tr>
-                  <td>{{ c }}</td>
+                  <td>{{ c.orderid }}</td>
+                  <td>{{ c.restLocation }}</td>
+                  <td>{{ c.custLocation }}</td>
                 </tr>
                 {% endfor %}
               {% endblock %}  
@@ -52,7 +59,7 @@
           </div>
           
           <br>
-          <form method="POST" action="orderSelected">
+          <form method="POST" action="processOrderSelectedForDelivery">
             <button type="submit"> Select this order </button>         
           </form>
 

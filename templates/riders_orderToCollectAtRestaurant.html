@@ -12,15 +12,7 @@
         <div class="container" >
           <h1> You have selected an order! </h1>
           <h1> Please head to this location to pick it up </h1>
-          <form name="viewRestCollection" action='collectFromRestaurant' method='GET'>
-            <table style = "width:100%">
-              {% for r in restLocation %}
-              <tr>
-                <td>{{ r }}</td>
-              </tr>
-              {% endfor %}
-            </table>
-          </form>
+          <h2> {{ restLocation }} </h2>
         </div>
 
         <br>

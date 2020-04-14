@@ -11,21 +11,13 @@
       {% block overall %}
         <div class="container" >
           <h1> You have collected the order! </h1>
-          <h1> Please head to this location to deliver it to our customer </h1>
-          <form name="viewCustLocation" action='deliverToCustomer' method='GET'>
-            <table style = "width:100%">
-              {% for c in custLocation %}
-              <tr>
-                <td>{{ c }}</td>
-              </tr>
-              {% endfor %}
-            </table>
-          </form>
+          <h1> Please head to this location to deliver it to our customer at </h1>
+          <h2> {{ custLocation }} </h2>
         </div>
 
         <br>
         <form method="POST" action="orderDelivered">
-          <button type="submit"> I have delivered it to the customer! Complete this order </button>         
+          <button type="submit"> I have delivered it to the customer! Complete this order. </button>         
         </form>
       {% endblock %}   
       </body>   
