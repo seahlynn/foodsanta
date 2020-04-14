@@ -18,17 +18,17 @@ DROP TABLE IF EXISTS Contains CASCADE;
 DROP TABLE IF EXISTS FDSPromo CASCADE;
 DROP TABLE IF EXISTS FullTimeRiders CASCADE;
 DROP TABLE IF EXISTS PartTimeRiders CASCADE;
-DROP TABLE IF EXISTS RidersStats CASCADE;
+DROP TABLE IF EXISTS RiderStats CASCADE;
 DROP TABLE IF EXISTS WeeklyWorkSchedule CASCADE;
 DROP TABLE IF EXISTS FixedWeeklySchedule CASCADE;
 DROP TABLE IF EXISTS MonthlyWorkSchedule CASCADE;
 DROP TABLE IF EXISTS DailyWorkShift CASCADE;
 
 CREATE TABLE Users (
-    username            varchar(30),    
-    name                varchar(30),
-    password            varchar(15),
-    phoneNumber         varchar(8),
+    username            VARCHAR(30),    
+    name                VARCHAR(30),
+    password            VARCHAR(15),
+    phoneNumber         VARCHAR(8),
     dateCreated			date,
 
     PRIMARY KEY (username)
@@ -36,7 +36,7 @@ CREATE TABLE Users (
 
 -- each customer has an entry in Locations but it uses username
 CREATE TABLE Customers (
-	username            varchar(30),
+	username            VARCHAR(30),
 	points		        INTEGER default 0,
 	
     PRIMARY KEY (username),
@@ -46,7 +46,7 @@ CREATE TABLE Customers (
 
 
 CREATE TABLE DeliveryRiders (
-    username    varchar(30),
+    username    VARCHAR(30),
     
     PRIMARY KEY (username),
     
@@ -54,7 +54,7 @@ CREATE TABLE DeliveryRiders (
 );
 
 CREATE TABLE FDSManagers (
-    username              varchar(30),
+    username              VARCHAR(30),
 
     PRIMARY KEY (username),
     
@@ -79,8 +79,8 @@ CREATE TABLE Locations (
 -- but payment method can also be cash.. then how? can set paymentmethodid = 1 for cash? 2 onwards is for card
 CREATE TABLE PaymentMethods (
 	paymentmethodid	INTEGER,
-	username  		varchar(30),
-	cardInfo		varchar(60),
+	username  		VARCHAR(30),
+	cardInfo		VARCHAR(60),
 
 	PRIMARY KEY (paymentmethodid),
 
@@ -90,15 +90,15 @@ CREATE TABLE PaymentMethods (
 --insertion of food into Contains table has to decrease availability by one (use trigger under contains)
 CREATE TABLE Restaurants (
     restid      INTEGER,
-    restName    varchar(50),
+    restName    VARCHAR(50),
     minAmt      INTEGER NOT NULL,
-    location    varchar(100) NOT NULL,
+    location    VARCHAR(100) NOT NULL,
 
     PRIMARY KEY (restid)
 );
 
 CREATE TABLE RestaurantStaff (
-    username              varchar(30),
+    username              VARCHAR(30),
     restid                INTEGER DEFAULT NULL,
 
     PRIMARY KEY (username),
@@ -108,11 +108,11 @@ CREATE TABLE RestaurantStaff (
 );
 
 CREATE TABLE Food ( 
-    foodid          integer,
-    description     varchar(50),
+    foodid          INTEGER,
+    description     VARCHAR(50),
     price           float NOT NULL,
     availability    INTEGER NOT NULL CHECK (availability >= 0),
-    category        varchar(20),
+    category        VARCHAR(20),
     restid          INTEGER NOT NULL,
     timesordered    INTEGER NOT NULL,
 
@@ -123,7 +123,7 @@ CREATE TABLE Food (
 
 --insertion into from table needs to check if restid is same as all other restid
 CREATE TABLE FDSPromo (
-    description     varchar(50),
+    description     VARCHAR(50),
     fdspromoid      INTEGER,
     orderid         INTEGER NOT NULL,
     startTime       DATE,
@@ -134,14 +134,14 @@ CREATE TABLE FDSPromo (
 
 CREATE TABLE Orders (
 	orderid				INTEGER,
-    username			varchar(30),
-    custLocation        varchar(100) NOT NULL,
-	orderCreatedTime	TIMESTAMP, 
+    username			VARCHAR(30),
+    custLocation        VARCHAR(100) NOT NULL,
+	orderCreatedTime	DATE, 
 	totalCost			INTEGER NOT NULL,
 	fdspromoid			INTEGER,
     paymentmethodid     INTEGER,
-    preparedByRest      boolean NOT NULL DEFAULT False,
-    collectedByRider    boolean NOT NULL DEFAULT False,
+    preparedByRest      BOOLEAN NOT NULL DEFAULT False,
+    selectedByRider    BOOLEAN NOT NULL DEFAULT False,
     restid              INTEGER NOT NULL,
 
 	PRIMARY KEY (orderid),
@@ -154,7 +154,7 @@ CREATE TABLE Orders (
 -- need to enforce that username has made the order that has the same orderid
 CREATE TABLE Reviews (
 	orderid			INTEGER,
-	reviewDesc		varchar(100),
+	reviewDesc		VARCHAR(100),
 
 	PRIMARY KEY (orderid),
 
@@ -164,8 +164,8 @@ CREATE TABLE Reviews (
 CREATE TABLE Contains (
     orderid     INTEGER NOT NULL,
     foodid      INTEGER NOT NULL,
-    username    varchar(30) NOT NULL,
-    description varchar(50) NOT NULL,
+    username    VARCHAR(30) NOT NULL,
+    description VARCHAR(50) NOT NULL,
     quantity    INTEGER NOT NULL,
 
     PRIMARY KEY (orderid, foodid),
@@ -176,16 +176,17 @@ CREATE TABLE Contains (
 
 CREATE TABLE Delivers (
 	orderid					INTEGER,
-    username                varchar(30),
+    username                VARCHAR(30), # rider who delivered it
 	rating					INTEGER CHECK ((rating <= 5) AND (rating >= 0)),
-	location 				varchar(50) NOT NULL,
+	location 				VARCHAR(50) NOT NULL,
     deliveryFee             INTEGER NOT NULL,
 	timeDepartToRestaurant	DATE NOT NULL,
-	timeArrivedAtRestaurant	DATE NOT NULL,
-	timeOrderDelivered		DATE NOT NULL,
+	timeArrivedAtRestaurant	DATE,
+	timeOrderDelivered		DATE,
 	paymentmethodid			INTEGER, 			
 
 	PRIMARY KEY (orderid),
+
 	FOREIGN KEY (orderid) REFERENCES Orders,
     FOREIGN KEY (username) REFERENCES DeliveryRiders,
 	FOREIGN KEY (paymentmethodid) REFERENCES PaymentMethods
@@ -193,7 +194,7 @@ CREATE TABLE Delivers (
 
 
 CREATE TABLE RestaurantPromo (
-    description     varchar(50),
+    description     VARCHAR(50),
     restpromoid     INTEGER,
     startTime       DATE,
     endTime         DATE,
@@ -204,20 +205,24 @@ CREATE TABLE RestaurantPromo (
 
 
 CREATE TABLE FullTimeRiders (
-    username              varchar(30),
+    username              VARCHAR(30),
+
     PRIMARY KEY (username),
+
     FOREIGN KEY (username) REFERENCES DeliveryRiders
 );
 
 CREATE TABLE PartTimeRiders (
     username              varchar(30),
+
     PRIMARY KEY (username),
+
     FOREIGN KEY (username) REFERENCES DeliveryRiders
 );
 
 CREATE TABLE MonthlyWorkSchedule (
     mwsid              INTEGER,
-    username             varchar(30),
+    username           VARCHAR(30),
     mnthStartDay       DATE NOT NULL,
     wkStartDay         INTEGER NOT NULL
                        CHECK (wkStartDay in (1, 2, 3, 4, 5, 6, 7)),
@@ -226,6 +231,7 @@ CREATE TABLE MonthlyWorkSchedule (
     completed          BOOLEAN NOT NULL,
 
     PRIMARY KEY (mwsid),
+
     FOREIGN KEY (username) REFERENCES FullTimeRiders
 );
 
@@ -250,7 +256,7 @@ CREATE TABLE FixedWeeklySchedule (
 
 CREATE TABLE WeeklyWorkSchedule (
     wwsid               INTEGER,
-    username              varchar(30),
+    username            VARCHAR(30),
     startDate           DATE,
     wwsHours            INTEGER,
     completed           BOOLEAN NOT NULL,
@@ -276,7 +282,7 @@ CREATE TABLE DailyWorkShift (
 -- FDS Manager purposes
 
 CREATE TABLE CustomerStats (
-    username            varchar(30),
+    username            VARCHAR(30),
     monthid             INTEGER,
     totalNumOrders      INTEGER,
     totalCostOfOrders   INTEGER,
@@ -299,8 +305,8 @@ CREATE TABLE RestaurantStats (
 );
 
 --use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
-CREATE TABLE RidersStats (
-	username 	    varchar(30),
+CREATE TABLE RiderStats (
+	username 	    VARCHAR(30),
 	totalOrders		INTEGER,
 	totalHours		INTEGER,
 	totalSalary		INTEGER,

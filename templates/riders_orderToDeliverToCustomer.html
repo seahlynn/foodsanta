@@ -4,25 +4,29 @@
   after he selects, should he be in a different page? ---> 
 <html lang="en">
     <head>
-        <title>FoodSantaTest-RidersToSeeOrders</title>
+        <title>FoodSantaTest</title>
     </head>
     <body align = 'center'>
+      {% extends 'base.html' %}
+      {% block overall %}
         <div class="container" >
-          <h1> Choose an order to pick up and deliver! </h1>
-          <table style = "width:100%">
-            <tr>
-              <th> Order Number </th>
-              <th> Restaurant Location </th>
-              <th> Customer Location </th>
-            </tr>
-            {% for o in ordersToPickUp %}
-            <tr>
-              <td>{{ o.orderid }}</td>
-              <td>{{ o.restLocation }}</td>
-              <td>{{ o.custLocation }}</td>
-            </tr>
-            {% endfor %}
-          </table>
+          <h1> You have collected the order! </h1>
+          <h1> Please head to this location to deliver it to our customer </h1>
+          <form name="viewCustLocation" action='deliverToCustomer' method='GET'>
+            <table style = "width:100%">
+              {% for c in custLocation %}
+              <tr>
+                <td>{{ c }}</td>
+              </tr>
+              {% endfor %}
+            </table>
+          </form>
         </div>
-      </body>  
+
+        <br>
+        <form method="POST" action="orderDelivered">
+          <button type="submit"> I have delivered it to the customer! Complete this order </button>         
+        </form>
+      {% endblock %}   
+      </body>   
 </html>      
