@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'base.html' %}
+        {% block overall %}
+            <div>
+                <h2> Ongoing Orders </h2>
+                {% for o in orderlist %}
+                <table border="1", style='margin-top: 20px;'> 
+                    <tr>
+                        <td> Restaurant: </td>
+                        <td>{{ o.rest }}</td>
+                    </tr>
+                    <tr>
+                        <td> Time Ordered: </td>
+                        <td>{{ o.timeordered }}</td>
+                    </tr>
+                    <tr>
+                        <td> Order picked by rider: </td>
+                        <td>{{ o.orderpicked }}</td>
+                    </tr>
+                    <tr>
+                        <td> Picked up by rider: </td>
+                        <td>{{ o.pickedup }}</td>
+                    </tr>
+                <!-- add list of items ordered -->
+            
+                    {% endfor %}
+                </table>
+            </div>
+
+            <div>
+                <h2> Order History </h2>
+            </div>
+        {% endblock %}
+    </body>
+</html>
+
+<!--
+  
+-->

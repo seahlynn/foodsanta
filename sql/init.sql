@@ -136,13 +136,14 @@ CREATE TABLE Orders (
 	orderid				INTEGER,
     username			VARCHAR(30),
     custLocation        VARCHAR(100) NOT NULL,
-	orderCreatedTime	DATE, 
+	orderCreatedTime	TIMESTAMP, 
 	totalCost			INTEGER NOT NULL,
 	fdspromoid			INTEGER,
     paymentmethodid     INTEGER NOT NULL,
-    preparedByRest      BOOLEAN NOT NULL DEFAULT False,
+    preparedByRest      BOOLEAN NOT NULL DEFAULT False, -- should this be null / datetime instead
     selectedByRider     BOOLEAN NOT NULL DEFAULT False,
     restid              INTEGER NOT NULL,
+    delivered   		BOOLEAN NOT NULL DEFAULT FALSE,
 
 	PRIMARY KEY (orderid),
 
@@ -181,7 +182,7 @@ CREATE TABLE Delivers (
 	location 				VARCHAR(100) NOT NULL,
     deliveryFee             INTEGER NOT NULL,
 	timeDepartToRestaurant	DATE NOT NULL,
-	timeArrivedAtRestaurant	DATE,
+	timeArrivedAtRestaurant	TIMESTAMP,
 	timeOrderDelivered		DATE,
 	paymentmethodid			INTEGER, 			
 

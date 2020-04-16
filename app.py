@@ -310,9 +310,23 @@ def placeorder():
     orderid = session['orderid']
     username = 'justning'
     location = request.form['location']
+    cardInfo = request.form['payment']
+
+    checkCartquery = f"select count(*) from Contains where orderid = {orderid}"
+    checkCartresult = db.session.execute(checkCartquery).fetchall()
+    checkCart = checkCartresult[0][0]
+
+    if (checkCart == 0):
+        flash("Your cart is empty, there is nothing to order!")
+        return redirect('viewcart')
 
     if location == '':
-        location = NONE
+        flash("Location cannot be blank!")
+        return redirect('viewcart')
+
+    if cardInfo == '':
+        flash("Card cannot be blank!")
+        return redirect('viewcart')
 
     ordercreatedtime = datetime.now().strftime("%d/%m/%Y %H%M") 
     # for totalCost
@@ -321,7 +335,6 @@ def placeorder():
     totalprice = totalresult[0][0]
     
     fdspromoid = 'null'
-    cardInfo = request.form['payment']
     paymentmethodquery = f"select paymentmethodid from PaymentMethods where username = '{username}' and cardInfo = '{cardInfo}'"
     paymentresult = db.session.execute(paymentmethodquery).fetchall()
     paymentmethodid = paymentresult[0][0]
@@ -333,12 +346,23 @@ def placeorder():
     restidresult = db.session.execute(restidquery).fetchall()
     restid = restidresult[0][0]
 
-    todo = f"insert into Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid) values ('{orderid}', '{username}', '{location}', '{ordercreatedtime}', {totalprice}, {fdspromoid}, {paymentmethodid}, {preparedbyrest}, {selectedByRider}, {restid})"
+    todo = f"insert into Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid, delivered) values ('{orderid}', '{username}', '{location}', '{ordercreatedtime}', {totalprice}, {fdspromoid}, {paymentmethodid}, {preparedbyrest}, {selectedByRider}, {restid}, False)"
     
     db.session.execute(todo)
     db.session.commit()
 
-    return render_template('ordered.html')
+    return redirect('orderstatus')
+
+@app.route('/orderstatus', methods=['POST', 'GET'])
+def orderstatus():
+
+    username = 'justning'
+    inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant from Orders O, Delivers D, Restaurants R where D.orderid = O.orderid and O.username = '{username}' and O.delivered = False and R.restid = O.restid"
+    result = db.session.execute(inprogressquery)
+        
+    orderlist = [dict(rest = row[0], timeordered = row[1], orderpicked = row[2], pickedup = row[3]) for row in result.fetchall()]
+    
+    return render_template('orderstatus.html', orderlist = orderlist)
 
 @app.route('/neworder', methods=['POST'])
 def neworder():
