@@ -14,11 +14,11 @@ INSERT INTO Customers(username, points) VALUES
 INSERT INTO CustomerStats("username", monthid, totalNumOrders, totalCostOfOrders) VALUES ('justning', 4, 1, 13.20);
 
 INSERT INTO Locations(username, location, dateAdded) VALUES
-('justning', '21 Lower Kent Ridge Rd, Singapore 119077', '2020-04-04'),
-('justning', '469 Bukit Timah Rd, Singapore 259756', '2020-04-04'),
-('justning', '20 Heng Mui Keng Terrace, Singapore 119618', '2020-04-04'),
-('justning', '12 Kent Ridge Dr, Singapore 119243', '2020-04-04'),
-('justning', '2 College Ave West, Stephen Riady Centre, Singapore 138607', '2020-04-04');
+('justning', '21 Lower Kent Ridge Rd, Singapore 119077', '2020-04-03'),
+('justning', '469 Bukit Timah Rd, Singapore 259756', '2020-04-01'),
+('justning', '20 Heng Mui Keng Terrace, Singapore 119618', '2020-02-07'),
+('justning', '12 Kent Ridge Dr, Singapore 119243', '2020-02-21'),
+('justning', '2 College Ave West, Stephen Riady Centre, Singapore 138607', '2020-01-04');
 
 INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES (1, '4Fingers', 15, '68 Orchard Rd #B1-07, Plaza, Singapore 238839');
 INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES (2, 'Yoogane', 25, '3, #03-08 Gateway Dr, Westgate, Singapore 608532');

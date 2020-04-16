@@ -139,7 +139,7 @@ CREATE TABLE Orders (
 	orderCreatedTime	DATE, 
 	totalCost			INTEGER NOT NULL,
 	fdspromoid			INTEGER,
-    paymentmethodid     INTEGER,
+    paymentmethodid     INTEGER NOT NULL,
     preparedByRest      BOOLEAN NOT NULL DEFAULT False,
     selectedByRider     BOOLEAN NOT NULL DEFAULT False,
     restid              INTEGER NOT NULL,
@@ -344,8 +344,8 @@ begin
         update CustomerStats C2
         set totalNumOrders = totalNumOrders + 1,
             totalCostOfOrders = totalCostOfOrders + NEW.totalCost
-        where C2.username = NEW.username;
-        /* and CustomerStats.monthid = ; // TO CHECK FOR CURRENT MONTH */
+        where C2.username = NEW.username
+        and C2.monthid = (select extract(month from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
 end if;    
 return new;
 end; $$ language plpgsql;        
@@ -364,9 +364,17 @@ begin
         select 1 
         from CustomerStats C
         where C.username = NEW.username))
-    then 
+    then
+        if (not exists (
+            select 1
+            from AllStats
+            where monthid = (select extract(month from current_timestamp)))) 
+        then insert into AllStats values ((select extract(month from current_timestamp)), 0, 0, 0); 
+        end if;
+
         update AllStats
-        set totalNewCust = totalNewCust + 1;
+        set totalNewCust = totalNewCust + 1
+        where monthid = (select extract(month from current_timestamp));
 end if;
 return new;
 end; $$ language plpgsql;
@@ -376,3 +384,55 @@ create trigger addNewCustomerTrigger
     after insert on Orders
     for each row
     execute function addNewCustomer(); 
+
+/* Updates allstats with +1 total num of orders and + total cost*/ 
+create or replace function updateAllStatsFunction()
+returns trigger as $$
+begin
+    /* new stats for the month  */
+    if (not exists (
+            select 1
+            from AllStats
+            where monthid = (select extract(month from current_timestamp)))) 
+            then insert into AllStats values ((select extract(month from current_timestamp)), 0, 1, NEW.totalCost);
+    /* existing customer */
+    else 
+        update AllStats
+        set totalNumOrders = totalNumOrders + 1,
+            totalCostOfOrders = totalCostOfOrders + NEW.totalCost
+        where monthid = (select extract(month from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
+    end if; 
+
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists updateAllStatsTrigger on AllStats;
+create trigger updateAllStatsTrigger
+    before insert on Orders
+    for each row
+    execute function updateAllStatsFunction();
+
+/* update Locations for top 5 locations*/ 
+create or replace function updateLocationFunction()
+returns trigger as $$
+begin
+    /* check if location already inside  */
+    if (not exists (select 1 from Locations where username = NEW.username and location = NEW.custLocation)) then
+        /* still got space to add more locations */
+        if ((select count(*) from Locations where username = NEW.username) < 5) then
+            insert into Locations values (NEW.username, NEW.custLocation, (select current_date));
+        /* existing customer */
+        else
+            update Locations
+            set location = NEW.custLocation, dateAdded = current_date
+            where location = (select location from Locations order by dateAdded limit 1) and username = NEW.username;
+        end if; 
+    end if;   
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists updateLocationTrigger on AllStats;
+create trigger updateLocationTrigger
+    before insert on Orders
+    for each row
+    execute function updateLocationFunction();

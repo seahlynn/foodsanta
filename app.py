@@ -19,7 +19,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = b'random123456789'
 
 db = SQLAlchemy(app)
-#login_manager = LoginManager()
+#login_manager = LoginManager() 
 
 @app.route('/', methods=['GET'])
 def index():
@@ -120,7 +120,7 @@ def is_valid_user(id, pw):
 
 @app.route('/gotorest', methods=['GET'])
 def gotorest():
-    orderidquery = f"select count(*) from Orders"
+    orderidquery = f"select orderid from Orders order by orderid desc limit 1"
     orderidresult = db.session.execute(orderidquery).fetchall()
     orderid = int(orderidresult[0][0]) + 1
     session['orderid'] = orderid
@@ -166,7 +166,7 @@ def editprofile():
         db.session.execute(update_contact)
 
     if cardInfo != '':
-        pmiquery = f"select count(*) from PaymentMethods"
+        pmiquery = f"select paymentmethodid from PaymentMethods order by paymentmethodid desc limit 1"
         pmiresult = db.session.execute(pmiquery).fetchall()
         paymentmethodid = int(pmiresult[0][0]) + 1
         update_card = f"insert into PaymentMethods(paymentmethodid, username, cardInfo) values ({paymentmethodid}, '{username}', '{cardInfo}');"
@@ -310,14 +310,21 @@ def placeorder():
     orderid = session['orderid']
     username = 'justning'
     location = request.form['location']
+
+    if location == '':
+        location = NONE
+
     ordercreatedtime = datetime.now().strftime("%d/%m/%Y %H%M") 
     # for totalCost
-    totalquery = f"select sum(F.price * C.quantity) from Contains C, Food F where C.foodid = F.foodid and orderid = 1"
+    totalquery = f"select sum(F.price * C.quantity) from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid}"
     totalresult = db.session.execute(totalquery).fetchall()
     totalprice = totalresult[0][0]
     
     fdspromoid = 'null'
-    paymentmethodid = 1
+    cardInfo = request.form['payment']
+    paymentmethodquery = f"select paymentmethodid from PaymentMethods where username = '{username}' and cardInfo = '{cardInfo}'"
+    paymentresult = db.session.execute(paymentmethodquery).fetchall()
+    paymentmethodid = paymentresult[0][0]
     preparedbyrest = False
     selectedByRider = False
 
