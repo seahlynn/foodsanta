@@ -190,15 +190,27 @@ Customers order from Restaurants Menu
 def restresults():
     global db
 
+    orderid = session['orderid']
     query = f"select * from Restaurants"
     result = db.session.execute(query)
     restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
     
+
     restid = int(request.args['chosen'])
     query = f"SELECT * FROM Food WHERE restid = {restid} and availability > 0"
     result = db.session.execute(query)
     foodlist = [dict(food= row[1], price = row[2], foodid = row[0]) for row in result.fetchall()]
     
+    
+    checklatest = db.session.execute(f"select count(*) from Latest where orderid = {orderid}").fetchall()[0][0]
+
+    if checklatest != 0:
+        latestRestID = db.session.execute(f"select restid from Latest where orderid = {orderid}").fetchall()[0][0]
+        restaurantName = db.session.execute(f"select restName from Restaurants where restid = {latestRestID}").fetchall()[0][0]
+
+        if restid != latestRestID:
+            flash("You have items in your cart under " + restaurantName + "! Each order can only be from one restaurant!")
+
     query = f"select R.reviewdesc, O.username from Reviews R, Orders O where R.orderid = O.orderid and O.restid = {restid}"
     result = db.session.execute(query)
     reviewlist = [dict(username= row[1], review = row[0]) for row in result.fetchall()]
@@ -288,7 +300,7 @@ def viewcart():
     checkLatest = db.session.execute(f"select count(*) from Latest where orderid = {orderid}").fetchall()[0][0]
 
     if checkLatest == 0:
-        flash("You don't have anything in your cart!")
+        flash("Your cart is empty!")
         return redirect('gotorest')
 
     restidquery = f"select restid from Latest where orderid = {orderid}"

@@ -8,6 +8,15 @@
     <body align = 'center'>
     {% extends 'base.html' %}
       {% block overall %}
+        <div>
+          {% with messages = get_flashed_messages() %}
+            {% if messages %}
+              {% for message in messages %}
+                <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 15px;"><b>{{ message }}</b></h2>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+        </div>
         <div class="container" >
           <form name="chosen" action="restresults" method='GET'>
             <h1 for="restaurant"> Choose a restaurant </h1>
@@ -43,13 +52,6 @@
           
           <div class="choosefood" style="width:50%; display: inline-block;">
             <h2> Add to Cart </h2>
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        {% for message in messages %}
-                            <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 15px;"><b>{{ message }}</b></h2>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
             <form name="restaurant" action="addtocart" method='POST'>
               <select name="foodid" onchange="this.form.submit()">
                 {% for f in foodlist %}

@@ -87,3 +87,6 @@ INSERT INTO Delivers(orderid, username, rating, location, deliveryFee, timeDepar
 (7, 'justning', 3,  '16 #01-220 College Ave West 138527', 5, '04/07/2020 1640', '04/07/2020 1650', '04/07/2020 1715', 1),
 (11, 'justning', 3,  '13 Computing Drive Singapore 117417', 5, '03/02/2020 1805', '03/02/2020 1815', '03/02/2020 1830', 1),
 (13, 'justning', 3,  '16 #01-220 College Ave West 138527', 5, '02/01/2020 1650', '02/01/2020 1715', '02/01/2020 1730', 1);
+
+INSERT INTO FDSPromo(fdspromoid, description, startTime, endTime) VALUES
+(1, "10% off all orders this Circuit Breaker", '18/04/2020', '04/05/2020');

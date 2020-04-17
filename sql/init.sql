@@ -125,9 +125,8 @@ CREATE TABLE Food (
 
 --insertion into from table needs to check if restid is same as all other restid
 CREATE TABLE FDSPromo (
-    description     VARCHAR(50),
     fdspromoid      INTEGER,
-    orderid         INTEGER NOT NULL,
+    description     VARCHAR(50),
     startTime       DATE,
     endTime         DATE,
 
