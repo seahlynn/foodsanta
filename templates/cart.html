@@ -26,10 +26,9 @@
                         {% endfor %}
                         {% endblock %}
                     </table>
-    
-                    {% for t in totalprice %}
-                    <p> total price : {{t.total}} </p>
-                    {% endfor %}
+
+                    <h4> total price : ${{totalprice}} </h4>
+                    <h4 style="color: blue;"> ${{difference}} away from minimum order!</h4>
     
                     <div class="choosefood" style="width:50%; display: inline-block;">
                         <h4> Delete from Cart </h4>
@@ -53,7 +52,7 @@
                 {% with messages = get_flashed_messages() %}
                     {% if messages %}
                         {% for message in messages %}
-                            <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 18px;"><b>{{ message }}</b></h2>
+                            <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 15px;"><b>{{ message }}</b></h2>
                         {% endfor %}
                     {% endif %}
                 {% endwith %}

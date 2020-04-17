@@ -39,7 +39,7 @@ INSERT INTO Food(foodid, description, restid, price, availability, category, tim
 (5, 'unagi sushi', 3, 6, 100, 'Japanese', 0),
 (6, 'chawanmushi', 3, 3, 100, 'Japanese', 0),
 (7, 'chicken katsu', 3, 8, 100, 'Japanese', 0),
-(8, 'cheese fries', 4, 4.5, 100, 'FastFood', 0),
+(8, 'cheese fries', 4, 4.5, 2, 'FastFood', 0),
 (9, 'popcorn chicken', 4.2, 8, 100, 'FastFood', 0),
 (10, 'lime froyo', 4, 2, 100, 'FastFood', 0),
 (11, 'zhong la mala hotpot', 5, 8, 100, 'Chinese', 0),

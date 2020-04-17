@@ -181,10 +181,10 @@ CREATE TABLE Delivers (
 	rating					INTEGER CHECK ((rating <= 5) AND (rating >= 0)),
 	location 				VARCHAR(100) NOT NULL,
     deliveryFee             INTEGER NOT NULL,
-	timeDepartToRestaurant	DATE NOT NULL,
+	timeDepartToRestaurant	TIMESTAMP,
 	timeArrivedAtRestaurant	TIMESTAMP,
 	timeOrderDelivered		TIMESTAMP,
-	paymentmethodid			INTEGER, 			
+	paymentmethodid			INTEGER not null, 			
 
 	PRIMARY KEY (orderid),
 
@@ -437,3 +437,49 @@ create trigger updateLocationTrigger
     before insert on Orders
     for each row
     execute function updateLocationFunction();
+
+/* update availability of food items*/ 
+create or replace function updateAvailFoodFunction()
+returns trigger as $$
+DECLARE 
+containrow RECORD;
+begin
+    for containrow in
+        (select foodid, quantity from Contains C where C.orderid = NEW.orderid)
+    loop
+        update Food
+        set availability = availability - containrow.quantity
+        where foodid = containrow.foodid;
+    end loop;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists updateAvailFoodTrigger on Food;
+create trigger updateAvailFoodTrigger
+    before insert on Orders
+    for each row
+    execute function updateAvailFoodFunction();
+
+/* update points for Customers*/ 
+create or replace function updateAvailFoodFunction()
+returns trigger as $$
+DECLARE 
+containrow RECORD;
+begin
+    for containrow in
+        (select foodid, quantity from Contains C where C.orderid = NEW.orderid)
+    loop
+        update Food
+        set availability = availability - containrow.quantity
+        where foodid = containrow.foodid;
+    end loop;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists updateAvailFoodTrigger on Food;
+create trigger updateAvailFoodTrigger
+    before insert on Orders
+    for each row
+    execute function updateAvailFoodFunction();
+
+

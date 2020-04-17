@@ -25,7 +25,7 @@
           <div class="results" style="width:50%; float: left;">
             {% block content %}
           <h2> Menu </h2>
-              <table border='1' align = 'center'>
+              <table border='1' align = 'center' style="margin-top: 0px;">
                   <tr>
                     <th> Item </th>
                     <th> Price </th>
@@ -38,10 +38,18 @@
                   {% endfor %}
               {% endblock %}
               </table>
+              <h4> Min. order : ${{minAmt}} </h4>
           </div>
- 
+          
           <div class="choosefood" style="width:50%; display: inline-block;">
             <h2> Add to Cart </h2>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 15px;"><b>{{ message }}</b></h2>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
             <form name="restaurant" action="addtocart" method='POST'>
               <select name="foodid" onchange="this.form.submit()">
                 {% for f in foodlist %}
@@ -60,7 +68,7 @@
 
         
         <div class="reviews">
-          <br> <br> <br>
+          <br> <br> <br> <br> <br> <br>
           <h1> Reviews </h1>
 
         {% for p in reviewlist %}
