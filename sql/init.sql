@@ -183,7 +183,7 @@ CREATE TABLE Delivers (
     deliveryFee             INTEGER NOT NULL,
 	timeDepartToRestaurant	DATE NOT NULL,
 	timeArrivedAtRestaurant	TIMESTAMP,
-	timeOrderDelivered		DATE,
+	timeOrderDelivered		TIMESTAMP,
 	paymentmethodid			INTEGER, 			
 
 	PRIMARY KEY (orderid),

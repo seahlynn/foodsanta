@@ -197,10 +197,13 @@ def restresults():
     restid = int(request.args['chosen'])
     query = f"SELECT * FROM Food WHERE restid = {restid}"
     result = db.session.execute(query)
-        
     foodlist = [dict(food= row[1], price = row[2], foodid = row[0]) for row in result.fetchall()]
     
-    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist)
+    query = f"select R.reviewdesc, O.username from Reviews R, Orders O where R.orderid = O.orderid and O.restid = {restid}"
+    result = db.session.execute(query)
+    reviewlist = [dict(username= row[1], review = row[0]) for row in result.fetchall()]
+
+    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, reviewlist = reviewlist)
 
 @app.route('/addtocart', methods=['POST'])
 def addtocart():
@@ -358,11 +361,36 @@ def orderstatus():
 
     username = 'justning'
     inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant from Orders O, Delivers D, Restaurants R where D.orderid = O.orderid and O.username = '{username}' and O.delivered = False and R.restid = O.restid"
-    result = db.session.execute(inprogressquery)
-        
-    orderlist = [dict(rest = row[0], timeordered = row[1], orderpicked = row[2], pickedup = row[3]) for row in result.fetchall()]
+    progressresult = db.session.execute(inprogressquery)
+    orderlist = [dict(rest = row[0], timeordered = row[1], orderpicked = row[2], pickedup = row[3]) for row in progressresult.fetchall()]
+
+    finishedquery = f"select R.restName, O.totalCost, D.timeOrderDelivered, O.orderid from Orders O, Delivers D, Restaurants R where D.orderid = O.orderid and O.username = '{username}' and R.restid = O.restid and O.delivered = True"
+    finishedresult = db.session.execute(finishedquery)
+    finishedlist = [dict(rest = row[0], total = row[1], received = row[2], orderid = row[3]) for row in finishedresult.fetchall()]
     
-    return render_template('orderstatus.html', orderlist = orderlist)
+    return render_template('orderstatus.html', orderlist = orderlist, finishedlist = finishedlist)
+
+@app.route('/submitreview', methods=['POST'])
+def submitreview():
+
+    username = 'justning'
+    review = request.form['review']
+    orderid = int(request.form['orderid'])
+    checkquery = f"select count(*) from Reviews where orderid = {orderid}"
+    checkresult = db.session.execute(checkquery).fetchall()
+    check = checkresult[0][0]
+    
+    if (check != 0):
+        flash("You have already submitted a review for this order!")
+        return redirect('orderstatus')
+
+    if review != '':
+        reviewToPost = f"insert into Reviews values ({orderid}, '{review}')"
+        db.session.execute(reviewToPost)
+        db.session.commit()
+
+    flash('Review submitted!')
+    return redirect('orderstatus')
 
 @app.route('/neworder', methods=['POST'])
 def neworder():

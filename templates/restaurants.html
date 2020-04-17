@@ -20,7 +20,8 @@
           </form>
         </div>
         <br>
-        <div style="display: inline"> 
+
+        <div> 
           <div class="results" style="width:50%; float: left;">
             {% block content %}
           <h2> Menu </h2>
@@ -51,10 +52,26 @@
             </form>
 
             <br>
-            <form method="POST" action="viewcart">
+            <form method="POST" action="viewcart" style="width: auto;">
               <button type="submit"> View Cart </button>         
             </form>
           </div>
+        </div>
+
+        
+        <div class="reviews">
+          <br> <br> <br>
+          <h1> Reviews </h1>
+
+        {% for p in reviewlist %}
+          <table align = 'center'>
+            <tr>
+              <td style="font-weight:bold" >{{ p.username }}: </td>
+              <td> <q> {{ p.review }} </q></td>
+            </tr>
+        </table>
+        {% endfor %}
+
         </div>
         
       {% endblock %}
