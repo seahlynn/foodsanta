@@ -285,9 +285,11 @@ def viewcart():
     orderid = session['orderid']
     username = 'justning'
 
-    '''restidquery = f"select distinct C.restid from Food F, Contains C where C.orderid = {orderid} "
-    restidresult = db.session.execute(restidquery).fetchall()
-    restid = restidresult[0][0]'''
+    checkLatest = db.session.execute(f"select count(*) from Latest where orderid = {orderid}").fetchall()[0][0]
+
+    if checkLatest == 0:
+        flash("You don't have anything in your cart!")
+        return redirect('gotorest')
 
     restidquery = f"select restid from Latest where orderid = {orderid}"
     restidresult = db.session.execute(restidquery).fetchall()
