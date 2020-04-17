@@ -23,6 +23,8 @@ DROP TABLE IF EXISTS WeeklyWorkSchedule CASCADE;
 DROP TABLE IF EXISTS FixedWeeklySchedule CASCADE;
 DROP TABLE IF EXISTS MonthlyWorkSchedule CASCADE;
 DROP TABLE IF EXISTS DailyWorkShift CASCADE;
+DROP TABLE IF EXISTS Latest CASCADE;
+
 
 CREATE TABLE Users (
     username            VARCHAR(30),    
@@ -110,7 +112,7 @@ CREATE TABLE RestaurantStaff (
 CREATE TABLE Food ( 
     foodid          INTEGER,
     description     VARCHAR(50),
-    price           float NOT NULL,
+    price           decimal NOT NULL,
     availability    INTEGER NOT NULL CHECK (availability >= 0),
     category        VARCHAR(20),
     restid          INTEGER NOT NULL,
@@ -137,7 +139,7 @@ CREATE TABLE Orders (
     username			VARCHAR(30),
     custLocation        VARCHAR(100) NOT NULL,
 	orderCreatedTime	TIMESTAMP, 
-	totalCost			INTEGER NOT NULL,
+	totalCost			decimal NOT NULL,
 	fdspromoid			INTEGER,
     paymentmethodid     INTEGER NOT NULL,
     preparedByRest      BOOLEAN NOT NULL DEFAULT False, -- should this be null / datetime instead
@@ -328,6 +330,15 @@ CREATE TABLE AllStats (
     PRIMARY KEY (monthid)
 );
 
+CREATE TABLE Latest (
+	orderid			INTEGER,
+	restid 			INTEGER,
+
+	primary key (orderid),
+	foreign key (restid) references Restaurants
+	
+);
+
 ------------------------- TRIGGER STATEMENTS -------------------------
 
 /* Updates customer's total number of orders and total cost spent on orders or inserts new tuple if it is a new customer */ 
@@ -461,25 +472,41 @@ create trigger updateAvailFoodTrigger
     execute function updateAvailFoodFunction();
 
 /* update points for Customers*/ 
-create or replace function updateAvailFoodFunction()
+create or replace function updatePointsFunction()
 returns trigger as $$
-DECLARE 
-containrow RECORD;
 begin
-    for containrow in
-        (select foodid, quantity from Contains C where C.orderid = NEW.orderid)
-    loop
-        update Food
-        set availability = availability - containrow.quantity
-        where foodid = containrow.foodid;
-    end loop;
+    update Customers
+    set points = points + cast(NEW.totalCost as int)
+    where username = NEW.username;
 return new;
 end; $$ language plpgsql;        
 
-drop trigger if exists updateAvailFoodTrigger on Food;
-create trigger updateAvailFoodTrigger
-    before insert on Orders
+drop trigger if exists updatePointsTrigger on Customers;
+create trigger updatePointsTrigger
+    after insert on Orders
     for each row
-    execute function updateAvailFoodFunction();
+    execute function updatePointsFunction();
+
+/* add default cash on delivery payment method for customer*/ 
+create or replace function addCashMethodFunction()
+returns trigger as $$
+DECLARE
+paymentmethodid INTEGER;
+begin
+    if ((select count(*) from PaymentMethods) = 0) then 
+        paymentmethodid = 1;
+    else
+        paymentmethodid = cast((select P.paymentmethodid from PaymentMethods P order by paymentmethodid desc limit 1) as int) + 1;
+    end if;
+
+    insert into PaymentMethods values (paymentmethodid, NEW.username, 'cash on delivery');
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists addCashMethodTrigger on Customers;
+create trigger addCashMethodTrigger
+    after insert on Customers
+    for each row
+    execute function addCashMethodFunction();
 
 

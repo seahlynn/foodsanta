@@ -75,10 +75,10 @@ INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost,
 INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid, delivered) VALUES (14, 'Kalsyc', '3 Science Drive 2 Singapore 117543', '04/07/2020 1945', 23.80, NULL, 1, False, False, 1, False);
 
 INSERT INTO PaymentMethods(paymentmethodid, username, cardInfo) VALUES
-(1, 'justning', 'dbs card'),
-(2, 'justning', 'ocbc card'),
-(3, 'justning', 'uob card'),
-(4, 'justning', 'stanchart card');
+(5, 'justning', 'dbs card'),
+(6, 'justning', 'ocbc card'),
+(7, 'justning', 'uob card'),
+(8, 'justning', 'stanchart card');
 
 INSERT INTO DeliveryRiders(username) VALUES ('justning');
 

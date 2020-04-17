@@ -139,7 +139,7 @@ def gotoprofile():
     profileresult = db.session.execute(profilequery)
     profile = [dict(name = row[0], number = row[1]) for row in profileresult.fetchall()]
     
-    cardquery = f"select cardInfo from PaymentMethods where username='{username}'"
+    cardquery = f"select cardInfo from PaymentMethods where username='{username}' and cardInfo <> 'cash on delivery'"
     cardresult = db.session.execute(cardquery)
     cardlist = [dict(card = row[0]) for row in cardresult.fetchall()]
     
@@ -245,18 +245,38 @@ def addtocart():
     db.session.execute(todo)
     db.session.commit()
 
+    restidquery = f"(select restid from Food where foodid = {foodid})"
+    restidresult = db.session.execute(restidquery).fetchall()
+    restid = restidresult[0][0]
+
+    checklatestquery = f"select count(*) from Latest where orderid = {orderid}"
+    checklatestresult = db.session.execute(checklatestquery).fetchall()
+    checklatest = checklatestresult[0][0]
+
+    if checklatest != 0:
+        updateLatest = f"update Latest set restid = {restid} where orderid = {orderid}"
+    else:
+        updateLatest = f"insert into Latest (orderid, restid) values ({orderid}, {restid})"
+
+    '''updateLatest = f"insert into Latest (orderid, restid) values({orderid}, {restid}) on conflict (orderid) do update set restid = excluded.restid"'''
+    db.session.execute(updateLatest)
+    db.session.commit()
+
     #ensures the page stays on the specific restaurant menu
-    restid = f"(select restid from Food where foodid = {foodid})"
     query = f"select * from Food where restid = {restid}"
     result = db.session.execute(query)
-        
     foodlist = [dict(food = row[1], price = row[2], foodid = row[0]) for row in result.fetchall()]
     
+    query = f"select * from Restaurants"
+    result = db.session.execute(query)
+    restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
+
+    #display min amt for restaurant
     query = f"select minAmt from Restaurants where restid = {restid}"
     result = db.session.execute(query).fetchall()
     minAmt = result[0][0]
 
-    return render_template('restaurants.html', foodlist = foodlist, minAmt = minAmt)
+    return render_template('restaurants.html', restlist = restlist, minAmt = minAmt, foodlist = foodlist)
 
 @app.route('/viewcart', methods=['POST', 'GET'])
 def viewcart():
@@ -265,16 +285,20 @@ def viewcart():
     orderid = session['orderid']
     username = 'justning'
 
-    restidquery = f"select distinct F.restid from Food F, Contains C where C.orderid = {orderid} and F.foodid = C.foodid"
+    '''restidquery = f"select distinct C.restid from Food F, Contains C where C.orderid = {orderid} "
+    restidresult = db.session.execute(restidquery).fetchall()
+    restid = restidresult[0][0]'''
+
+    restidquery = f"select restid from Latest where orderid = {orderid}"
     restidresult = db.session.execute(restidquery).fetchall()
     restid = restidresult[0][0]
     
     #for cart 
-    orderquery = f"select C.description, F.price, C.quantity, F.foodid from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid}"
+    orderquery = f"select C.description, F.price, C.quantity, F.foodid from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid} and restid = {restid}"
     orderresult = db.session.execute(orderquery)
     orderlist = [dict(food = row[0], price = row[1], quantity = row[2], foodid = row[3]) for row in orderresult.fetchall()]
 
-    totalquery = f"select sum(F.price * C.quantity) from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid}"
+    totalquery = f"select sum(F.price * C.quantity) from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid} and restid = {restid}"
     totalresult = db.session.execute(totalquery).fetchall()
     totalprice = totalresult[0][0]
 
@@ -329,16 +353,24 @@ def deletefromcart():
 def backto():
 
     orderid = session['orderid']
-    #ensures the page stays on the specific restaurant menu
 
-    randomfoodid = f"(select foodid from Contains where username = 'justning' and orderid = {orderid} limit 1)"
-    restid = f"(select restid from Food where foodid = {randomfoodid})"
+    #ensures the page displays the specific restaurant menu
+    restid = f"(select restid from Latest where orderid = {orderid})"
     query = f"SELECT * FROM Food WHERE restid = {restid}"
     result = db.session.execute(query)
-        
     foodlist = [dict(food = row[1], price = row[2], foodid = row[0]) for row in result.fetchall()]
     
-    return render_template('restaurants.html', foodlist = foodlist)
+    #for the restaurants dropdown
+    query = f"select * from Restaurants"
+    result = db.session.execute(query)
+    restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
+
+    #display min amt for restaurant
+    query = f"select minAmt from Restaurants where restid = {restid}"
+    result = db.session.execute(query).fetchall()
+    minAmt = result[0][0]
+
+    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, minAmt = minAmt)
 
 @app.route('/placeorder', methods=['POST'])
 def placeorder():
@@ -365,9 +397,13 @@ def placeorder():
         flash("Card cannot be blank!")
         return redirect('viewcart')
 
+    restidquery = f"(select restid from Latest where orderid = {orderid})"
+    restidresult = db.session.execute(restidquery).fetchall()
+    restid = restidresult[0][0]
+
     ordercreatedtime = datetime.now().strftime("%d/%m/%Y %H%M") 
     # for totalCost
-    totalquery = f"select sum(F.price * C.quantity) from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid}"
+    totalquery = f"select sum(F.price * C.quantity) from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid} and restid = {restid}"
     totalresult = db.session.execute(totalquery).fetchall()
     totalprice = totalresult[0][0]
 
@@ -378,16 +414,12 @@ def placeorder():
     preparedbyrest = False
     selectedByRider = False
 
-    randomfoodid = f"(select foodid from Contains where username = '{username}' and orderid = {orderid} limit 1)"
-    restidquery = f"(select restid from Food where foodid = {randomfoodid})"
-    restidresult = db.session.execute(restidquery).fetchall()
-    restid = restidresult[0][0]
 
     #to check if it hits restuarant's minimum order amount
     query = f"select minAmt from Restaurants where restid = {restid}"
     result = db.session.execute(query).fetchall()
     minAmt = result[0][0]
-    difference = '{0:.2f}'.format(float(minAmt) -float(totalprice))
+    difference = '{0:.2f}'.format(float(minAmt) - float(totalprice))
     
     if (totalprice < minAmt):
         flash("You are $" + difference + " away from the minimum order amount!")
