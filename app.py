@@ -133,7 +133,7 @@ def gotorest():
 
 @app.route('/gotoprofile', methods=['GET'])
 def gotoprofile():
-    username = 'justning'
+    username = session['username']
 
     profilequery = f"select name, phoneNumber from Users where username = '{username}'"
     profileresult = db.session.execute(profilequery)
@@ -155,7 +155,7 @@ def gotodelivery():
 
 @app.route('/editprofile', methods=['POST'])
 def editprofile():
-    username = 'justning'
+    username = session['username']
 
     contact = request.form['contact']
     cardInfo = request.form['card']
@@ -186,7 +186,7 @@ Customers order from Restaurants Menu
 
 '''
 
-@app.route('/restresults', methods=['GET'])
+@app.route('/restresults', methods=['GET', 'POST'])
 def restresults():
     global db
 
@@ -231,7 +231,7 @@ def addtocart():
     result = db.session.execute(query).fetchall()
 
     #note how to retrieve orderid and username??
-    username = 'justning'
+    username = session['username']
     orderid = session['orderid']
     description = result[0][1]
     check = f"select count(*) from Contains where foodid = {foodid} and orderid = {orderid}"
@@ -290,12 +290,17 @@ def addtocart():
 
     return render_template('restaurants.html', restlist = restlist, minAmt = minAmt, foodlist = foodlist)
 
+'''
+
+Customers view / delete from their cart + checkout
+
+'''
 @app.route('/viewcart', methods=['POST', 'GET'])
 def viewcart():
     global db
 
     orderid = session['orderid']
-    username = 'justning'
+    username = session['username']
 
     checkLatest = db.session.execute(f"select count(*) from Latest where orderid = {orderid}").fetchall()[0][0]
 
@@ -326,9 +331,9 @@ def viewcart():
         difference = 0
 
     #for customer details
-    custquery = f"select U.name, U.phoneNumber, L.location from Users U, Locations L where U.username = '{username}' and L.username = '{username}' limit 1"
+    custquery = f"select U.name, U.phoneNumber from Users U where U.username = '{username}' limit 1"
     custresult = db.session.execute(custquery)
-    custdetails = [dict(name = row[0], number = row[1], location = row[2]) for row in custresult.fetchall()]
+    custdetails = [dict(name = row[0], number = row[1]) for row in custresult.fetchall()]
     
     #locationlist
     locationquery = f"select location from Locations where username = '{username}'"
@@ -347,7 +352,7 @@ def deletefromcart():
     global db
 
     orderid = session['orderid']
-    username = 'justning'
+    username = session['username']
     foodid = int(request.form['foodid'])
     quantityquery = f"select quantity from Contains where foodid = {foodid} and orderid = {orderid}"
     result = db.session.execute(quantityquery).fetchall()
@@ -390,7 +395,7 @@ def backto():
 def placeorder():
 
     orderid = session['orderid']
-    username = 'justning'
+    username = session['username']
     location = request.form['location']
     cardInfo = request.form['payment']
 
@@ -441,7 +446,7 @@ def placeorder():
 
     todo = f"insert into Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid, delivered) values ('{orderid}', '{username}', '{location}', '{ordercreatedtime}', {totalprice}, {fdspromoid}, {paymentmethodid}, {preparedbyrest}, {selectedByRider}, {restid}, False)"
     deliveryFee = 5
-    addDelivery = f"insert into Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered, paymentmethodid) values ({orderid}, '{username}', null, '{location}', {deliveryFee}, null, null, null, {paymentmethodid})"
+    addDelivery = f"insert into Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered, paymentmethodid) values ('{orderid}', null, null, '{location}', '{deliveryFee}', null, null, null, {paymentmethodid})"
 
     db.session.execute(todo)
     db.session.execute(addDelivery)
@@ -449,10 +454,15 @@ def placeorder():
 
     return redirect('orderstatus')
 
+'''
+
+Customers view their ongoing orders and order history
+
+'''
 @app.route('/orderstatus', methods=['POST', 'GET'])
 def orderstatus():
 
-    username = 'justning'
+    username = session['username']
     inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant from Orders O, Delivers D, Restaurants R where D.orderid = O.orderid and O.username = '{username}' and O.delivered = False and R.restid = O.restid"
     progressresult = db.session.execute(inprogressquery)
     orderlist = [dict(rest = row[0], timeordered = row[1], orderpicked = row[2], pickedup = row[3]) for row in progressresult.fetchall()]
@@ -466,7 +476,7 @@ def orderstatus():
 @app.route('/submitreview', methods=['POST'])
 def submitreview():
 
-    username = 'justning'
+    username = session['username']
     review = request.form['review']
     orderid = int(request.form['orderid'])
     checkquery = f"select count(*) from Reviews where orderid = {orderid}"
@@ -527,6 +537,7 @@ def processOrderSelectedForDelivery():
     db.session.commit()
 
     # add into delivery table
+    '''username = session['username']'''
     username = 'justning'
     chosenOrderQuery = f"select custLocation from Orders where preparedByRest = False and selectedByRider = True and orderid = {deliveringOrderId}"
     chosenOrderResult = db.session.execute(chosenOrderQuery).fetchall()
@@ -535,8 +546,9 @@ def processOrderSelectedForDelivery():
     currentTime = datetime.now().strftime("%d/%m/%Y %H%M")
     deliveryFee = 3 # to be edited later
     # maybe can change to update Delivers instead of insert into
-    addDelivery = f"insert into Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered, paymentmethodid) values ({deliveringOrderId}, '{username}', null, '{custLocation}', 3, '{currentTime}', null, null, null)"
-    db.session.execute(addDelivery)
+    updateDelivery = f"update Delivers set username = '{username}' where orderid = {deliveringOrderId}"
+    
+    db.session.execute(updateDelivery)
     db.session.commit()
 
     return redirect('collectFromRestaurant')
@@ -546,7 +558,7 @@ def collectFromRestaurant():
     global db
 
     deliveringOrderId = session['deliveringOrderId']
-    username = 'justning'
+    username = session['username']
 
     # retrieve restaurant address to display
     restLocationQuery = f'select location from Restaurants where restid in (select distinct restid from Orders where Orders.orderid = {deliveringOrderId})'
@@ -560,7 +572,7 @@ def collectedFromRestaurant():
     global db
 
     deliveringOrderId = session['deliveringOrderId']
-    username = 'justning'
+    username = session['username']
     currentTime = datetime.now().strftime("%d/%m/%Y %H%M")
     
     # handle functionality of button
@@ -577,7 +589,7 @@ def deliverToCustomer():
     global db
 
     deliveringOrderId = session['deliveringOrderId']
-    username = 'justning'
+    username = session['username']
 
     custLocationQuery = f'select custLocation from Orders where Orders.orderid = {deliveringOrderId}'
     custLocationResult = db.session.execute(custLocationQuery).fetchall()
@@ -590,6 +602,7 @@ def orderDelivered():
     global db
 
     deliveringOrderId = session['deliveringOrderId']
+    '''username = session['username']'''
     username = 'justning'
     currentTime = datetime.today().strftime("%d/%m/%Y %H%M")
 

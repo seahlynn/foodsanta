@@ -373,7 +373,7 @@ returns trigger as $$
 begin
     if (not exists(
         select 1 
-        from CustomerStats C
+        from Customers C
         where C.username = NEW.username))
     then
         if (not exists (
@@ -392,7 +392,7 @@ end; $$ language plpgsql;
 
 drop trigger if exists addNewCustomerTrigger ON AllStats;
 create trigger addNewCustomerTrigger
-    after insert on Orders
+    after insert on Customers
     for each row
     execute function addNewCustomer(); 
 
