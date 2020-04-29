@@ -26,7 +26,7 @@ def index():
     print("Root page accessed")
     if settings.test:
 
-        return redirect('gotoprofile')
+        return redirect('login')
         #return render_template('test.html') 
         
     return render_template('index.html')
@@ -45,7 +45,7 @@ def login():
         if is_valid:
             print("Login verified")
             session['username'] = username
-            return redirect('rest_home')
+            return redirect('gotoprofile')
         else:
             print("Login denied")
             flash("No such user. :(")
