@@ -49,6 +49,30 @@
                           </select>
                         </form>
                     </div>
+
+                    <br><br><br>
+                    <form method="POST" action="showpromohistory">
+                        <input type="submit" value="See Past Promotions">
+                    </form>
+                    <h2> Promo History </h2>
+                    <table align="center" border=1>
+                        <tr>
+                            <th> PromoID </th>
+                            <th> Description </th>
+                            <th> Start Date </th>
+                            <th> End Date </th>
+                          </tr>
+      
+                          {% for p in pastpromolist %}
+                          <tr>
+                            <td> {{ p.id }} </td>
+                            <td> {{ p.description }} </td>
+                            <td> {{ p.start }} </td>
+                            <td> {{ p.end }} </td>
+                          </tr>
+                          {% endfor %}
+                    </table>
+
                 </div>
                 
                 <div style="width:50%; display: inline-block;"> 

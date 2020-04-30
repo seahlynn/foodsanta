@@ -246,6 +246,21 @@ def deletepromo():
     db.session.commit()
     return redirect('gotopromos')
 
+@app.route('/showpromohistory', methods=['POST'])
+def showpromohistory():
+    global db
+
+    promoquery = f"select * from FDSPromo where endTime > (select current_date)"
+    promoresult = db.session.execute(promoquery).fetchall()
+    pastpromoquery = f"select * from FDSPromo where endTime < (select current_date)"
+    pastpromoresult = db.session.execute(pastpromoquery).fetchall()
+
+    promolist = [dict(id = row[0], description = row[1], start = row[3], end = row[4]) for row in promoresult]
+    pastpromolist = [dict(id = row[0], description = row[1], start = row[3], end = row[4]) for row in pastpromoresult]
+
+    return render_template('promo.html', promolist = promolist, pastpromolist = pastpromolist)
+
+
 @app.route('/addpromo', methods=['POST'])
 def addpromo():
     global db
