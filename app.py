@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, session, flash, redirect
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import MetaData
 #from flask_login import LoginManager
-from datetime import datetime
+from datetime import datetime, date
 
 app = Flask(__name__) #Initialize FoodSanta
 
@@ -26,7 +26,8 @@ def index():
     print("Root page accessed")
     if settings.test:
 
-        return redirect('login')
+        #return redirect('login')
+        return redirect('gotomanagerprofile')
         #return render_template('test.html') 
         
     return render_template('index.html')
@@ -45,7 +46,7 @@ def login():
         if is_valid:
             print("Login verified")
             session['username'] = username
-            return redirect('gotoprofile')
+            return redirect('gotocusprofile')
         else:
             print("Login denied")
             flash("No such user. :(")
@@ -117,7 +118,167 @@ def is_valid_user(id, pw):
     check_user_result = db.session.execute(check_user_query).fetchone()
     return check_user_result[0]
 
+'''
+Manager related 
+'''
+@app.route('/gotomanagerprofile', methods=['GET'])
+def gotomanagerprofile():
+    username = session['username']
 
+    profilequery = f"select name, phoneNumber from Users where username = '{username}'"
+    profileresult = db.session.execute(profilequery)
+    profile = [dict(name = row[0], number = row[1]) for row in profileresult.fetchall()]
+    
+    
+    return render_template('managerprofile.html', profile = profile)
+
+@app.route('/editmanagerprofile', methods=['POST'])
+def editmanagerprofile():
+    username = session['username']
+
+    contact = request.form['contact']
+    
+    if contact != '':
+        update_contact = f"update Users set phoneNumber = {contact} where username = '{username}'"
+        db.session.execute(update_contact)
+
+    db.session.commit()
+
+    return redirect('gotomanagerprofile')
+
+@app.route('/gotopromos', methods=['GET'])
+def gotopromos():
+    promoquery = f"select * from FDSPromo where endTime > (select current_date)"
+    promoresult = db.session.execute(promoquery).fetchall()
+
+    promolist = [dict(id = row[0], description = row[1], start = row[3], end = row[4]) for row in promoresult]
+    return render_template('promo.html', promolist = promolist)
+
+@app.route('/gotostats', methods=['GET'])
+def gotostats():
+    monthlistresult = db.session.execute(f"select distinct monthid from Allstats order by monthid")
+    monthlist = [dict(month = row[0]) for row in monthlistresult.fetchall()]
+        
+    return render_template('stats.html', monthlist = monthlist)
+
+
+@app.route('/viewallstats', methods=['GET', 'POST'])
+def viewallstats():
+    '''to have the month dropdown'''
+    monthlistresult = db.session.execute(f"select distinct monthid from Allstats order by monthid")
+    monthlist = [dict(month = row[0]) for row in monthlistresult.fetchall()]
+    
+    statsquery = f"select * from AllStats order by monthid"
+    statsresult = db.session.execute(statsquery)
+    statslist = [dict(month = row[0], customers = row[1], orders = row[2], cost = row[3]) for row in statsresult.fetchall()]
+
+    return render_template('stats.html', monthlist = monthlist, overallstatslist = statslist)
+
+@app.route('/viewspecificstats', methods=['GET', 'POST'])
+def viewspecificstats():
+    monthlistresult = db.session.execute(f"select distinct monthid from Allstats order by monthid")
+    monthlist = [dict(month = row[0]) for row in monthlistresult.fetchall()]
+    
+    monthid = int(request.form['month'])
+    statsquery = f"select * from AllStats where monthid = {monthid}"
+    statsresult = db.session.execute(statsquery)
+    statslist = [dict(month = row[0], customers = row[1], orders = row[2], cost = row[3]) for row in statsresult.fetchall()]
+
+    return render_template('stats.html', monthlist = monthlist, overallstatslist = statslist)
+
+@app.route('/viewallcusstats', methods=['GET', 'POST'])
+def viewallcusstats():
+    '''to have the month dropdown'''
+    monthlistresult = db.session.execute(f"select distinct monthid from Allstats order by monthid")
+    monthlist = [dict(month = row[0]) for row in monthlistresult.fetchall()]
+    
+    statsquery = f"select * from CustomerStats order by monthid"
+    statsresult = db.session.execute(statsquery)
+    statslist = [dict(month = row[1], username = row[0], orders = row[2], cost = row[3]) for row in statsresult.fetchall()]
+
+    return render_template('stats.html', monthlist = monthlist, cusstatslist = statslist)
+
+@app.route('/viewspecificcusstats', methods=['GET', 'POST'])
+def viewspecificcusstats():
+    monthlistresult = db.session.execute(f"select distinct monthid from Allstats order by monthid")
+    monthlist = [dict(month = row[0]) for row in monthlistresult.fetchall()]
+    
+    monthid = int(request.form['month'])
+    statsquery = f"select * from CustomerStats where monthid = {monthid}"
+    statsresult = db.session.execute(statsquery)
+    statslist = [dict(month = row[1], username = row[0], orders = row[2], cost = row[3]) for row in statsresult.fetchall()]
+
+    return render_template('stats.html', monthlist = monthlist, cusstatslist = statslist)
+
+@app.route('/viewallriderstats', methods=['GET', 'POST'])
+def viewallriderstats():
+    '''to have the month dropdown'''
+    monthlistresult = db.session.execute(f"select distinct monthid from Allstats order by monthid")
+    monthlist = [dict(month = row[0]) for row in monthlistresult.fetchall()]
+    
+    statsquery = f"select * from RiderStats order by month"
+    statsresult = db.session.execute(statsquery)
+    statslist = [dict(month = row[0], username = row[2], orders = row[3], hours = row[4], salary = row[5]) for row in statsresult.fetchall()]
+
+    return render_template('stats.html', monthlist = monthlist, riderstatslist = statslist)
+
+@app.route('/viewspecificriderstats', methods=['GET', 'POST'])
+def viewspecificriderstats():
+    '''to have the month dropdown'''
+    monthlistresult = db.session.execute(f"select distinct monthid from Allstats order by monthid")
+    monthlist = [dict(month = row[0]) for row in monthlistresult.fetchall()]
+    
+    monthid = int(request.form['month'])
+    statsquery = f"select * from RiderStats where month = {monthid}"
+    statsresult = db.session.execute(statsquery)
+    statslist = [dict(month = row[0], username = row[2], orders = row[3], hours = row[4], salary = row[5]) for row in statsresult.fetchall()]
+
+    return render_template('stats.html', monthlist = monthlist, riderstatslist = statslist)
+
+@app.route('/deletepromo', methods=['POST'])
+def deletepromo():
+    global db
+
+    fdspromoid = int(request.form['fdspromoid'])
+    todo = f"delete from FDSPromo where fdspromoid = {fdspromoid}"
+
+    db.session.execute(todo)
+    db.session.commit()
+    return redirect('gotopromos')
+
+@app.route('/addpromo', methods=['POST'])
+def addpromo():
+    global db
+
+    promotype = request.form['promotype']
+    description = request.form['description']
+    discount = int(request.form['discount'])
+    minamnt = int(request.form['minamnt'])
+    appliedto = request.form['appliedto']
+    validfrom = datetime.strptime(request.form['validfrom'], '%Y-%m-%d')
+    validtill = datetime.strptime(request.form['validtill'], '%Y-%m-%d')
+    cost = int(request.form['cost'])
+    
+    fdspromoidquery = f"select fdspromoid from FDSPromo order by fdspromoid desc limit 1"
+    fdspromoidresult = db.session.execute(fdspromoidquery).fetchall()
+    fdspromoid = fdspromoidresult[0][0] + 1
+
+    if promotype == 'PercentOff':
+        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'percentoff', {validfrom}, {validtill}, {cost})"
+        addtospecificpromo = f"insert into PercentOff values ({fdspromoid}, {discount}, {minamnt}, '{appliedto}')"
+    else:
+        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'amountoff', {validfrom}, {validtill}, {cost})"
+        addtospecificpromo = f"insert into AmountOff values ({fdspromoid}, {discount}, {minamnt}, '{appliedto}')"
+
+    db.session.execute(addtofdspromo)
+    db.session.execute(addtospecificpromo)
+    db.session.commit()
+    return redirect('gotopromos')
+
+
+'''
+Customer related
+'''
 @app.route('/gotorest', methods=['GET'])
 def gotorest():
     orderidquery = f"select orderid from Orders order by orderid desc limit 1"
@@ -131,8 +292,8 @@ def gotorest():
     restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
     return render_template('restaurants.html', restlist = restlist)
 
-@app.route('/gotoprofile', methods=['GET'])
-def gotoprofile():
+@app.route('/gotocusprofile', methods=['GET'])
+def gotocusprofile():
     username = session['username']
 
     profilequery = f"select name, phoneNumber from Users where username = '{username}'"
@@ -178,7 +339,7 @@ def editprofile():
     
     db.session.commit()
 
-    return redirect('gotoprofile')
+    return redirect('gotocusprofile')
 
 '''
 
@@ -230,7 +391,6 @@ def addtocart():
     query = f"select * from Food where foodid = {foodid}"
     result = db.session.execute(query).fetchall()
 
-    #note how to retrieve orderid and username??
     username = session['username']
     orderid = session['orderid']
     description = result[0][1]

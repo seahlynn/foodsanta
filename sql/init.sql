@@ -127,10 +127,35 @@ CREATE TABLE Food (
 CREATE TABLE FDSPromo (
     fdspromoid      INTEGER,
     description     VARCHAR(50),
-    startTime       DATE,
-    endTime         DATE,
+    type 			VARCHAR(50),
+    CONSTRAINT chck_type CHECK (type IN ('percentoff', 'amountoff')),
+    startTime       TIMESTAMP,
+    endTime         TIMESTAMP,
+    points 			INTEGER default 0,
 
     PRIMARY KEY (fdspromoid)
+);
+
+CREATE TABLE PercentOff (
+	fdspromoid		INTEGER,
+	percent 		INTEGER CHECK (percent > 0 AND percent <100),
+	minAmnt			INTEGER DEFAULT 0,
+	appliedto		VARCHAR,
+	CONSTRAINT chck_appliedto CHECK (appliedto IN ('total', 'delivery')),
+
+	FOREIGN KEY (fdspromoid) REFERENCES FDSPromo ON DELETE CASCADE ON UPDATE CASCADE,
+	PRIMARY KEY (fdspromoid)
+);
+
+CREATE TABLE AmountOff (
+	fdspromoid		INTEGER,
+	amount 			INTEGER CHECK (amount > 0),
+	minAmnt			INTEGER DEFAULT 0,
+	appliedto		VARCHAR,
+	CONSTRAINT chck_appliedto CHECK (appliedto IN ('total', 'delivery')),
+
+	FOREIGN KEY (fdspromoid) REFERENCES FDSPromo ON DELETE CASCADE ON UPDATE CASCADE,
+	PRIMARY KEY (fdspromoid)
 );
 
 CREATE TABLE Orders (
@@ -308,12 +333,13 @@ CREATE TABLE RestaurantStats (
 
 --use trigger to update the attributes every time the rider delivers an order, or updates his work schedule
 CREATE TABLE RiderStats (
+	month           INTEGER,
+    year            INTEGER,
 	username 	    VARCHAR(30),
 	totalOrders		INTEGER,
 	totalHours		INTEGER,
 	totalSalary		INTEGER,
-    month           INTEGER,
-    year            INTEGER,
+    
 
     PRIMARY KEY (username, month, year),
 
@@ -348,8 +374,9 @@ begin
     if (not exists(
         select 1
         from CustomerStats C1
-        where C1.username = NEW.username)) then
-        insert into CustomerStats values(NEW.username, NEW.totalCost);
+        where C1.username = NEW.username
+        and C1.monthid = (select extract(month from current_timestamp)))) then
+        insert into CustomerStats values(NEW.username, (select extract(month from current_timestamp)), 1, NEW.totalCost);
     /* existing customer */
     else 
         update CustomerStats C2

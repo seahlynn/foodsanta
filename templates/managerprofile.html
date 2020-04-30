@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'managerbase.html' %}
+      {% block overall %}
+        <div style="display: inline"> 
+          <div class="results" style="width:50%; float: left;">
+            {% block content %}
+          <h2> Profile </h2>
+              <table align = 'center'>
+                  {% for p in profile %}
+                  <tr>
+                    <td> <h4> Name: </h4></td>
+                    <td>{{ p.name }}</td>
+                  </tr>
+                  <tr>
+                    <td><h4> Contact Number: </h4></td>
+                    <td>{{ p.number }}</td>
+                  </tr>
+                  {% endfor %}
+              {% endblock %}
+              </table>
+          </div>
+ 
+          <div class="editprofile" style="width:50%; display: inline-block;">
+            <h2> Edit Profile </h2>
+            <form method="POST" action="editmanagerprofile" autocomplete="off">
+                <table  align = 'center'>
+                    <tr>
+                        <td> Contact: </td>
+                        <td> <input type="text" name="contact" placeholder="Update Contact Number"> </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"> <input type="Submit" value="Update"> </td>
+                    </tr>
+                </table>  
+            </form>
+
+            <datalist id="cards">
+                {% for c in cardlist %}
+                  <option value="{{c.card}}">
+                {% endfor %}
+            </datalist>
+          </div>
+        </div>
+        
+      {% endblock %}
+    </body>
+</html>
+
+<!--
+  
+-->
