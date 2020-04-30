@@ -129,8 +129,8 @@ CREATE TABLE FDSPromo (
     description     VARCHAR(50),
     type 			VARCHAR(50),
     CONSTRAINT chck_type CHECK (type IN ('percentoff', 'amountoff')),
-    startTime       TIMESTAMP,
-    endTime         TIMESTAMP,
+    startTime       DATE,
+    endTime         DATE,
     points 			INTEGER default 0,
 
     PRIMARY KEY (fdspromoid)

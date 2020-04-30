@@ -255,8 +255,8 @@ def addpromo():
     discount = int(request.form['discount'])
     minamnt = int(request.form['minamnt'])
     appliedto = request.form['appliedto']
-    validfrom = datetime.strptime(request.form['validfrom'], '%Y-%m-%d')
-    validtill = datetime.strptime(request.form['validtill'], '%Y-%m-%d')
+    validfrom = request.form['validfrom']
+    validtill = request.form['validtill']
     cost = int(request.form['cost'])
     
     fdspromoidquery = f"select fdspromoid from FDSPromo order by fdspromoid desc limit 1"
@@ -264,10 +264,10 @@ def addpromo():
     fdspromoid = fdspromoidresult[0][0] + 1
 
     if promotype == 'PercentOff':
-        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'percentoff', {validfrom}, {validtill}, {cost})"
+        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'percentoff', '{validfrom}', '{validtill}', {cost})"
         addtospecificpromo = f"insert into PercentOff values ({fdspromoid}, {discount}, {minamnt}, '{appliedto}')"
     else:
-        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'amountoff', {validfrom}, {validtill}, {cost})"
+        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'amountoff', '{validfrom}', '{validtill}', {cost})"
         addtospecificpromo = f"insert into AmountOff values ({fdspromoid}, {discount}, {minamnt}, '{appliedto}')"
 
     db.session.execute(addtofdspromo)
