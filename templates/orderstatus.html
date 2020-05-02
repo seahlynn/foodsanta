@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+        <style> 
+            /* if the browser window is at least 800px-s wide: */
+            @media screen and (min-width: 800px) {
+                #historytable {
+                    width: 90%;}
+            }
+
+            /* if the browser window is at least 1000px-s wide: */
+            @media screen and (min-width: 1000px) {
+                #historytable {
+                    width: 80%;}
+            }
+        </style>
+    </head>
+    <body align = 'center'>
+    {% extends 'base.html' %}
+        {% block overall %}
+            <div>
+                <h2> Ongoing Orders </h2>
+                {% for o in orderlist %}
+                <table border="1", style='margin-top: 20px;' align='center'> 
+                    <tr>
+                        <td> Restaurant: </td>
+                        <td>{{ o.rest }}</td>
+                    </tr>
+                    <tr>
+                        <td> Time Ordered: </td>
+                        <td>{{ o.timeordered }}</td>
+                    </tr>
+                    <tr>
+                        <td> Order picked by rider: </td>
+                        <td>{{ o.orderpicked }}</td>
+                    </tr>
+                    <tr>
+                        <td> Picked up by rider: </td>
+                        <td>{{ o.pickedup }}</td>
+                    </tr>
+                <!-- add list of items ordered -->
+            
+                    {% endfor %}
+                </table>
+            </div>
+
+            <div>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 18px;"><b>{{ message }}</b></h2>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <h2> Order History </h2>
+                
+                    <table id="historytable" border="1", style='margin-top: 20px;' align='center'> 
+                        <tr>
+                            <th> Order number </th>
+                            <th> Restaurant </th>
+                            <th> Total Cost of Order </th>
+                            <th> Time Order Received </th>
+                            <th colspan = '2'> Review </th>
+                        </tr>
+                        {% for p in finishedlist %}
+                        <form method="POST" action="submitreview">
+                            <tr>
+                              <td> <select name="orderid"> <option value="{{p.orderid}}" SELECTED> {{p.orderid}} </option>  </select> </td>
+                              <td> {{ p.rest }}</td>
+                              <td>{{ p.total }}</td>
+                              <td>{{ p.received }}</td>
+                              <td> <textarea wrap="soft" type="text" name="review" placeholder = "Give the restaurant a review!" style="width: 200px;"></textarea> </td>
+                              <td> <input type="Submit" value="Submit Review"> </td>
+                            </tr>
+                        </form>
+                        {% endfor %}
+                    </table>
+                
+            </div>
+        {% endblock %}
+    </body>
+</html>
+
+<!--
+  
+-->

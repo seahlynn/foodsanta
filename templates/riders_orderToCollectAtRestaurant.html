@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<!--- this page shows him all possible orders that he can select from in this format 
+  things to be shown to rider after he has selected: orderid, restLocation, custLocation
+  after he selects, should he be in a different page? ---> 
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+      {% extends 'base.html' %}
+      {% block overall %}
+        <div class="container" >
+          <h1> You have selected an order! </h1>
+          <h1> Please head to this location to pick it up </h1>
+          <h2> {{ restLocation }} </h2>
+        </div>
+
+        <br>
+        <form method="POST" action="collectedFromRestaurant">
+          <button type="submit"> I have collected this order! </button>         
+        </form>
+      {% endblock %}  
+      </body>  
+</html>      

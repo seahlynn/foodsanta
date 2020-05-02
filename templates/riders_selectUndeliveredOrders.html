@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+      {% extends 'base.html' %}
+      {% block overall %}
+        <div class="container" >
+          <form name="availableOrders" action="getUndeliveredOrders" method='GET'>
+            <h1> Choose an order to pick up and deliver! </h1>
+            <table style = "width:100%">
+              <tr>
+                <th> Order Number </th>
+                <th> Restaurant Location </th>
+                <th> Customer Location </th>
+              </tr>
+              {% for o in ordersToPickUp %}
+              <tr>
+                <td>{{ o.orderid }}</td>
+                <td>{{ o.restLocation }}</td>
+                <td>{{ o.custLocation }}</td>
+              </tr>
+              {% endfor %}
+            </table>
+          </form>
+
+          <br>
+          <form name="chosenOrder" action="getUndeliveredOrders" method='GET'>
+            <select name="chosenOrder" onchange="this.form.submit()">
+              {% for o in ordersToPickUp %}
+                <option value="{{o.orderid}}" SELECTED> {{o.orderid}} </option>
+              {% endfor %}
+              <option value="" disabled selected> Select your order </option>
+            </select>
+          </form>
+        </div>
+
+        <br>
+        <div style="display: inline"> 
+          <div class="results" style="width:100%">
+            {% block content %}
+              <h2> You have selected this order: </h2>
+              <table style = "width:100%">
+                <tr>
+                <th> Order Number </th>
+                <th> Restaurant Location </th>
+                <th> Customer Location </th>
+                </tr>
+                {% for c in chosenOrderInfo %}
+                <tr>
+                  <td>{{ c.orderid }}</td>
+                  <td>{{ c.restLocation }}</td>
+                  <td>{{ c.custLocation }}</td>
+                </tr>
+                {% endfor %}
+              {% endblock %}  
+              </table>
+          </div>
+          
+          <br>
+          <form method="POST" action="processOrderSelectedForDelivery">
+            <button type="submit"> Select this order </button>         
+          </form>
+
+        </div>
+      {% endblock %}        
+      </body>  
+</html>      

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+        {% extends 'managerbase.html' %}
+            {% block overall %}
+            <div>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 18px;"><b>{{ message }}</b></h2>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+            <div>
+                <div style="float: left; width: 33%;">
+                    <h2> FoodSanta Stats </h2>
+                    <table align="center" >
+                        <tr>
+                            <td> 
+                                <form action="viewallstats" method="POST"> 
+                                    <input type="submit" value="view all">
+                                </form> 
+                            </td>
+
+                            <td> 
+                                <form action="viewspecificstats" method="POST"> 
+                                    <select name="month" onchange="this.form.submit()">
+                                        {% for f in monthlist %}
+                                          <option value="{{f.month}}" SELECTED> {{f.month}} </option>
+                                        {% endfor %}
+                                        <option value="" disabled selected> Choose a month </option>
+                                    </select>
+                                </form> 
+                            </td>
+                        </tr>
+                    </table>
+                    <br>
+                    <table align="center" border=1>
+                        <tr>
+                            <th> Month </th>
+                            <th> New Customers </th>
+                            <th> Number of Orders </th>
+                            <th> Cost of All Orders </th>
+                          </tr>
+      
+                          {% for p in overallstatslist %}
+                          <tr>
+                            <td> {{ p.month }} </td>
+                            <td>{{ p.customers }}</td>
+                            <td>{{ p.orders }}</td>
+                            <td>{{ p.cost }}</td>
+                          </tr>
+                          {% endfor %}
+                    </table>
+                </div>
+                <div style="float: left; width: 33%;">
+                    <h2> Customer Stats </h2>
+                    <table align="center" >
+                        <tr>
+                            <td> 
+                                <form action="viewallcusstats" method="POST"> 
+                                    <input type="submit" value="view all">
+                                </form> 
+                            </td>
+
+                            <td> 
+                                <form action="viewspecificcusstats" method="POST"> 
+                                    <select name="month" onchange="this.form.submit()">
+                                        {% for f in monthlist %}
+                                          <option value="{{f.month}}" SELECTED> {{f.month}} </option>
+                                        {% endfor %}
+                                        <option value="" disabled selected> Choose a month </option>
+                                    </select>
+                                </form> 
+                            </td>
+                        </tr>
+                    </table>
+                    <br>
+                    <table align="center" border=1>
+                        <tr>
+                            <th> Month </th>
+                            <th> Username </th>
+                            <th> Number of Orders </th>
+                            <th> Cost of Orders </th>
+                          </tr>
+      
+                          {% for p in cusstatslist %}
+                          <tr>
+                            <td> {{ p.month }} </td>
+                            <td>{{ p.username }}</td>
+                            <td>{{ p.orders }}</td>
+                            <td>{{ p.cost }}</td>
+                          </tr>
+                          {% endfor %}
+                    </table>
+                </div>
+
+                <div style="float: left; width: 33%;">
+                    <h2> Riders Stats </h2>
+                    <table align="center" >
+                        <tr>
+                            <td> 
+                                <form action="viewallriderstats" method="POST"> 
+                                    <input type="submit" value="view all">
+                                </form> 
+                            </td>
+
+                            <td> 
+                                <form action="viewspecificriderstats" method="POST"> 
+                                    <select name="month" onchange="this.form.submit()">
+                                        {% for f in monthlist %}
+                                          <option value="{{f.month}}" SELECTED> {{f.month}} </option>
+                                        {% endfor %}
+                                        <option value="" disabled selected> Choose a month </option>
+                                    </select>
+                                </form> 
+                            </td>
+                        </tr>
+                    </table>
+                    <br>
+                    <table align="center" border=1>
+                        <tr>
+                            <th> Month </th>
+                            <th> Username </th>
+                            <th> Number of Orders </th>
+                            <th> Number of Hours worked </th>
+                            <th> Monthly Salary </th>
+                          </tr>
+      
+                          {% for p in riderstatslist %}
+                          <tr>
+                            <td> {{ p.month }} </td>
+                            <td>{{ p.username }}</td>
+                            <td>{{ p.orders }}</td>
+                            <td>{{ p.hours }}</td>
+                            <td>{{ p.salary }}</td>
+                          </tr>
+                          {% endfor %}
+                    </table>
+                    <br>
+                </div>
+            </div>
+                
+
+            {% endblock %}
+        </body>
+</html>
+

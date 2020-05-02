@@ -26,10 +26,9 @@
                         {% endfor %}
                         {% endblock %}
                     </table>
-    
-                    {% for t in totalprice %}
-                    <p> total price : {{t.total}} </p>
-                    {% endfor %}
+
+                    <h4> total price : ${{totalprice}} </h4>
+                    <h4 style="color: blue;"> ${{difference}} away from minimum order!</h4>
     
                     <div class="choosefood" style="width:50%; display: inline-block;">
                         <h4> Delete from Cart </h4>
@@ -50,6 +49,13 @@
             </div>
 
             <div style="width:50%; display:inline-block;">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 15px;"><b>{{ message }}</b></h2>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
                 {% block details %}
                 <h2> Details </h2>
                 <form method="POST" action="placeorder" autocomplete="off">
@@ -64,12 +70,20 @@
                             <td> {{p.number}} </td>
                         </tr>
                         <tr>
+                            <td> Total: </td>
+                            <td> work in progress </td>
+                        </tr>
+                        <tr>
+                            <td> Promo Code: </td>
+                            <td> work in progress </td>
+                        </tr>
+                        <tr>
                             <td> Location: </td>
                             <td> <input name="location" list="locations"> </td>
                         </tr>
                         <tr>
                             <td> Payment Method: </td>
-                            <td> <input name="location" list="payments"> </td>
+                            <td> <input name="payment" list="payments"> </td>
                         </tr>
                         <tr style="padding: 10px"> 
                             <td> </td>

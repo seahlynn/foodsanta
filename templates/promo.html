@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+        {% extends 'managerbase.html' %}
+            {% block overall %}
+            <div>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 18px;"><b>{{ message }}</b></h2>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <div>
+                <div style="float: left; width: 50%;">
+                    <h2> Existing Promos </h2>
+                    <table align="center" border=1>
+                        <tr>
+                            <th> PromoID </th>
+                            <th> Description </th>
+                            <th> Start Date </th>
+                            <th> End Date </th>
+                          </tr>
+      
+                          {% for p in promolist %}
+                          <tr>
+                            <td> {{ p.id }} </td>
+                            <td> {{ p.description }} </td>
+                            <td> {{ p.start }} </td>
+                            <td> {{ p.end }} </td>
+                          </tr>
+                          {% endfor %}
+                    </table>
+                    
+                    <div style="width:50%; display: inline-block;">
+                        <h4> Delete Promo </h4>
+                        <form name="promo" action="deletepromo" method='POST'>
+                          <select name="fdspromoid" onchange="this.form.submit()">
+                            {% for f in promolist %}
+                              <option value="{{f.id}}" SELECTED> {{f.id}} </option>
+                            {% endfor %}
+                            <option value="" disabled selected> Delete a promotion </option>
+                          </select>
+                        </form>
+                    </div>
+
+                    <br><br><br>
+                    <form method="POST" action="showpromohistory">
+                        <input type="submit" value="See Past Promotions">
+                    </form>
+                    <h2> Promo History </h2>
+                    <table align="center" border=1>
+                        <tr>
+                            <th> PromoID </th>
+                            <th> Description </th>
+                            <th> Start Date </th>
+                            <th> End Date </th>
+                          </tr>
+      
+                          {% for p in pastpromolist %}
+                          <tr>
+                            <td> {{ p.id }} </td>
+                            <td> {{ p.description }} </td>
+                            <td> {{ p.start }} </td>
+                            <td> {{ p.end }} </td>
+                          </tr>
+                          {% endfor %}
+                    </table>
+
+                </div>
+                
+                <div style="width:50%; display: inline-block;"> 
+                    <div>
+                        <h2> Add Promos </h2>
+                        <form method="POST" action="addpromo">
+                            <select name="promotype">
+                                <option value="PercentOff"> Percent Off </option>
+                                <option value="AmountOff"> Amount Off </option>
+                                <option value="" disabled selected> Select </option>
+                            </select>
+                            
+                            <table  align = 'center'>
+                                <tr>
+                                    <td> Description </td>
+                                    <td> <input name="description" size="35"> </td>
+                                </tr>
+                                <tr>
+                                    <td rowspan="2"> Percent / Amount Off </td>
+                                    <td> <input name="discount" size="35" placeholder="Please enter a number between 0 to 100"> </td>
+                                </tr>
+                                <tr>
+                                    <td style="font-size: 10pt;"> Enter '5' for 5% off or $5 off </td>
+                                </tr>
+                                <tr>
+                                    <td> Minimum Amount </td>
+                                    <td> <input name="minamnt" size="35" placeholder="Min. order amount for promo to apply"> </td>
+                                </tr>
+                                <tr>
+                                    <td> Applied To </td>
+                                    <td>  
+                                        <select name="appliedto">
+                                            <option value="total"> Apply discount to total order </option>
+                                            <option value="delivery"> Apply discount to delivery charge </option>
+                                            <option value="" disabled selected> Select </option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td> Valid From </td>
+                                    <td> <input name="validfrom" size="35" type="date" value="2020-04-30"> </td>
+                                </tr>
+                                <tr>
+                                    <td> Valid Till </td>
+                                    <td> <input name="validtill" size="35" type="date" value="2020-04-30"> </td>
+                                </tr>
+                                <tr>
+                                    <td> Cost </td>
+                                    <td> <input name="cost" size="35" placeholder="Number of points to redeem promo"> </td>
+                                </tr>
+                                <tr style="padding: 10px"> 
+                                    <td> </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2"> <input type="Submit" value="Add Promo"> </td>
+                                </tr>
+                                
+                            </table>  
+                        </form>
+    
+                        <datalist id="type">
+                            <option value="total">
+                            <option value="delivery">
+                        </datalist>
+                        <datalist id="promotype">
+                            <option value="PercentOff">
+                            <option value="AmountOff">
+                        </datalist>
+    
+                    </div>
+                </div>
+                
+
+            </div>
+        
+            {% endblock %}
+        </body>
+</html>
+
