@@ -10,7 +10,14 @@
         <div style="display: inline"> 
           <div class="results" style="width:50%; float: left;">
             {% block content %}
-          <h2> New Full-Time Schedule for {{ monthYear }} was successfully submitted</h2>
+          <h2> Full Time Schedule for {{ monthYear }}</h2>
+              <table border='1' align = 'center'>
+                {% for s in schedule %}
+                <tr>
+                  <th>{{ s.day }}</th>
+                  <td>{{ s.shift }}</td>
+                </tr>
+                {% endfor %}
             </table>
             <br></br>
             <form action="/getFullTimeSchedule" name="getfulltimeschedule">

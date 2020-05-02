@@ -20,9 +20,15 @@
                 {% endfor %}
             </table>
             <br></br>
-            <form action="/setFullTimeSchedule" name="setfulltimeschedule">
-              <input type="submit" value="Submit next month's schedule"/>
-            </form>
+            {% if noNextSchedule %}
+              <form action="/setFullTimeSchedule" name="setfulltimeschedule">
+                <input type="submit" value="Submit next month's schedule"/>
+              </form>
+            {% else %}
+              <form action="/getNextFullTimeSchedule" name="getnextfulltimeschedule">
+                <input type="submit" value="View next month's schedule"/>
+              </form>
+            {% endif %}
           </div>
         </div>
       {% endblock %}
