@@ -3,8 +3,8 @@ import os
 from flask import Flask, render_template, request, session, flash, redirect
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import MetaData
-from flask_login import LoginManager
-from datetime import datetime
+#from flask_login import LoginManager
+from datetime import datetime, timedelta
 
 app = Flask(__name__) #Initialize FoodSanta
 
@@ -19,7 +19,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = b'random123456789'
 
 db = SQLAlchemy(app)
-login_manager = LoginManager()
+#login_manager = LoginManager()
 
 @app.route('/', methods=['GET'])
 def index():
@@ -33,8 +33,9 @@ def index():
         # select a certain order to form the next page 
         #return render_template('riders_getUndeliveredOrders.html', ordersToPickUp=ordersToPickUp)
 
-        return redirect('gotoprofile')
+        #return redirect('gotoprofile')
         #return render_template('test.html') 
+        return getFullTimeSchedule()
         
     return render_template('index.html')
 
@@ -106,7 +107,7 @@ def registration_success():
 def register_user(username, name, password, user_type):
     global db
     date = datetime.today().strftime("%d/%m/%Y")
-    insert_users = f"insert into Users(username, name, password, dateCreated) values ('{username}','{name}','{password}', '{date}');"
+    insert_users = f"insert into Users(username, name, password, dateCreated) values ('{username}';'{name}';'{password}'; '{date}');"
     insert_type = f"insert into {user_type}(username) values ('{username}');"
     db.session.execute(insert_users)
     db.session.execute(insert_type)
@@ -168,7 +169,7 @@ def editprofile():
         pmiquery = f"select count(*) from PaymentMethods"
         pmiresult = db.session.execute(pmiquery).fetchall()
         paymentmethodid = int(pmiresult[0][0]) + 1
-        update_card = f"insert into PaymentMethods(paymentmethodid, username, cardInfo) values ({paymentmethodid}, '{username}', '{cardInfo}');"
+        update_card = f"insert into PaymentMethods(paymentmethodid, username, cardInfo) values ({paymentmethodid}, '{username}'; '{cardInfo}');"
         db.session.execute(update_card)
 
     if deleteCard != '':
@@ -212,12 +213,12 @@ def addtocart():
     check = f"select count(*) from Contains where foodid = {foodid} and orderid = {orderid}"
     checkresult = db.session.execute(check).fetchall()
     
-    todo = f"insert into Contains (orderid, foodid, username, description, quantity) values ({orderid}, {foodid}, '{username}', '{description}', 1)"
+    todo = f"insert into Contains (orderid, foodid, username, description, quantity) values ({orderid}, {foodid}, '{username}'; '{description}'; 1)"
 
     if checkresult[0][0]:
         todo = f"update Contains set quantity = quantity + 1 where foodid = {foodid} and orderid = {orderid}"
     else:
-        todo = f"insert into Contains (orderid, foodid, username, description, quantity) values ('{orderid}', {foodid}, '{username}', '{description}', 1)"
+        todo = f"insert into Contains (orderid, foodid, username, description, quantity) values ('{orderid}'; {foodid}, '{username}'; '{description}'; 1)"
     
     db.session.execute(todo)
     db.session.commit()
@@ -320,7 +321,7 @@ def placeorder():
     restidresult = db.session.execute(restidquery).fetchall()
     restid = restidresult[0][0]
 
-    todo = f"insert into Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, collectedByRider, restid) values ('{orderid}', '{username}', '{location}', '{ordercreatedtime}', {totalprice}, {fdspromoid}, {paymentmethodid}, {preparedbyrest}, {collectedbyrider}, {restid})"
+    todo = f"insert into Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, collectedByRider, restid) values ('{orderid}'; '{username}'; '{location}'; '{ordercreatedtime}'; {totalprice}, {fdspromoid}, {paymentmethodid}, {preparedbyrest}, {collectedbyrider}, {restid})"
     
     db.session.execute(todo)
     db.session.commit()
@@ -344,6 +345,69 @@ def getUndeliveredOrders():
     # select a certain order to form the next page 
     return render_template('riders_getUndeliveredOrders.html', ordersToPickUp=ordersToPickUp)
 
+@app.route('/getFullTimeSchedule', methods=['GET'])
+def getFullTimeSchedule():
+    username = 'Bakkwa'
+    today = datetime.today()
+    datem = datetime(today.year, today.month, 1).date()
+    monthYear = datem.strftime('%B') + ' ' + str(today.year)
+    print(datem)
+
+    schedulequery = f"create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select M.wkStartDay, F.day1 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 1) % 7, F.day2 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 2) % 7, F.day3 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 3) % 7, F.day4 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 4) % 7, F.day5 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as day, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shift from dayShift;"
+    scheduleresult = db.session.execute(schedulequery)
+    schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
+    
+    return render_template('fulltimeschedule.html', schedule = schedule, monthYear = monthYear)
+
+@app.route('/getPartTimeSchedule', methods=['GET'])
+def getPartTimeSchedule():
+    username = "Bakkwa"
+    today = datetime.today()
+    monday = today - timedelta(days = today.weekday())
+    datem = monday.date()
+    print(datem)
+
+    schedulequery = f"create table dayShift (day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (day, shift, duration) select D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as day, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shift from dayShift"
+    scheduleresult = db.session.execute(schedulequery)
+    schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
+    
+    return render_template('parttimeschedule.html', schedule = schedule)
+
+@app.route('/setFullTimeSchedule', methods=['GET'])
+def setFullTimeSchedule():
+    username = "Bakkwa"
+    today = datetime.today()
+    datem = datetime(today.year, today.month + 1 % 12, 1).date()
+    monthYear = datem.strftime('%B') + ' ' + str(today.year)
+
+    return render_template('setfulltimeschedule.html', monthYear = monthYear)
+
+@app.route('/setFullTimeScheduleResult', methods=['GET', 'POST'])
+def setFullTimeScheduleResult():
+    username = "Bakkwa"
+    today = datetime.today()
+    datem = datetime(today.year, today.month + 1 % 12, 1).date()
+    monthYear = datem.strftime('%B') + ' ' + str(today.year)
+
+    if request.method == 'POST':
+        form = request.form
+        startDay = form.get('startDay')
+        day1 = form.get('day1')
+        day2 = form.get('day2')
+        day3 = form.get('day3')
+        day4 = form.get('day4')
+        day5 = form.get('day5')
+        newMwsidQuery = f"select max(mwsid) from MonthlyWorkSchedule"
+        newFwsidQuery = f"select max(fwsid) from FixedWeeklySchedule"
+        newMwsid = db.session.execute(newMwsidQuery).fetchall()[0][0] + 1
+        newFwsid = db.session.execute(newFwsidQuery).fetchall()[0][0] + 1
+        print(newMwsid)
+        print(newFwsid)
+
+    return render_template('setfulltimescheduleresult.html', monthYear = monthYear)
+
+    return render_template('setfulltimescheduleresult.html', monthYear = monthYear)
+
 
 #Check if server can be run, must be placed at the back of this file
 if __name__ == '__main__':
@@ -363,7 +427,7 @@ def test_submit():
     result = db.session.execute(query).fetchall()
     if result[0][0]:
         return render_template('test.html') #Name has already been added
-    data = f"insert into TestingSetup (memberName, ricePurityScore) values ('{name}', {score})"
+    data = f"insert into TestingSetup (memberName, ricePurityScore) values ('{name}'; {score})"
     db.session.execute(data)
     db.session.commit()
     return render_template('testsuccess.html')

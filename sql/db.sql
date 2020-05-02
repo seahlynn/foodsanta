@@ -11,6 +11,24 @@ INSERT INTO Customers(username, points) VALUES
 ('Bakkwa', 0),
 ('justning', 0);
 
+INSERT INTO DeliveryRiders(username) VALUES
+('Kalsyc'),
+('LynnJah'),
+('Bakkwa'),
+('justning');
+
+INSERT INTO FullTimeRiders(username) VALUES
+('Kalsyc'),
+('LynnJah'),
+('Bakkwa'),
+('justning');
+
+INSERT INTO PartTimeRiders(username) VALUES
+('Kalsyc'),
+('LynnJah'),
+('Bakkwa'),
+('justning');
+
 INSERT INTO Locations(username, location, dateAdded) VALUES
 ('justning', '21 Lower Kent Ridge Rd, Singapore 119077', '2020-04-04'),
 ('justning', '469 Bukit Timah Rd, Singapore 259756', '2020-04-04'),
@@ -77,3 +95,17 @@ INSERT INTO PaymentMethods(paymentmethodid, username, cardInfo) VALUES
 (2, 'justning', 'ocbc card'),
 (3, 'justning', 'uob card'),
 (4, 'justning', 'stanchart card');
+
+INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed) VALUES
+(1, 'Bakkwa', '2020-05-01', 1, false);
+
+INSERT INTO FixedWeeklySchedule(fwsid, mwsid, day1, day2, day3, day4, day5) VALUES
+(1, 1, 0, 1, 2, 3, 0);
+
+INSERT INTO WeeklyWorkSchedule(wwsid, username, startDate, wwsHours, completed) VALUES
+(1, 'Bakkwa', '2020-04-27', 12, false);
+
+INSERT INTO DailyWorkShift(dwsid, wwsid, day, startHour, duration) VALUES
+(1, 1, 0, 10, 4),
+(2, 1, 0, 18, 4),
+(3, 1, 1, 10, 4);
