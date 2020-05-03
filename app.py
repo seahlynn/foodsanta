@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, session, flash, redirect
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import MetaData
 #from flask_login import LoginManager
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 app = Flask(__name__) #Initialize FoodSanta
 
@@ -28,7 +28,7 @@ def index():
 
         #return redirect('login')
         return redirect('login')
-        #return render_template('test.html') 
+
         
     return render_template('index.html')
 
@@ -818,6 +818,83 @@ def orderDelivered():
     numOrders = numOrdersResult[0][0]
 
     return render_template('riders_deliveryCompleted.html', numOrders = numOrders)    
+
+
+    
+@app.route('/getFullTimeSchedule', methods=['GET'])
+def getFullTimeSchedule():
+    username = 'bakwah'
+    today = datetime.today()
+    datem = datetime(today.year, today.month, 1).date()
+    monthYear = datem.strftime('%B') + ' ' + str(today.year)
+    schedulequery = f"create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select M.wkStartDay, F.day1 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 1) % 7, F.day2 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 2) % 7, F.day3 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 3) % 7, F.day4 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 4) % 7, F.day5 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as day, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shift from dayShift;"
+    scheduleresult = db.session.execute(schedulequery)
+    nextMonth = datetime(today.year, today.month + 1 % 12, 1).date()
+    nextScheduleQuery = f"select count(*) from MonthlyWorkSchedule where mnthStartDay = '{nextMonth}'"
+    nextScheduleResult = db.session.execute(nextScheduleQuery).fetchall()[0][0]
+    noNextSchedule = nextScheduleResult == 0
+    print(noNextSchedule)
+    schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
+    
+    return render_template('fulltimeschedule.html', schedule = schedule, monthYear = monthYear, noNextSchedule = noNextSchedule)
+    
+@app.route('/getNextFullTimeSchedule', methods=['GET'])
+def getNextFullTimeSchedule():
+    username = 'bakwah'
+    today = datetime.today()
+    datem = datetime(today.year, today.month + 1 % 12, 1).date()
+    monthYear = datem.strftime('%B') + ' ' + str(today.year)
+    scheduleQuery = f"create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select M.wkStartDay, F.day1 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 1) % 7, F.day2 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 2) % 7, F.day3 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 3) % 7, F.day4 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 4) % 7, F.day5 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as day, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shift from dayShift;"
+    scheduleResult = db.session.execute(scheduleQuery)
+    schedule = [dict(day = row[0], shift = row[1]) for row in scheduleResult.fetchall()]
+    
+    return render_template('nextfulltimeschedule.html', schedule = schedule, monthYear = monthYear)
+
+@app.route('/setFullTimeSchedule', methods=['GET'])
+def setFullTimeSchedule():
+    username = "bakwah"
+    today = datetime.today()
+    datem = datetime(today.year, today.month + 1 % 12, 1).date()
+    monthYear = datem.strftime('%B') + ' ' + str(today.year)
+
+    return render_template('setfulltimeschedule.html', monthYear = monthYear)
+
+@app.route('/setFullTimeScheduleResult', methods=['GET', 'POST'])
+def setFullTimeScheduleResult():
+    username = "bakwah"
+    today = datetime.today()
+    datem = datetime(today.year, today.month + 1 % 12, 1).date()
+    monthYear = datem.strftime('%B') + ' ' + str(today.year)
+    
+    if request.method == 'POST':
+        form = request.form
+        startDay = form.get('startDay')
+        day1 = form.get('day1')
+        day2 = form.get('day2')
+        day3 = form.get('day3')
+        day4 = form.get('day4')
+        day5 = form.get('day5')
+        newMwsidQuery = f"select max(mwsid) from MonthlyWorkSchedule"
+        newFwsidQuery = f"select max(fwsid) from FixedWeeklySchedule"
+        newMwsid = db.session.execute(newMwsidQuery).fetchall()[0][0] + 1
+        newFwsid = db.session.execute(newFwsidQuery).fetchall()[0][0] + 1
+        newScheduleQuery = f"begin; insert into MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed) values ('{newMwsid}', '{username}', '{datem}', '{startDay}', false); insert into FixedWeeklySchedule(fwsid, mwsid, day1, day2, day3, day4, day5) values ('{newFwsid}', '{newMwsid}', '{day1}', '{day2}', '{day3}', '{day4}', '{day5}'); commit;"
+        newScheduleResult = db.session.execute(newScheduleQuery)
+
+    return render_template('setfulltimescheduleresult.html', monthYear = monthYear)
+
+@app.route('/getPartTimeSchedule', methods=['GET'])
+def getPartTimeSchedule():
+    username = "bakwah"
+    today = datetime.today()
+    monday = today - timedelta(days = today.weekday())
+    datem = monday.date()
+    print(datem)
+    schedulequery = f"create table dayShift (day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (day, shift, duration) select D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as day, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shift from dayShift"
+    scheduleresult = db.session.execute(schedulequery)
+    schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
+    
+    return render_template('parttimeschedule.html', schedule = schedule)
 
 @app.route('/newDelivery', methods=['POST'])
 def newDelivery():

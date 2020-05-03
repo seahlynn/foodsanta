@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'base.html' %}
+      {% block overall %}
+        <div style="display: inline"> 
+          <div class="results" style="width:50%; float: left;">
+            {% block content %}
+          <h2> New Full Time Schedule for {{ monthYear }}</h2>
+              <form action="/setFullTimeScheduleResult", name="fulltimeschedule-form", method="post">
+                <label for="startDay">Starting Day</label>
+                <select id="startDay" name="startDay">
+                  <option value="0">Monday</option>
+                  <option value="1">Tuesday</option>
+                  <option value="2">Wednesday</option>
+                  <option value="3">Thurday</option>
+                  <option value="4">Friday</option>
+                  <option value="5">Saturday</option>
+                  <option value="6">Sunday</option>
+                </select>
+                <br></br>
+                <label for="day1">Day 1 Shift:</label>
+                <select id="day1" name="day1">
+                  <option value="0">Shift 1</option>
+                  <option value="1">Shift 2</option>
+                  <option value="2">Shift 3</option>
+                  <option value="3">Shift 4</option>
+                </select>
+                <br></br>
+                <label for="day2">Day 2 Shift:</label>
+                <select id="day2" name="day2">
+                  <option value="0">Shift 1</option>
+                  <option value="1">Shift 2</option>
+                  <option value="2">Shift 3</option>
+                  <option value="3">Shift 4</option>
+                </select>
+                <br></br>
+                <label for="day3">Day 3 Shift:</label>
+                <select id="day3" name="day3">
+                  <option value="0">Shift 1</option>
+                  <option value="1">Shift 2</option>
+                  <option value="2">Shift 3</option>
+                  <option value="3">Shift 4</option>
+                </select>
+                <br></br>
+                <label for="day4">Day 4 Shift:</label>
+                <select id="day4" name="day4">
+                  <option value="0">Shift 1</option>
+                  <option value="1">Shift 2</option>
+                  <option value="2">Shift 3</option>
+                  <option value="3">Shift 4</option>
+                </select>
+                <br></br>
+                <label for="day5">Day 5 Shift:</label>
+                <select id="day5" name="day5">
+                  <option value="0">Shift 1</option>
+                  <option value="1">Shift 2</option>
+                  <option value="2">Shift 3</option>
+                  <option value="3">Shift 4</option>
+                </select>
+                <br></br>
+                <input type="submit">
+              </form>
+            <form action="/getFullTimeSchedule" name="getfulltimeschedule">
+              <input type="submit" value="Back"/>
+            </form>
+          </div>
+        </div>
+      {% endblock %}
+    </body>
+    {% endblock %}
+</html>
+
+<!--
+  
+-->

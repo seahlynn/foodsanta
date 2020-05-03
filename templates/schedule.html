@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'base.html' %}
+      {% block overall %}
+        <div style="display: inline"> 
+          <div class="results" style="width:50%; float: left;">
+            {% block content %}
+          <h2> Full Time Schedule </h2>
+              <table border='1' align = 'center'>
+                {% for s in schedule %}
+                <tr>
+                  <th>{{ s.day }}</th>
+                  <td>{{ s.shift }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+          </div>
+        </div>
+      {% endblock %}
+    </body>
+    {% endblock %}
+</html>
+
+<!--
+  
+-->

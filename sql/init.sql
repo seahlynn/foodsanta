@@ -252,9 +252,7 @@ CREATE TABLE MonthlyWorkSchedule (
     username           VARCHAR(30),
     mnthStartDay       DATE NOT NULL,
     wkStartDay         INTEGER NOT NULL
-                       CHECK (wkStartDay in (1, 2, 3, 4, 5, 6, 7)),
-    mwsHours           INTEGER NOT NULL
-                       CHECK (mwsHours = 40),
+                       CHECK (wkStartDay in (0, 1, 2, 3, 4, 5, 6)),
     completed          BOOLEAN NOT NULL,
 
     PRIMARY KEY (mwsid),
@@ -266,15 +264,15 @@ CREATE TABLE FixedWeeklySchedule (
     fwsid               INTEGER,
     mwsid               INTEGER,
     day1                INTEGER NOT NULL
-                        CHECK (day1 in (1, 2, 3, 4)),
+                        CHECK (day1 in (0, 1, 2, 3)),
     day2                INTEGER NOT NULL
-                        CHECK (day2 in (1, 2, 3, 4)),
+                        CHECK (day2 in (0, 1, 2, 3)),
     day3                INTEGER NOT NULL
-                        CHECK (day3 in (1, 2, 3, 4)),
+                        CHECK (day3 in (0, 1, 2, 3)),
     day4                INTEGER NOT NULL
-                        CHECK (day4 in (1, 2, 3, 4)),
+                        CHECK (day4 in (0, 1, 2, 3)),
     day5                INTEGER NOT NULL
-                        CHECK (day5 in (1, 2, 3, 4)),
+                        CHECK (day5 in (0, 1, 2, 3)),
 
     PRIMARY KEY (fwsid),
 
@@ -295,11 +293,12 @@ CREATE TABLE WeeklyWorkSchedule (
 
 CREATE TABLE DailyWorkShift (
     dwsid               INTEGER,
+    wwsid               INTEGER,
+    day                 INTEGER,
     startHour           INTEGER
                         CHECK (startHour >= 10 AND startHour <= 22),
     duration            INTEGER
                         CHECK (duration in (1, 2, 3, 4)),
-    wwsid               INTEGER,
 
     PRIMARY KEY (dwsid, startHour),
 
