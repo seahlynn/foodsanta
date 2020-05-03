@@ -6,6 +6,7 @@
     <body align = 'center'>
     {% extends 'base.html' %}
       {% block overall %}
+      
         <div> 
             <div class="cart">
                 {% block content %}
@@ -42,6 +43,14 @@
                         </form>
             
                         <br>
+                        {% with messages = get_flashed_messages() %}
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 15px;"><b>{{ message }}</b></h2>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
                         <form method="POST" action="backto">
                             <button type="submit"> Back to Order Page </button>         
                         </form>

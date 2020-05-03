@@ -152,7 +152,7 @@ def gotopromos():
     promoresult = db.session.execute(promoquery).fetchall()
 
     promolist = [dict(id = row[0], description = row[1], start = row[3], end = row[4]) for row in promoresult]
-    return render_template('managerpromopages.html', promolist = promolist)
+    return render_template('managerpromopage.html', promolist = promolist)
 
 @app.route('/gotostats', methods=['GET'])
 def gotostats():
@@ -258,7 +258,7 @@ def showpromohistory():
     promolist = [dict(id = row[0], description = row[1], start = row[3], end = row[4]) for row in promoresult]
     pastpromolist = [dict(id = row[0], description = row[1], start = row[3], end = row[4]) for row in pastpromoresult]
 
-    return render_template('promo.html', promolist = promolist, pastpromolist = pastpromolist)
+    return render_template('managerpromopage.html', promolist = promolist, pastpromolist = pastpromolist)
 
 
 @app.route('/addpromo', methods=['POST'])
@@ -558,6 +558,7 @@ def checkout():
     orderid = session['orderid']
     username = session['username']
     deliveryfee = session['deliveryfee']
+
     #for customer details
     custquery = f"select U.name, U.phoneNumber from Users U where U.username = '{username}' limit 1"
     custresult = db.session.execute(custquery)
@@ -584,6 +585,16 @@ def checkout():
 
     total = subtotal + session['deliveryfee']
 
+    #to check if it hits restaurant's minimum order amount
+    query = f"select minAmt from Restaurants where restid = {restid}"
+    result = db.session.execute(query).fetchall()
+    minAmt = result[0][0]
+    difference = '{0:.2f}'.format(float(minAmt) - float(subtotal))
+    
+    if (subtotal < minAmt):
+        flash("You are $" + difference + " away from the minimum order amount!")
+        return redirect('viewcart')
+        
     #delivery promotions
     deliverypromoquery = f"select deliverypromoid, description, points from DeliveryPromo where deliverypromoid not in (select deliverypromoid from UsersDeliveryPromo)"
     deliverypromoresult = db.session.execute(deliverypromoquery)
@@ -655,46 +666,7 @@ def confirmcheckout():
     total = subtotal + deliveryfee
 
     #temp order 
-    session['orderinsert'] = f""
-    
-    return render_template('confirmcheckout.html', custdetails = custdetails, location = location, cardInfo = cardInfo, subtotal = subtotal, total = total, deliverypromo = deliverypromo, deliveryfee = deliveryfee)
-
-@app.route('/placeorder', methods=['POST'])
-def placeorder():
-
-    orderid = session['orderid']
-    username = session['username']
-    location = request.form['location']
-    cardInfo = request.form['payment']
-
-    checkCartquery = f"select count(*) from Contains where orderid = {orderid}"
-    checkCartresult = db.session.execute(checkCartquery).fetchall()
-    checkCart = checkCartresult[0][0]
-
-
-    if (checkCart == 0):
-        flash("Your cart is empty, there is nothing to order!")
-        return redirect('viewcart')
-
-    if location == '':
-        flash("Location cannot be blank!")
-        return redirect('viewcart')
-
-    if cardInfo == '':
-        flash("Card cannot be blank!")
-        return redirect('viewcart')
-
-    restidquery = f"(select restid from Latest where orderid = {orderid})"
-    restidresult = db.session.execute(restidquery).fetchall()
-    restid = restidresult[0][0]
-
     ordercreatedtime = datetime.now().strftime("%d/%m/%Y %H%M") 
-    # for totalCost
-    deliveryfee = 4
-    totalquery = f"select sum(F.price * C.quantity) from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid} and restid = {restid}"
-    totalresult = db.session.execute(totalquery).fetchall()
-    totalprice = totalresult[0][0] + deliveryfee
-
     fdspromoid = 'null'
     paymentmethodquery = f"select paymentmethodid from PaymentMethods where username = '{username}' and cardInfo = '{cardInfo}'"
     paymentresult = db.session.execute(paymentmethodquery).fetchall()
@@ -703,22 +675,22 @@ def placeorder():
     selectedByRider = False
 
 
-    #to check if it hits restuarant's minimum order amount
-    query = f"select minAmt from Restaurants where restid = {restid}"
-    result = db.session.execute(query).fetchall()
-    minAmt = result[0][0]
-    difference = '{0:.2f}'.format(float(minAmt) - float(totalprice))
+    session['insertorder'] = f"insert into Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid, delivered) values ('{orderid}', '{username}', '{location}', '{ordercreatedtime}', {total}, {fdspromoid}, {paymentmethodid}, {preparedbyrest}, {selectedByRider}, {restid}, False)"
+    session['insertdelivery'] = f"insert into Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered, paymentmethodid) values ('{orderid}', null, null, '{location}', '{deliveryfee}', null, null, null, {paymentmethodid})"
+    session['removepromo'] = f"delete from UsersDeliveryPromo where deliverypromoid = {promoid}"
     
-    if (totalprice < minAmt):
-        flash("You are $" + difference + " away from the minimum order amount!")
-        return redirect('viewcart')
+    return render_template('confirmcheckout.html', custdetails = custdetails, location = location, cardInfo = cardInfo, subtotal = subtotal, total = total, deliverypromo = deliverypromo, deliveryfee = deliveryfee)
 
-    todo = f"insert into Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid, delivered) values ('{orderid}', '{username}', '{location}', '{ordercreatedtime}', {totalprice}, {fdspromoid}, {paymentmethodid}, {preparedbyrest}, {selectedByRider}, {restid}, False)"
-    deliveryFee = 5
-    addDelivery = f"insert into Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered, paymentmethodid) values ('{orderid}', null, null, '{location}', '{deliveryFee}', null, null, null, {paymentmethodid})"
+@app.route('/placeorder', methods=['POST'])
+def placeorder():
 
-    db.session.execute(todo)
-    db.session.execute(addDelivery)
+    insertorder = session['insertorder']
+    insertdelivery = session['insertdelivery']
+    removepromo = session['removepromo']
+
+    db.session.execute(insertorder)
+    db.session.execute(insertdelivery)
+    db.session.execute(removepromo)
     db.session.commit()
 
     return redirect('orderstatus')
