@@ -766,7 +766,6 @@ def neworder():
 Customer related: View and purchase promos
 '''
    
-'''
 @app.route('/viewpromos', methods=['POST', 'GET'])
 def viewpromos():
 
@@ -778,7 +777,11 @@ def viewpromos():
     promoresult = db.session.execute(promoquery)
     promolist = [dict(fdspromoid = row[0], description = row[1], validfrom = row[2], validtill = row[3], points = row[4]) for row in promoresult.fetchall()]
     
-    return render_template('cuspromopage.html', points = points, promolist = promolist)
+    boughtpromoquery = f"select fdspromoid, description, startTime, endTime from FDSPromo where endTime > (select current_date) and fdspromoid in (select fdspromoid from UsersPromo)"
+    boughtpromoresult = db.session.execute(boughtpromoquery)
+    boughtpromolist = [dict(fdspromoid = row[0], description = row[1], validfrom = row[2], validtill = row[3]) for row in boughtpromoresult.fetchall()]
+
+    return render_template('cuspromopage.html', points = points, promolist = promolist, boughtpromolist = boughtpromolist)
 
 @app.route('/buypromo', methods=['POST', 'GET'])
 def buypromo():
@@ -801,7 +804,7 @@ def buypromo():
        return redirect('viewpromos')
     else:
         flash("You don't have enough points to purchase this promo! \n You get 1 point for every $1 spent!")
-'''
+
     
 '''
 Riders select existing undelivered orders to pick up and deliver

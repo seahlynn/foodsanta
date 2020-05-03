@@ -41,6 +41,26 @@
                     {% endfor %}
                 </table>
             </div>
+
+            <div style="width:50%;float: right;">
+                <h2> Your Promos! </h2>
+                <table border="1", style='margin-top: 20px;' align='center'> 
+                    <tr>
+                        <th> PromoID </th>
+                        <th> Promotion </th>
+                        <th> Valid From </th>
+                        <th> Valid Till </th>
+                    </tr>
+                    {% for p in boughtpromolist %}
+                        <tr>
+                          <td> <select name="fdspromoid"> <option value="{{p.fdspromoid}}" SELECTED> {{p.fdspromoid}} </option> </select></td>
+                          <td> {{ p.description }}</td>
+                          <td>{{ p.validfrom }}</td>
+                          <td>{{ p.validtill }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
         </div>
         {% endblock %}
     </body>
