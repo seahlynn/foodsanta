@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'base.html' %}
+      {% block overall %}
+        <div style="display:inline;"> 
+
+            <div style="width:50%; display:inline-block;">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 15px;"><b>{{ message }}</b></h2>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <h2> Current Promotions </h2>
+                <h4> Current Points: {{points}}</h4>
+                <table id="historytable" border="1", style='margin-top: 20px;' align='center'> 
+                    <tr>
+                        <th> PromoID </th>
+                        <th> Promotion </th>
+                        <th> Valid From </th>
+                        <th> Valid Till </th>
+                        <th> Points to Redeem </th>
+                        <th colspan = '2'> Buy </th>
+                    </tr>
+                    {% for p in promolist %}
+                    <form method="POST" action="buypromo">
+                        <tr>
+                          <td> <select name="fdspromoid"> <option value="{{p.fdspromoid}}" SELECTED> {{p.fdspromoid}} </option> </select></td>
+                          <td> {{ p.description }}</td>
+                          <td>{{ p.validfrom }}</td>
+                          <td>{{ p.validtill }}</td>
+                          <td>{{ p.points }}</td>
+                          <td> <input type="Submit" value="Buy Promo"> </td>
+                        </tr>
+                    </form>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+        {% endblock %}
+    </body>
+</html>

@@ -18,7 +18,7 @@
                 {% endwith %}
                 {% block details %}
                 <h2> Details </h2>
-                <form method="POST" action="confirmcheckout" autocomplete="off">
+                <form method="POST" action="placeorder" autocomplete="off">
                     <table  align = 'center'>
                         {% for p in custdetails %}
                         <tr>
@@ -34,8 +34,8 @@
                             <td> ${{deliveryfee}} </td>
                         </tr>
                         <tr>
-                            <td> Delivery Off: </td>
-                            <td> <input name="deliverypromoid" list="deliverypromos"> </td>
+                            <td> Delivery Promo Applied: </td>
+                            <td> {{deliverypromo}}</td>
                         </tr>
                         <tr>
                             <td> Subtotal: </td>
@@ -47,17 +47,17 @@
                         </tr>
                         <tr>
                             <td> Location: </td>
-                            <td> <input name="location" list="locations"> </td>
+                            <td> {{location}}</td>
                         </tr>
                         <tr>
                             <td> Payment Method: </td>
-                            <td> <input name="payment" list="payments"> </td>
+                            <td> {{cardInfo}} </td>
                         </tr>
                         <tr style="padding: 10px"> 
                             <td> </td>
                         </tr>
                         <tr>
-                            <td colspan="2"> <input type="Submit" value="Confirm CheckOut"> </td>
+                            <td colspan="2"> <input type="Submit" value="Confirm Order"> </td>
                         </tr>
                         {% endfor %}
                         {% endblock %}
@@ -82,33 +82,9 @@
 
             <datalist id="deliverypromos">
                 {% for r in boughtdeliverypromolist %}
-                  <option value="{{r.description}}">
+                  <option value="{{r.deliverypromo}}">
                 {% endfor %}
             </datalist>
-
-
-            <div style="width:50%; float: right;">
-                <h2> Delivery Off </h2>
-                <h4> Current Points: {{points}}</h4>
-                <table id="historytable" border="1", style='margin-top: 20px;' align='center'> 
-                    <tr>
-                        <th> PromoID </th>
-                        <th> Promotion </th>
-                        <th> Points to Redeem </th>
-                        <th colspan = '2'> Buy </th>
-                    </tr>
-                    {% for p in deliverypromolist %}
-                    <form method="POST" action="buydeliverypromo">
-                        <tr>
-                          <td> <select name="deliverypromoid"> <option value="{{p.deliverypromoid}}" SELECTED> {{p.deliverypromoid}} </option> </select></td>
-                          <td> {{ p.description }}</td>
-                          <td>{{ p.points }}</td>
-                          <td> <input type="Submit" value="Buy Promo"> </td>
-                        </tr>
-                    </form>
-                    {% endfor %}
-                </table>
-            </div>
 
         </div>
         {% endblock %}
