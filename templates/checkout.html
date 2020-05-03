@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'base.html' %}
+      {% block overall %}
+        <div style="display:inline;"> 
+
+            <div style="width:50%; display:inline-block;">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 15px;"><b>{{ message }}</b></h2>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                {% block details %}
+                <h2> Details </h2>
+                <form method="POST" action="placeorder" autocomplete="off">
+                    <table  align = 'center'>
+                        {% for p in custdetails %}
+                        <tr>
+                            <td> Name: </td>
+                            <td> {{p.name}} </td>
+                        </tr>
+                        <tr>
+                            <td> Contact: </td>
+                            <td> {{p.number}} </td>
+                        </tr>
+                        <tr>
+                            <td> Total: </td>
+                            <td> work in progress </td>
+                        </tr>
+                        <tr>
+                            <td> Promo Code: </td>
+                            <td> work in progress </td>
+                        </tr>
+                        <tr>
+                            <td> Location: </td>
+                            <td> <input name="location" list="locations"> </td>
+                        </tr>
+                        <tr>
+                            <td> Payment Method: </td>
+                            <td> <input name="payment" list="payments"> </td>
+                        </tr>
+                        <tr style="padding: 10px"> 
+                            <td> </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"> <input type="Submit" value="Place Order"> </td>
+                        </tr>
+                        {% endfor %}
+                        {% endblock %}
+                    </table>  
+                </form>
+                <form method="POST" action="viewcart">
+                    <button type="submit"> Back to Cart </button>         
+                </form>
+            </div>
+
+            <datalist id="locations">
+                {% for r in locationlist %}
+                  <option value="{{r.location}}">
+                {% endfor %}
+            </datalist>
+
+            <datalist id="payments">
+                {% for r in paymentlist %}
+                  <option value="{{r.method}}">
+                {% endfor %}
+            </datalist>
+        </div>
+        {% endblock %}
+    </body>
+</html>

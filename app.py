@@ -27,7 +27,7 @@ def index():
     if settings.test:
 
         #return redirect('login')
-        return redirect('gotomanagerprofile')
+        return redirect('login')
         #return render_template('test.html') 
         
     return render_template('index.html')
@@ -152,7 +152,7 @@ def gotopromos():
     promoresult = db.session.execute(promoquery).fetchall()
 
     promolist = [dict(id = row[0], description = row[1], start = row[3], end = row[4]) for row in promoresult]
-    return render_template('promo.html', promolist = promolist)
+    return render_template('managerpromopages.html', promolist = promolist)
 
 @app.route('/gotostats', methods=['GET'])
 def gotostats():
@@ -311,9 +311,9 @@ def gotorest():
 def gotocusprofile():
     username = session['username']
 
-    profilequery = f"select name, phoneNumber from Users where username = '{username}'"
+    profilequery = f"select U.name, U.phoneNumber, C.points from Users U, Customers C where C.username = '{username}' and U.username = '{username}'"
     profileresult = db.session.execute(profilequery)
-    profile = [dict(name = row[0], number = row[1]) for row in profileresult.fetchall()]
+    profile = [dict(name = row[0], number = row[1], points = row[2]) for row in profileresult.fetchall()]
     
     cardquery = f"select cardInfo from PaymentMethods where username='{username}' and cardInfo <> 'cash on delivery'"
     cardresult = db.session.execute(cardquery)
@@ -505,22 +505,7 @@ def viewcart():
     if float(difference) <= 0:
         difference = 0
 
-    #for customer details
-    custquery = f"select U.name, U.phoneNumber from Users U where U.username = '{username}' limit 1"
-    custresult = db.session.execute(custquery)
-    custdetails = [dict(name = row[0], number = row[1]) for row in custresult.fetchall()]
-    
-    #locationlist
-    locationquery = f"select location from Locations where username = '{username}'"
-    locationresult = db.session.execute(locationquery)
-    locationlist = [dict(location = row[0]) for row in locationresult.fetchall()]
-
-    #paymentlist
-    paymentquery = f"select cardInfo from PaymentMethods where username = '{username}'"
-    paymentresult = db.session.execute(paymentquery)
-    paymentlist = [dict(method = row[0]) for row in paymentresult.fetchall()]
-
-    return render_template('cart.html', orderlist = orderlist, totalprice = totalprice, custdetails = custdetails, locationlist = locationlist, paymentlist = paymentlist, difference = difference)
+    return render_template('cart.html', orderlist = orderlist, totalprice = totalprice, difference = difference)
 
 @app.route('/deletefromcart', methods=['POST'])
 def deletefromcart():
@@ -565,6 +550,28 @@ def backto():
     minAmt = result[0][0]
 
     return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, minAmt = minAmt)
+
+@app.route('/checkout', methods=['POST', 'GET'])
+def checkout():
+
+    orderid = session['orderid']
+    username = session['username']
+    #for customer details
+    custquery = f"select U.name, U.phoneNumber from Users U where U.username = '{username}' limit 1"
+    custresult = db.session.execute(custquery)
+    custdetails = [dict(name = row[0], number = row[1]) for row in custresult.fetchall()]
+    
+    #locationlist
+    locationquery = f"select location from Locations where username = '{username}'"
+    locationresult = db.session.execute(locationquery)
+    locationlist = [dict(location = row[0]) for row in locationresult.fetchall()]
+
+    #paymentlist
+    paymentquery = f"select cardInfo from PaymentMethods where username = '{username}'"
+    paymentresult = db.session.execute(paymentquery)
+    paymentlist = [dict(method = row[0]) for row in paymentresult.fetchall()]
+
+    return render_template('checkout.html', custdetails = custdetails, locationlist = locationlist, paymentlist = paymentlist)
 
 @app.route('/placeorder', methods=['POST'])
 def placeorder():
@@ -673,6 +680,10 @@ def submitreview():
 @app.route('/neworder', methods=['POST'])
 def neworder():
     return redirect('gotorest')
+
+'''
+Customers view and purchase promotions
+'''
 
 '''
 Riders select existing undelivered orders to pick up and deliver

@@ -99,7 +99,8 @@ INSERT INTO FDSPromo(fdspromoid, description, startTime, endTime) VALUES
 INSERT INTO AllStats(monthid, totalNewCust, totalNumOrders, totalCostOfOrders) values
 (1, 20, 50, 654),
 (2, 34, 62, 722),
-(3, 18, 47, 443);
+(3, 18, 47, 443),
+(4, 22, 53, 528);
 
 INSERT INTO CustomerStats(username, monthid, totalNumOrders, totalCostOfOrders) values
 ('justning', 1, 2, 54),
