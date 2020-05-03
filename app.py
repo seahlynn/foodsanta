@@ -494,6 +494,9 @@ def viewcart():
     totalresult = db.session.execute(totalquery).fetchall()
     totalprice = totalresult[0][0]
 
+    if totalprice is None:
+        totalprice = 0
+
     #to find amount away from minimum order
     query = f"select minAmt from Restaurants where restid = {restid}"
     result = db.session.execute(query).fetchall()
@@ -583,8 +586,20 @@ def checkout():
     totalquery = f"select sum(F.price * C.quantity) from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid} and restid = {restid}"
     totalresult = db.session.execute(totalquery).fetchall()
     subtotal = totalresult[0][0]
+    
+    if subtotal is None:
+        subtotal = 0
 
     total = subtotal + session['deliveryfee']
+
+    # check cart
+    checkCartquery = f"select count(*) from Contains where orderid = {orderid}"
+    checkCartresult = db.session.execute(checkCartquery).fetchall()
+    checkCart = checkCartresult[0][0]
+
+    if (checkCart == 0):
+        flash("Your cart is empty, there is nothing to order!")
+        return redirect('confirmcheckout')
 
     #to check if it hits restaurant's minimum order amount
     query = f"select minAmt from Restaurants where restid = {restid}"
@@ -606,11 +621,16 @@ def checkout():
     boughtdeliverypromoresult = db.session.execute(boughtdeliverypromoquery)
     boughtdeliverypromolist = [dict(deliverypromoid = row[0], description = row[1]) for row in boughtdeliverypromoresult.fetchall()]
 
+    #existing promos available for us
+    promoquery = f"select F.fdspromoid, F.description from FDSPromo F, UsersPromo U where F.fdspromoid = U.fdspromoid and U.username = '{username}'"
+    promoresult = db.session.execute(promoquery)
+    promolist = [dict(deliverypromoid = row[0], description = row[1]) for row in promoresult.fetchall()]
+
     #get points
     pointsquery = f"select points from Customers where username = '{username}'"
     points = db.session.execute(pointsquery).fetchall()[0][0]
 
-    return render_template('checkout.html', custdetails = custdetails, locationlist = locationlist, paymentlist = paymentlist, deliveryfee = deliveryfee, subtotal = subtotal, total = total, deliverypromolist = deliverypromolist, boughtdeliverypromolist = boughtdeliverypromolist, points = points)
+    return render_template('checkout.html', custdetails = custdetails, locationlist = locationlist, paymentlist = paymentlist, deliveryfee = deliveryfee, subtotal = subtotal, total = total, deliverypromolist = deliverypromolist, boughtdeliverypromolist = boughtdeliverypromolist, points = points, promolist = promolist)
 
 @app.route('/buydeliverypromo', methods=['POST', 'GET'])
 def buydeliverypromo():
@@ -639,29 +659,18 @@ def confirmcheckout():
 
     orderid = session['orderid']
     username = session['username']
-
-    # check cart
-    checkCartquery = f"select count(*) from Contains where orderid = {orderid}"
-    checkCartresult = db.session.execute(checkCartquery).fetchall()
-    checkCart = checkCartresult[0][0]
-
     #location
-    location = request.form['location']
-    
+    location = request.form.get('location')
     #card info
-    cardInfo = request.form['payment']
-
-    if (checkCart == 0):
-        flash("Your cart is empty, there is nothing to order!")
-        return redirect('viewcart')
+    cardInfo = request.form.get('payment')
 
     if location == '':
         flash("Location cannot be blank!")
-        return redirect('viewcart')
+        return redirect('checkout')
 
-    if cardInfo == '':
+    if cardInfo is None:
         flash("Card cannot be blank!")
-        return redirect('viewcart')
+        return redirect('checkout')
 
     #for customer details
     custquery = f"select U.name, U.phoneNumber from Users U where U.username = '{username}' limit 1"
@@ -670,10 +679,15 @@ def confirmcheckout():
     
 
     #amount off delivery fee
-    deliverypromo = request.form['deliverypromoid']
-    promoid = db.session.execute(f"select deliverypromoid from DeliveryPromo where description = '{deliverypromo}'").fetchall()[0][0]
-    amountoffquery = f"select amount from DeliveryPromo where deliverypromoid = {promoid}"
-    amountoff = db.session.execute(amountoffquery).fetchall()[0][0]
+    deliverypromo = request.form.get('deliverypromoid')
+
+    if deliverypromo == 'nonechosen':
+        amountoff = 0
+    else:
+        promoid = db.session.execute(f"select deliverypromoid from DeliveryPromo where description = '{deliverypromo}'").fetchall()[0][0]
+        amountoffquery = f"select amount from DeliveryPromo where deliverypromoid = {promoid}"
+        amountoff = db.session.execute(amountoffquery).fetchall()[0][0]
+        session['removepromo'] = f"delete from UsersDeliveryPromo where deliverypromoid = {promoid}"
 
     deliveryfee = session['deliveryfee'] - amountoff
 
@@ -699,7 +713,7 @@ def confirmcheckout():
 
     session['insertorder'] = f"insert into Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid, delivered) values ('{orderid}', '{username}', '{location}', '{ordercreatedtime}', {total}, {fdspromoid}, {paymentmethodid}, {preparedbyrest}, {selectedByRider}, {restid}, False)"
     session['insertdelivery'] = f"insert into Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered, paymentmethodid) values ('{orderid}', null, null, '{location}', '{deliveryfee}', null, null, null, {paymentmethodid})"
-    session['removepromo'] = f"delete from UsersDeliveryPromo where deliverypromoid = {promoid}"
+    
     
     return render_template('confirmcheckout.html', custdetails = custdetails, location = location, cardInfo = cardInfo, subtotal = subtotal, total = total, deliverypromo = deliverypromo, deliveryfee = deliveryfee)
 
@@ -708,11 +722,13 @@ def placeorder():
 
     insertorder = session['insertorder']
     insertdelivery = session['insertdelivery']
-    removepromo = session['removepromo']
+
+    if session.get('removepromo') is not None:
+        removepromo = session['removepromo']
+        db.session.execute(removepromo)
 
     db.session.execute(insertorder)
     db.session.execute(insertdelivery)
-    db.session.execute(removepromo)
     db.session.commit()
 
     return redirect('orderstatus')

@@ -30,12 +30,34 @@
                             <td> {{p.number}} </td>
                         </tr>
                         <tr>
+                            <td> Location: </td>
+                            <td> <input name="location" list="locations"> </td>
+                        </tr>
+                        <tr>
+                            <td> Payment Method: </td>
+                            <td> 
+                                <select name="payment">
+                                    {% for r in paymentlist %}
+                                    <option value="{{r.method}}" SELECTED> {{r.method}} </option>
+                                    {% endfor %}
+                                    <option value="" disabled selected> Payment Method </option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
                             <td> Delivery Fee: </td>
                             <td> ${{deliveryfee}} </td>
                         </tr>
                         <tr>
                             <td> Delivery Off: </td>
-                            <td> <input name="deliverypromoid" list="deliverypromos"> </td>
+                            <td>
+                                <select name="deliverypromoid">
+                                    {% for r in boughtdeliverypromolist %}
+                                      <option value="{{r.description}}" SELECTED> {{r.description}} </option>
+                                    {% endfor %}
+                                    <option value="nonechosen"> Choose a Promo </option>
+                                </select>
+                            </td>
                         </tr>
                         <tr>
                             <td> Subtotal: </td>
@@ -45,14 +67,10 @@
                             <td> Total: </td>
                             <td> ${{total}} </td>
                         </tr>
-                        <tr>
-                            <td> Location: </td>
-                            <td> <input name="location" list="locations"> </td>
-                        </tr>
-                        <tr>
-                            <td> Payment Method: </td>
-                            <td> <input name="payment" list="payments"> </td>
-                        </tr>
+                        <!--<tr>
+                            <td> Promo Codes: </td>
+                            <td> <input name="promoid" list="promos"> </td>
+                        </tr>-->
                         <tr style="padding: 10px"> 
                             <td> </td>
                         </tr>
@@ -86,6 +104,11 @@
                 {% endfor %}
             </datalist>
 
+            <datalist id="promos">
+                {% for r in promolist %}
+                  <option value="{{r.description}}">
+                {% endfor %}
+            </datalist>
 
             <div style="width:50%; float: right;">
                 <h2> Delivery Off </h2>
