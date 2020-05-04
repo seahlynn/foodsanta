@@ -46,7 +46,7 @@ def login():
         if is_valid:
             print("Login verified")
             session['username'] = username
-            return redirect('gotocusprofile')
+            return redirect_accordingly(username)
         else:
             print("Login denied")
             flash("No such user. :(")
@@ -117,6 +117,20 @@ def is_valid_user(id, pw):
     check_user_query = f"select count(*) from Users where username='{id}' and password ='{pw}'"
     check_user_result = db.session.execute(check_user_query).fetchone()
     return check_user_result[0]
+
+def redirect_accordingly(username):
+    global db
+    check_user_customer = f"select 1 from Customers where username = '{username}'"
+    if db.session.execute(check_user_customer).fetchone():
+        return redirect('gotocusprofile')
+    check_user_manager = f"select 1 from FDSManagers where username = '{username}'"
+    if db.session.execute(check_user_manager).fetchone():
+        return redirect('gotomanagerprofile')
+    check_user_rider = f"select 1 from DeliveryRiders where username = '{username}'"
+    if db.session.execute(check_user_rider).fetchone():
+        return redirect('gotodelivery')
+    return redirect('login')
+        
 
 '''
 Manager related: Profile
