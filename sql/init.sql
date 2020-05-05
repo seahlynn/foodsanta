@@ -370,7 +370,6 @@ CREATE TABLE RiderStats (
 	totalHours		INTEGER,
 	totalSalary		INTEGER,
     
-
     PRIMARY KEY (username, month, year),
 
 	FOREIGN KEY (username) REFERENCES DeliveryRiders

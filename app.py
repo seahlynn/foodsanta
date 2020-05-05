@@ -904,9 +904,12 @@ def gotoriderprofile():
     profilequery = f"select name, phoneNumber from Users where username = '{username}'"
     profileresult = db.session.execute(profilequery)
     profile = [dict(name = row[0], number = row[1]) for row in profileresult.fetchall()]
+
+    riderstatsquery = f"select * from RiderStats where username = '{username}'"    
+    riderstatsresult = db.session.execute(riderstatsquery)
+    riderstats = [dict(month = row[0], year = row[1], totalOrders = row[3], totalHours = row[4], totalSalary = row[5]) for row in riderstatsresult.fetchall()]
     
-    
-    return render_template('riderprofile.html', profile = profile)
+    return render_template('riderprofile.html', profile = profile, riderstats = riderstats)
 
 @app.route('/gotodelivery', methods=['GET'])
 def gotodelivery():
