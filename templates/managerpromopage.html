@@ -8,16 +8,6 @@
         {% extends 'managerbase.html' %}
             {% block overall %}
             <div>
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        {% for message in messages %}
-                            <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 18px;"><b>{{ message }}</b></h2>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-            </div>
-
-            <div>
                 <div style="float: left; width: 50%;">
                     <h2> Existing Promos </h2>
                     <table align="center" border=1>
@@ -76,6 +66,7 @@
                 </div>
                 
                 <div style="width:50%; display: inline-block;"> 
+        
                     <div>
                         <h2> Add Promos </h2>
                         <form method="POST" action="addpromo">
@@ -142,6 +133,16 @@
                             <option value="AmountOff">
                         </datalist>
     
+                    </div>
+
+                    <div>
+                        {% with messages = get_flashed_messages() %}
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <h4 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 15px;"><b>{{ message }}</b></h4>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
                     </div>
                 </div>
                 

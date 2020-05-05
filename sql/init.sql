@@ -582,7 +582,7 @@ create trigger addCashMethodTrigger
 
 
 /* deduct customer's points after purchase of promo*/ 
-/*create or replace function deductPointsPromoFunction()
+create or replace function deductPointsPromoFunction()
 returns trigger as $$
 DECLARE
 pointsused INTEGER;
@@ -597,7 +597,7 @@ drop trigger if exists deductPointsPromoTrigger on Customers;
 create trigger deductPointsPromoTrigger
     after insert on UsersPromo
     for each row
-    execute function deductPointsPromoFunction();*/
+    execute function deductPointsPromoFunction();
 
 /* deduct customer's points after purchase of promo*/ 
 create or replace function deductPointsDeliveryFunction()
