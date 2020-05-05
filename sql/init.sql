@@ -118,6 +118,7 @@ CREATE TABLE Food (
     foodid          INTEGER,
     description     VARCHAR(50),
     price           decimal NOT NULL,
+    dailylimit		INTEGER NOT NULL CHECK (dailylimit >= 0),
     availability    INTEGER NOT NULL CHECK (availability >= 0),
     category        VARCHAR(20),
     restid          INTEGER NOT NULL,
@@ -341,11 +342,12 @@ CREATE TABLE DailyWorkShift (
 
 CREATE TABLE CustomerStats (
     username            VARCHAR(30),
-    monthid             INTEGER,
+    month            	INTEGER,
+    year 				INTEGER,
     totalNumOrders      INTEGER,
     totalCostOfOrders   INTEGER,
 
-    PRIMARY KEY (username, monthid),
+    PRIMARY KEY (username, month, year),
 
     FOREIGN KEY (username) REFERENCES Customers
 );
@@ -377,12 +379,13 @@ CREATE TABLE RiderStats (
 );
 
 CREATE TABLE AllStats (
-    monthid             INTEGER,
+    month               INTEGER,
+    year                INTEGER,
     totalNewCust        INTEGER,
     totalNumOrders      INTEGER, --should be total num of restuarants--
     totalCostOfOrders   INTEGER,
 
-    PRIMARY KEY (monthid)
+    PRIMARY KEY (month, year)
 );
 
 CREATE TABLE Latest (
@@ -405,15 +408,17 @@ begin
         select 1
         from CustomerStats C1
         where C1.username = NEW.username
-        and C1.monthid = (select extract(month from current_timestamp)))) then
-        insert into CustomerStats values(NEW.username, (select extract(month from current_timestamp)), 1, NEW.totalCost);
+        and C1.month = (select extract(month from current_timestamp))
+        and C1.year = (select extract(year from current_timestamp)))) then
+        insert into CustomerStats values(NEW.username, (select extract(month from current_timestamp)), (select extract(year from current_timestamp)), 1, NEW.totalCost);
     /* existing customer */
     else 
         update CustomerStats C2
         set totalNumOrders = totalNumOrders + 1,
             totalCostOfOrders = totalCostOfOrders + NEW.totalCost
         where C2.username = NEW.username
-        and C2.monthid = (select extract(month from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
+        and C2.month = (select extract(month from current_timestamp));
+        and C2.year = (select extract(year from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
 end if;    
 return new;
 end; $$ language plpgsql;        
@@ -436,13 +441,15 @@ begin
         if (not exists (
             select 1
             from AllStats
-            where monthid = (select extract(month from current_timestamp)))) 
-        then insert into AllStats values ((select extract(month from current_timestamp)), 0, 0, 0); 
+            where month = (select extract(month from current_timestamp))
+            and year = (select extract(year from current_timestamp)))) 
+        then insert into AllStats values ((select extract(month from current_timestamp)), (select extract(year from current_timestamp)), 0, 0, 0); 
         end if;
 
         update AllStats
         set totalNewCust = totalNewCust + 1
-        where monthid = (select extract(month from current_timestamp));
+        where month = (select extract(month from current_timestamp))
+        and year = (select extract(year from current_timestamp));
 end if;
 return new;
 end; $$ language plpgsql;
@@ -461,14 +468,16 @@ begin
     if (not exists (
             select 1
             from AllStats
-            where monthid = (select extract(month from current_timestamp)))) 
-            then insert into AllStats values ((select extract(month from current_timestamp)), 0, 1, NEW.totalCost);
+            where month = (select extract(month from current_timestamp))
+            and year = (select extract(year from current_timestamp)))) 
+            then insert into AllStats values ((select extract(month from current_timestamp)), (select extract(year from current_timestamp)), 0, 1, NEW.totalCost);
     /* existing customer */
     else 
         update AllStats
         set totalNumOrders = totalNumOrders + 1,
             totalCostOfOrders = totalCostOfOrders + NEW.totalCost
-        where monthid = (select extract(month from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
+        where month = (select extract(month from current_timestamp))
+        and year = (select extract(year from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
     end if; 
 
 return new;
@@ -641,5 +650,27 @@ create trigger addUsersPromoTrigger
     after insert on FDSPromo
     for each row
     execute function addUsersPromoFunction();
+
+/*add times ordered of food*/
+create or replace function incrementTimesOrderedFoodFunction()
+returns trigger as $$
+DECLARE
+food RECORD;
+begin
+    for food in
+		(select foodid from Food where restid = NEW.restid)
+	loop
+		update Food set timesOrdered = timesOrdered - 1 where foodid = food.foodid;
+	end loop;
+
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists incrementTimesOrderdFoodTrigger on Orders;
+create trigger incrementTimesOrderedFoodTrigger
+    after insert on Orders
+    for each row
+    execute function incrementTimesOrderedFoodFunction();
+
 
 

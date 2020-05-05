@@ -1,11 +1,14 @@
 import settings
 import os
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, render_template, request, session, flash, redirect
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import MetaData
 #from flask_login import LoginManager
 from datetime import datetime, date, timedelta
 from decimal import *
+
+
 
 app = Flask(__name__) #Initialize FoodSanta
 
@@ -21,6 +24,18 @@ app.config['SECRET_KEY'] = b'random123456789'
 
 db = SQLAlchemy(app)
 #login_manager = LoginManager() 
+
+def updateDailyLimit():
+    todo = f"update Food F1 set availability = (select dailylimit from Food F2 where F1.foodid = F2.foodid)"
+    db.session.execute(todo)
+    db.session.commit()
+    print("Scheduler is alive!")
+
+
+sched = BackgroundScheduler(daemon=True)
+sched.add_job(updateDailyLimit,'cron', hour=0)
+sched.start()
+
 
 @app.route('/', methods=['GET'])
 def index():
