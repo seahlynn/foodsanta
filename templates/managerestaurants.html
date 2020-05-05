@@ -43,15 +43,15 @@
                     <table align='center'>
                         <tr>
                             <td> Restaurant Name: </td>
-                            <td> <input type="text" name="restname" placeholder="Restaurant Name"> </td>
+                            <td> <input type="text" pattern="[a-zA-Z][a-zA-Z0-9\s]*" name="restname" placeholder="Restaurant Name"> </td>
                         </tr>
                         <tr>
                             <td> Location: </td>
-                            <td> <input type="text" name="location" placeholder= "Location"> </td>
+                            <td> <input type="text" pattern="[a-zA-Z][a-zA-Z0-9\s]*" name="location" placeholder= "Location"> </td>
                         </tr>
                         <tr>
                             <td> Min. Amount: </td>
-                            <td> <input type="text" name="minamnt" placeholder="Minimum Amount to be Spent"> </td>
+                            <td> <input type="number" min="0" name="minamnt" placeholder="Minimum Amount to be Spent"> </td>
                         </tr>
                         <tr>
                             <td colspan="2"> <input type="Submit" value="Add Restaurant"> </td>
@@ -78,7 +78,7 @@
                         </tr>
                         <tr>
                             <td> Min. Amount: </td>
-                            <td> <input type="text" name="minamnt" placeholder="Minimum Amount to be Spent"> </td>
+                            <td> <input type="number" min="0" name="minamnt" placeholder="Minimum Amount to be Spent"> </td>
                         </tr>
                         <tr>
                             <td colspan="2"> <input type="Submit" value="Edit Restaurant"> </td>

@@ -18,6 +18,7 @@ DROP TABLE IF EXISTS Contains CASCADE;
 DROP TABLE IF EXISTS FDSPromo CASCADE;
 DROP TABLE IF EXISTS UsersPromo CASCADE;
 DROP TABLE IF EXISTS DeliveryPromo CASCADE;
+DROP TABLE IF EXISTS UsersDeliveryPromo CASCADE;
 DROP TABLE IF EXISTS AmountOff CASCADE;
 DROP TABLE IF EXISTS PercentOff CASCADE;
 DROP TABLE IF EXISTS FullTimeRiders CASCADE;
@@ -189,6 +190,14 @@ CREATE TABLE UsersDeliveryPromo (
 	PRIMARY KEY (deliverypromoid, username)
 );
 
+
+CREATE TABLE RestaurantPromo (
+	fdspromoid		INTEGER,
+	restid 			INTEGER,
+
+    PRIMARY KEY (fdspromoid, restid)     
+);
+
 CREATE TABLE Orders (
 	orderid				INTEGER,
     username			VARCHAR(30),
@@ -237,7 +246,7 @@ CREATE TABLE Delivers (
     username                VARCHAR(30), 
 	rating					INTEGER CHECK ((rating <= 5) AND (rating >= 0)),
 	location 				VARCHAR(100) NOT NULL,
-    deliveryFee             INTEGER NOT NULL,
+    deliveryFee             DECIMAL NOT NULL,
 	timeDepartToRestaurant	TIMESTAMP,
 	timeArrivedAtRestaurant	TIMESTAMP,
 	timeOrderDelivered		TIMESTAMP,
@@ -251,15 +260,7 @@ CREATE TABLE Delivers (
 );
 
 
-CREATE TABLE RestaurantPromo (
-    description     VARCHAR(50),
-    restpromoid     INTEGER,
-    startTime       DATE,
-    endTime         DATE,
-    restid          INTEGER NOT NULL,
 
-    PRIMARY KEY (restpromoid)     
-);
 
 
 CREATE TABLE FullTimeRiders (
@@ -616,5 +617,30 @@ create trigger deductPointsDeliveryTrigger
     after insert on UsersDeliveryPromo
     for each row
     execute function deductPointsDeliveryFunction();
+
+/*add promotions under user's promo if points needed to buy is 0*/
+create or replace function addUsersPromoFunction()
+returns trigger as $$
+DECLARE
+pointsused INTEGER;
+customer RECORD;
+begin
+    select into pointsused (select points from FDSPromo where fdspromoid = NEW.fdspromoid);
+
+    if pointsused = 0 then
+	    for customer in
+	        (select username from Customers)
+	    loop
+	    	insert into UsersPromo values (NEW.fdspromoid, customer.username);
+	    end loop;
+	end if;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists addUsersPromoTrigger on UsersPromo;
+create trigger addUsersPromoTrigger
+    after insert on FDSPromo
+    for each row
+    execute function addUsersPromoFunction();
 
 
