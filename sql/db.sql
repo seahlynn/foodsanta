@@ -6,12 +6,13 @@ INSERT INTO Users(username, name, password, phoneNumber, dateCreated) VALUES
 ('managertest', 'ManagerTest', 'managercool', '96567556', '2020-04-05'),
 ('ridertest', 'RiderTest', 'ridercool', '96567556', '2020-04-12'),
 ('stafftest', 'StaffTest', 'staffcool', '96567556', '2020-03-11'),
-('staffresttest', 'StaffRestTest', 'staffrestcool', '96567556', '2020-03-11');
+('staffresttest', 'StaffRestTest', 'staffrestcool', '96567556', '2020-03-11'),
+('fullridertest', 'RiderTest', 'fullridercool', '96567556', '2020-04-12'),
+('partridertest', 'RiderTest', 'partridercool', '96567556', '2020-04-12');
+
 
 INSERT INTO RestaurantStaff(username) VALUES
 ('stafftest');
-('fullridertest', 'RiderTest', 'fullridercool', '96567556', '2020-04-12'),
-('partridertest', 'RiderTest', 'partridercool', '96567556', '2020-04-12');
 
 INSERT INTO FDSManagers(username) VALUES
 ('managertest');
@@ -33,13 +34,9 @@ INSERT INTO DeliveryRiders(username) VALUES
 INSERT INTO FullTimeRiders(username) VALUES
 ('kalsyc'),
 ('lynjaaa'),
-('bakwah'),
-('justning'),
 ('fullridertest');
 
 INSERT INTO PartTimeRiders(username) VALUES
-('kalsyc'),
-('lynjaaa'),
 ('bakwah'),
 ('justning'),
 ('partridertest');
