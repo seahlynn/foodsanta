@@ -147,8 +147,33 @@ def gotostaff():
         return render_template('no_restaurant_registered.html')
     session['rest_id'] = rest_id
     menu = get_menu(rest_id)
-    rest_name = 0
-    return render_template('staffprofile.html', menu=menu)
+    details = get_rest_details(rest_id)
+    return render_template('staffprofile.html', menu=menu, details=details)
+
+@app.route('/deleteitemsuccess', methods=['GET', 'POST'])
+def deleteitemsuccess():
+    if request.method == 'POST':
+        form = request.form
+        food_id = form['foodid']
+        delete_query = f"delete from Food where foodid = {food_id}"
+        db.session.execute(delete_query)
+        db.session.commit()
+    return redirect('gotostaff')
+
+@app.route('/changeminamtsuccess', methods=['GET', 'POST'])
+def changeminamtsuccess():
+    rest_id = session['rest_id']
+    if request.method == 'POST':
+        form = request.form
+        minamt = form['minamt']
+        update_query = f"update Restaurants set minAmt = {minamt} where restid = {rest_id}"
+        db.session.execute(update_query)
+        db.session.commit()
+    return redirect('gotostaff')
+
+@app.route('/addpromosuccess', methods=['GET', 'POST'])
+def addpromosuccess():
+    pass
 
 @app.route('/additemsuccess', methods=['GET', 'POST'])
 def additemsuccess():
@@ -180,12 +205,23 @@ def edititemsuccess():
             flash("This food is not in your restaurant's menu.")
     return redirect('gotostaff')
 
+def get_rest_details(id):
+    global db
+    check_restaurant_query = f"select * from Restaurants where restid = {id}"
+    details = db.session.execute(check_restaurant_query).fetchone()
+    parsed_details = dict(restid=details[0], restname=details[1], minAmt=details[2], location=details[3])
+    return parsed_details
+
 def get_next_food_id():
+    global db
     check_max_food_id = f"select max(foodid) from Food"
-    max_food_id = db.session.execute(check_max_food_id).fetchone()[0]
-    return max_food_id + 1
+    max_food_id = db.session.execute(check_max_food_id).fetchone()
+    if not max_food_id:
+        return 1
+    return max_food_id[0] + 1
 
 def get_rest_id(username):
+    global db
     check_restaurant_query = f"select restid from RestaurantStaff where username = '{username}' "
     rest_id = db.session.execute(check_restaurant_query).fetchone()[0]
     return rest_id

@@ -8,8 +8,23 @@
     {% extends 'staffbase.html' %}
       {% block overall %}
       <div>
+				<div align = 'center'>
+					<h3>{{"Restaurant name: " + details.restname}}</h3>
+					<h3>{{"Location: " + details.location}}</h3>
+					<div display='inline-block'>
+						<div float='left'>
+							<h3>Minimum Amount: {{details.minAmt}}</h3>
+						</div>
+						<div float='right'>
+							<form action="/changeminamtsuccess" method="POST">
+								<input type="number" placeholder="Change minimum amount" class="input" name="minamt"/>
+								<input type="submit" value="Change" class="text--centered input--submit"/>
+							</form>
+						</div>
+					</div>
+				</div>
         <div>
-          <h2> Menu </h2>
+          <h2 align='center'> Menu </h2>
           {% with messages = get_flashed_messages() %}
             {% if messages %}
               {% for message in messages %}
@@ -25,6 +40,7 @@
               <th> Stock </th>
               <th> Category </th>
               <th> Times ordered </th>
+              <th> Delete? </th>
               {% for f in menu %}
               <tr>
                 <td> {{ f.foodid }}</td>
@@ -33,32 +49,54 @@
                 <td>{{ f.stock }}</td>
                 <td> {{ f.category | safe }} </td>
                 <td> {{ f.timesordered }}</td>
+                <td>
+                  <form action="/deleteitemsuccess" method="POST">
+                    <input type="submit" value="Remove" class="text--centered input--submit"/>
+                    <input type="hidden" name="foodid" value={{f.foodid}}>
+                  </form>
+                </td>
               </tr>
-              {% endfor %}
-            </table>
-          </div>
-          <div>
-            <h2>Add item here</h2>
-            <form action="/additemsuccess" name="signup-form" method="POST">
-              <input type="text" placeholder="Food description" class="input" name="description" maxlength="30"/>
-              <input type="number" placeholder="Price" class="input" name="price" maxlength="30" />
-              <input type="number" placeholder="Stock" class="input" name="stock" maxlength="15"/>
-              <input type="text" placeholder="Category" class="input" name="category" maxlength="15"/>
-              <input type="submit" value="Add food" class="text--centered input--submit"/>
-            </form>
-          </div>
-          <div>
-            <h2>Edit item here</h2>
-            <form action="/edititemsuccess" name="signup-form" method="POST">
-              <input type="number" placeholder="Food ID" class="input" name="food_id" maxlength="30"/>
-              <input type="text" placeholder="Food description" class="input" name="description" maxlength="30"/>
-              <input type="number" placeholder="Price" class="input" name="price" maxlength="30" />
-              <input type="number" placeholder="Stock" class="input" name="stock" maxlength="15"/>
-              <input type="text" placeholder="Category" class="input" name="category" maxlength="15"/>
-              <input type="submit" value="Edit food" class="text--centered input--submit"/>
-            </form>
-          </div>
+            {% endfor %}
+          </table>
         </div>
+        <div align='center'>
+          <h2>Add item here</h2>
+          <form action="/additemsuccess" name="signup-form" method="POST">
+            <input type="text" placeholder="Food description" class="input" name="description" maxlength="30"/>
+            <input type="number" placeholder="Price" class="input" name="price" maxlength="30" />
+            <input type="number" placeholder="Stock" class="input" name="stock" maxlength="15"/>
+            <input type="text" placeholder="Category" class="input" name="category" maxlength="15"/>
+            <input type="submit" value="Add food" class="text--centered input--submit"/>
+          </form>
+        </div>
+        <div align='center'>
+          <h2>Edit item here</h2>
+          <form action="/edititemsuccess" name="signup-form" method="POST">
+            <input type="number" placeholder="Food ID" class="input" name="food_id" maxlength="30"/>
+            <input type="text" placeholder="Food description" class="input" name="description" maxlength="30"/>
+            <input type="number" placeholder="Price" class="input" name="price" maxlength="30" />
+            <input type="number" placeholder="Stock" class="input" name="stock" maxlength="15"/>
+            <input type="text" placeholder="Category" class="input" name="category" maxlength="15"/>
+            <input type="submit" value="Edit food" class="text--centered input--submit"/>
+          </form>
+				</div>
+				<div align='center'>
+          <h2>Add promos</h2>
+					<form action="/addpromosuccess" name="signup-form" method="POST">
+
+            <input type="text" placeholder="Promo Description" class="input" name="food_id" maxlength="50"/>
+            <input type="date" placeholder="Start date" class="input" name="description"/>
+						<input type="date" placeholder="End date" class="input" name="price"/>
+						<select name="promotype">
+							<option value="PercentOff"> Percent Off </option>
+							<option value="AmountOff"> Amount Off </option>
+							<option value="" disabled selected> Select </option>
+						</select>
+						<input type="number" placeholder="Amount or Percentage", name="amt"/>
+						<input type="submit" value="Add promo" class="text--centered input--submit"/>
+          </form>
+        </div>
+      </div>
       {% endblock %}
     </body>
 </html>
