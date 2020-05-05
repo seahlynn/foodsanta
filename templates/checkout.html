@@ -52,10 +52,21 @@
                             <td> Delivery Off: </td>
                             <td>
                                 <select name="deliverypromoid">
+                                    <option value="nonechosen" selected> Choose a Promo </option>
                                     {% for r in boughtdeliverypromolist %}
-                                      <option value="{{r.description}}" SELECTED> {{r.description}} </option>
+                                      <option value="{{r.description}}" > {{r.description}} </option>
                                     {% endfor %}
-                                    <option value="nonechosen"> Choose a Promo </option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td> Apply Promotion: </td>
+                            <td>
+                                <select name="fdspromoid" style="text-align-last:center;">
+                                    <option value="nonechosen" selected> Choose a Promo </option>
+                                    {% for r in boughtpromolist %}
+                                      <option value="{{r.description}}" > {{r.description}} </option>
+                                    {% endfor %}
                                 </select>
                             </td>
                         </tr>
@@ -95,18 +106,6 @@
             <datalist id="payments">
                 {% for r in paymentlist %}
                   <option value="{{r.method}}">
-                {% endfor %}
-            </datalist>
-
-            <datalist id="deliverypromos">
-                {% for r in boughtdeliverypromolist %}
-                  <option value="{{r.description}}">
-                {% endfor %}
-            </datalist>
-
-            <datalist id="promos">
-                {% for r in promolist %}
-                  <option value="{{r.description}}">
                 {% endfor %}
             </datalist>
 

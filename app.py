@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import MetaData
 #from flask_login import LoginManager
 from datetime import datetime, date, timedelta
+from decimal import *
 
 app = Flask(__name__) #Initialize FoodSanta
 
@@ -635,8 +636,8 @@ def checkout():
     boughtdeliverypromoresult = db.session.execute(boughtdeliverypromoquery)
     boughtdeliverypromolist = [dict(deliverypromoid = row[0], description = row[1]) for row in boughtdeliverypromoresult.fetchall()]
 
-    #existing promos available for us
-    promoquery = f"select F.fdspromoid, F.description from FDSPromo F, UsersPromo U where F.fdspromoid = U.fdspromoid and U.username = '{username}'"
+    #existing promos available for user
+    promoquery = f"select fdspromoid, description from FDSPromo where fdspromoid in (select fdspromoid from Userspromo where username = '{username}')"
     promoresult = db.session.execute(promoquery)
     promolist = [dict(deliverypromoid = row[0], description = row[1]) for row in promoresult.fetchall()]
 
@@ -644,7 +645,7 @@ def checkout():
     pointsquery = f"select points from Customers where username = '{username}'"
     points = db.session.execute(pointsquery).fetchall()[0][0]
 
-    return render_template('checkout.html', custdetails = custdetails, locationlist = locationlist, paymentlist = paymentlist, deliveryfee = deliveryfee, subtotal = subtotal, total = total, deliverypromolist = deliverypromolist, boughtdeliverypromolist = boughtdeliverypromolist, points = points, promolist = promolist)
+    return render_template('checkout.html', custdetails = custdetails, locationlist = locationlist, paymentlist = paymentlist, deliveryfee = deliveryfee, subtotal = subtotal, total = total, deliverypromolist = deliverypromolist, boughtdeliverypromolist = boughtdeliverypromolist, points = points, boughtpromolist = promolist)
 
 @app.route('/buydeliverypromo', methods=['POST', 'GET'])
 def buydeliverypromo():
@@ -683,7 +684,7 @@ def confirmcheckout():
         return redirect('checkout')
 
     if cardInfo is None:
-        flash("Card cannot be blank!")
+        flash("Please choose a payment method!")
         return redirect('checkout')
 
     #for customer details
@@ -714,6 +715,45 @@ def confirmcheckout():
     totalresult = db.session.execute(totalquery).fetchall()
     subtotal = totalresult[0][0]
 
+    #process fds promotions
+    fdspromo = request.form.get('fdspromoid')
+
+    if fdspromo != 'nonechosen':
+        fdspromoid = db.session.execute(f"select fdspromoid from FDSPromo where description = '{fdspromo}'").fetchall()[0][0]
+        typequery = f"select type from FDSPromo where fdspromoid = {fdspromoid}"
+        typeresult = db.session.execute(typequery).fetchall()[0][0]
+
+        if typeresult == 'percentoff':
+            percent = db.session.execute(f"select percent from PercentOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
+            appliedto = db.session.execute(f"select appliedto from PercentOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
+            minamnt = db.session.execute(f"select minAmnt from PercentOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
+
+            if (minamnt > subtotal):
+                flash("You cannot apply this promo! Minimum spending amount has to be " + minamnt)
+                return redirect ('checkout')
+            else:
+                if appliedto == 'delivery':
+                    deliveryfee = round(Decimal((deliveryfee / 100) * (100 - percent)), 2)
+                else:
+                    subtotal = round(Decimal((subtotal / 100) * (100 - percent)), 2)
+        #amount off
+        else:
+            amount = db.session.execute(f"select amount from AmountOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
+            appliedto = db.session.execute(f"select appliedto from AmountOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
+            minamnt = db.session.execute(f"select minAmnt from AmountOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
+
+            if (minamnt > subtotal):
+                flash("You cannot apply this promo! Minimum spending amount has to be " + minamnt)
+                return redirect ('checkout')
+            else:
+                if appliedto == 'delivery':
+                    deliveryfee = deliveryfee - amount
+                else:
+                    subtotal = subtotal - amount
+
+        session['removefdspromo'] = f"delete from UsersPromo where fdspromoid = {fdspromoid}"
+
+    #eventual price 
     total = subtotal + deliveryfee
 
     #temp order 
@@ -740,6 +780,10 @@ def placeorder():
     if session.get('removepromo') is not None:
         removepromo = session['removepromo']
         db.session.execute(removepromo)
+
+    if session.get('removefdspromo') is not None:
+        removefdspromo = session['removefdspromo']
+        db.session.execute(removefdspromo)
 
     db.session.execute(insertorder)
     db.session.execute(insertdelivery)
@@ -834,6 +878,7 @@ def buypromo():
        return redirect('viewpromos')
     else:
         flash("You don't have enough points to purchase this promo! \n You get 1 point for every $1 spent!")
+        return redirect('viewpromos')
 
     
 '''
