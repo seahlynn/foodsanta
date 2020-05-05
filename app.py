@@ -215,6 +215,10 @@ def addpromo():
     fdspromoidresult = db.session.execute(fdspromoidquery).fetchall()
     fdspromoid = fdspromoidresult[0][0] + 1
 
+    if validtill < validfrom:
+        flash("Invalid Promotion dates! Please make sure the start date is before the end date!")
+        return redirect('gotopromos')
+
     if promotype == 'PercentOff':
         addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'percentoff', '{validfrom}', '{validtill}', {cost})"
         addtospecificpromo = f"insert into PercentOff values ({fdspromoid}, {discount}, {minamnt}, '{appliedto}')"
@@ -729,7 +733,7 @@ def confirmcheckout():
             minamnt = db.session.execute(f"select minAmnt from PercentOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
 
             if (minamnt > subtotal):
-                flash("You cannot apply this promo! Minimum spending amount has to be " + minamnt)
+                flash("You cannot apply this promo! Minimum spending amount has to be $" + str(minamnt))
                 return redirect ('checkout')
             else:
                 if appliedto == 'delivery':
