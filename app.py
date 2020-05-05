@@ -1069,12 +1069,33 @@ def getPartTimeSchedule():
     today = datetime.today()
     monday = today - timedelta(days = today.weekday())
     datem = monday.date()
+    sunday = monday + timedelta(days = 6)
+    datemEnd = sunday.date()
     print(datem)
+    print(datemEnd)
     schedulequery = f"create table dayShift (day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (day, shift, duration) select D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as day, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shift from dayShift"
     scheduleresult = db.session.execute(schedulequery)
     schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
     
-    return render_template('parttimeschedule.html', schedule = schedule)
+    return render_template('parttimeschedule.html', schedule = schedule, datem = datem, datemEnd = datemEnd)
+
+@app.route('/getNextPartTimeSchedule', methods=['GET'])
+def getNextPartTimeSchedule():
+    username = 'bakwah'
+    today = datetime.today()
+    daysToNextMonday = 0 - today.weekday()
+    if daysToNextMonday <= 0:
+        daysToNextMonday += 7
+    nextMonday = today + timedelta(days = daysToNextMonday)
+    datem = nextMonday.date()
+    nextSunday = nextMonday + timedelta(days = 6)
+    datemEnd = nextSunday.date()
+
+    schedulequery = f"create table dayShift (day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (day, shift, duration) select D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as day, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shift from dayShift"
+    scheduleresult = db.session.execute(schedulequery)
+    schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
+    
+    return render_template('nextparttimeschedule.html', schedule = schedule, datem = datem, datemEnd = datemEnd)
 
 @app.route('/newDelivery', methods=['POST'])
 def newDelivery():
