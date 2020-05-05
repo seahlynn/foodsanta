@@ -924,11 +924,12 @@ def orderstatus():
     
     return render_template('orderstatus.html', orderlist = orderlist, finishedlist = finishedlist)
 
-@app.route('/submitreview', methods=['POST'])
-def submitreview():
+@app.route('/submitreviewandrating', methods=['POST'])
+def submitreviewandrating():
 
     username = session['username']
     review = request.form['review']
+    rating = request.form['rating']
     orderid = int(request.form['orderid'])
     checkquery = f"select count(*) from Reviews where orderid = {orderid}"
     checkresult = db.session.execute(checkquery).fetchall()
@@ -944,7 +945,28 @@ def submitreview():
         db.session.commit()
 
     flash('Review submitted!')
+
+    checkRquery = f"select count(*) from Delivers where orderid = {orderid} and rating = null"
+    checkRresult = db.session.execute(checkRquery).fetchall()
+    checkR = checkRresult[0][0]
+
+    if (checkR != 0):
+        flash("You have already submitted a rating for this delivery!")
+        return redirect('orderstatus')
+
+    if rating != '':
+        ratingToGive = f"update Delivers set rating = '{rating}' where orderid = '{orderid}'"
+        db.session.execute(ratingToGive)
+        db.session.commit()
+
+    flash('Rating submitted!')
+
     return redirect('orderstatus')
+
+@app.route('/submitrating', methods=['POST'])
+def submitrating():
+    
+    username = session['username']    
 
 @app.route('/neworder', methods=['POST'])
 def neworder():
