@@ -93,11 +93,25 @@
                     <table align='center'>
                         <tr>
                             <td> Restaurant Name: </td>
-                            <td> <input name="restname" list="restnames"> </td>
+                            <td>
+                                <select name="restid">
+                                    {% for f in namelist %}
+                                      <option value="{{f.restid}}"> {{f.restname}} </option>
+                                    {% endfor %}
+                                    <option value="" disabled selected> Restaurant </option>
+                                </select>
+                            </td>
                         </tr>
                         <tr>
                             <td> Staff Name: </td>
-                            <td> <input name="staffname" list="staffnames"> </td>
+                            <td> 
+                                <select name="username">
+                                    {% for f in stafflist %}
+                                    <option value="{{f.username}}"> {{f.staffname}} </option>
+                                    {% endfor %}
+                                    <option value="" disabled selected> Staff </option>
+                                </select>
+                            </td>
                         </tr>
                         <tr>
                             <td colspan="2"> <input type="Submit" value="Add Staff under Restaurant"> </td>

@@ -172,13 +172,13 @@ def gotomanagerests():
     restresult = db.session.execute(restquery)
     restlist = [dict(restid = row[0], restname = row[1], location = row[3], minamnt = row[2]) for row in restresult.fetchall()]
     
-    restnamequery = f"select restname from Restaurants"
+    restnamequery = f"select restid, restname from Restaurants"
     restnameresult = db.session.execute(restnamequery)
-    namelist = [dict(restname = row[0]) for row in restnameresult.fetchall()]
+    namelist = [dict(restid = row[0], restname = row[1]) for row in restnameresult.fetchall()]
 
-    staffquery = f"select U.name from Users U, RestaurantStaff R where U.username = R.username and R.restid is null"
+    staffquery = f"select U.name, U.username from Users U, RestaurantStaff R where U.username = R.username and R.restid is null"
     staffresult = db.session.execute(staffquery)
-    stafflist = [dict(staffname = row[0]) for row in staffresult.fetchall()]
+    stafflist = [dict(staffname = row[0], username = row[1]) for row in staffresult.fetchall()]
 
     return render_template('managerestaurants.html', restlist = restlist, namelist = namelist, stafflist = stafflist)
 
@@ -245,20 +245,15 @@ def editrestaurant():
 
 @app.route('/linkstaff', methods=['POST'])
 def linkstaff():
-    username = session['username']
-
     restname = request.form['restname']
-    location = request.form['location']
-    minamnt = request.form['minamnt']
-    restidquery = f"select max(restid) from Restaurants"
-    restid = db.session.execute(restidquery).fetchall()[0][0] + 1
-
-    if restname == '' or location =='' or minamnt == '':
+    staffname = request.form['staffname']
+    
+    if restname == '' or staffname =='':
         flash("Please make sure all the fields have been filled!")
         return redirect('gotomanagerests')
 
-    minamnt = int(minamnt)
-    todo = f"insert into Restaurants values ({restid}, '{restname}', {minamnt}, '{location}')"
+    
+    todo = f"insert into Restaurants values "
     db.session.execute(todo)
     db.session.commit()
     
