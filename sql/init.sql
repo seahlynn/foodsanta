@@ -425,7 +425,7 @@ create trigger updateCustomerStatsTrigger
     execute function updateCustomerStatsFunction();
 
 /* Increments the total number of distinct customers */
-create or replace function addNewCustomer() 
+create or replace function addNewCustomerFunction() 
 returns trigger as $$
 begin
     if (not exists(
@@ -451,7 +451,7 @@ drop trigger if exists addNewCustomerTrigger ON AllStats;
 create trigger addNewCustomerTrigger
     after insert on Customers
     for each row
-    execute function addNewCustomer(); 
+    execute function addNewCustomerFunction(); 
 
 /* Updates allstats with +1 total num of orders and + total cost*/ 
 create or replace function updateAllStatsFunction()
@@ -479,6 +479,21 @@ create trigger updateAllStatsTrigger
     before insert on Orders
     for each row
     execute function updateAllStatsFunction();
+
+/* Updates rider's total salary after completing a delivery order (fixed delivery bonus = 5)*/
+create or replace function updateRiderDeliveryBonusFunction()
+returns trigger as $$
+begin
+    update RiderStats
+    set totalSalary = totalSalary + 5; 
+return new;
+end; $$ language plpgsql;
+
+drop trigger if exists updateRiderDeliveryBonusTrigger on RiderStats;
+create trigger updateRiderDeliveryBonusTrigger
+    after update of totalOrders on RiderStats
+    for each row
+    execute function updateRiderDeliveryBonusFunction();
 
 /* update Locations for top 5 locations*/ 
 create or replace function updateLocationFunction()
