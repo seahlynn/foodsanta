@@ -325,7 +325,8 @@ CREATE TABLE WeeklyWorkSchedule (
 CREATE TABLE DailyWorkShift (
     dwsid               INTEGER,
     wwsid               INTEGER,
-    day                 INTEGER,
+    day                 INTEGER
+                        CHECK (day in (0, 1, 2, 3, 4, 5, 6)),
     startHour           INTEGER
                         CHECK (startHour >= 10 AND startHour <= 22),
     duration            INTEGER
@@ -602,4 +603,43 @@ create trigger deductPointsDeliveryTrigger
     for each row
     execute function deductPointsDeliveryFunction();
 
+/* update weekly work schedule hours*/ 
+create or replace function updateWwsHoursFunction()
+returns trigger as $$
+begin
+    update WeeklyWorkSchedule
+    set wwsHours = wwsHours + NEW.duration
+    where wwsid = NEW.wwsid;
+return new;
+end; $$ language plpgsql;        
 
+drop trigger if exists updateWwsHoursTrigger on DailyWorkShift;
+create trigger updateWwsHoursTrigger
+    before insert on DailyWorkShift
+    for each row
+    execute function updateWwsHoursFunction();
+
+/* check validity of a new part time shift hours*/
+create or replace function validPartTimeShiftFunction()
+returns trigger as $$
+DECLARE
+existingDay INTEGER;
+existingStartHour INTEGER;
+existingDuration INTEGER;
+begin
+    select d1.day, d1.startHour, d1.duration into existingDay, existingStartHour, existingDuration
+        from DailyWorkShift d1, DailyWorkShift d2
+        where d1.wwsid = NEW.wwsid and d1.day = NEW.day and d2.dwsid = new.dwsid and d1.dwsid <> d2.dwsid
+        and   ((d1.startHour <= NEW.startHour and NEW.startHour <= d1.startHour + d1.duration)
+        or    (d1.startHour <= NEW.startHour + NEW.duration and NEW.startHour + NEW.duration <= d1.startHour + d1.duration));
+    if existingStartHour is not null then
+        raise exception 'Shift on % of % hour(s) on % clashes with shift % of % hour(s)!', NEW.startHour, NEW.duration, existingDay, existingStartHour, existingDuration;
+    end if;
+    return null;
+end; $$ language plpgsql;        
+
+drop trigger if exists validPartTimeShiftTrigger on DailyWorkShift;
+create trigger validPartTimeShiftTrigger
+    after insert on DailyWorkShift
+    for each row
+    execute function validPartTimeShiftFunction();
