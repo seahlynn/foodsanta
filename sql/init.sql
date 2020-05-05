@@ -120,7 +120,7 @@ CREATE TABLE Food (
     availability    INTEGER NOT NULL CHECK (availability >= 0),
     category        VARCHAR(20),
     restid          INTEGER NOT NULL,
-    timesordered    INTEGER NOT NULL,
+    timesordered    INTEGER NOT NULL DEFAULT 0,
 
     PRIMARY KEY (foodid),
 

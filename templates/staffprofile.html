@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'staffbase.html' %}
+      {% block overall %}
+      <div>
+        <div>
+          <h2> Menu </h2>
+          {% with messages = get_flashed_messages() %}
+            {% if messages %}
+              {% for message in messages %}
+                  <h2 class="text--centered text">{{ message }}</h2>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+          <table border="1", style='margin-top: 20px;' align='center'>
+            <tr>
+              <th> Food ID </th>
+              <th> Description </th>
+              <th> Price </th>
+              <th> Stock </th>
+              <th> Category </th>
+              <th> Times ordered </th>
+              {% for f in menu %}
+              <tr>
+                <td> {{ f.foodid }}</td>
+                <td>{{ f.description }}</td>
+                <td>{{ f.price }}</td>
+                <td>{{ f.stock }}</td>
+                <td> {{ f.category }} </td>
+                <td> {{ f.timesordered }}</td>
+              </tr>
+              {% endfor %}
+            </table>
+          </div>
+          <div>
+            <h2>Add item here</h2>
+            <form action="/additemsuccess" name="signup-form" method="POST">
+              <input type="text" placeholder="Food description" class="input" name="description" maxlength="30"/>
+              <input type="text" placeholder="Price" class="input" name="price" maxlength="30" />
+              <input type="text" placeholder="Stock" class="input" name="stock" maxlength="15"/>
+              <input type="text" placeholder="Category" class="input" name="category" maxlength="15"/>
+              <input type="submit" value="Add food" class="text--centered input--submit"/>
+            </form>
+          </div>
+          <div>
+            <h2>Edit item here</h2>
+            <form action="/edititemsuccess" name="signup-form" method="POST">
+              <input type="text" placeholder="Food ID" class="input" name="food_id" maxlength="30"/>
+              <input type="text" placeholder="Food description" class="input" name="description" maxlength="30"/>
+              <input type="text" placeholder="Price" class="input" name="price" maxlength="30" />
+              <input type="text" placeholder="Stock" class="input" name="stock" maxlength="15"/>
+              <input type="text" placeholder="Category" class="input" name="category" maxlength="15"/>
+              <input type="submit" value="Edit food" class="text--centered input--submit"/>
+            </form>
+          </div>
+        </div>
+      {% endblock %}
+    </body>
+</html>
+
+<!--
+  
+-->

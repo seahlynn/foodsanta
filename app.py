@@ -129,8 +129,70 @@ def redirect_accordingly(username):
     check_user_rider = f"select 1 from DeliveryRiders where username = '{username}'"
     if db.session.execute(check_user_rider).fetchone():
         return redirect('gotodelivery')
+    check_user_staff = f"select 1 from RestaurantStaff where username = '{username}'"
+    if db.session.execute(check_user_staff).fetchone():
+        return redirect('gotostaff')
     return redirect('login')
-        
+
+'''
+Restaurant related
+'''
+@app.route('/gotostaff', methods=['GET', 'POST'])
+def gotostaff():
+    global db
+    username = session['username']
+    rest_id = get_rest_id(username)
+    if not rest_id:
+        return render_template('no_restaurant_registered.html')
+    session['rest_id'] = rest_id
+    menu = get_menu(rest_id)
+    rest_name = 0
+    return render_template('staffprofile.html', menu=menu)
+
+@app.route('/additemsuccess', methods=['GET', 'POST'])
+def additemsuccess():
+    rest_id = session['rest_id']
+    food_id = get_next_food_id()
+    if request.method == 'POST':
+        form = request.form
+        description, price, stock, category = form["description"].strip(), form["price"].strip(), form["stock"], form["category"]
+        insert_query = f"insert into Food(foodid, description, price, availability, category, restid) values({food_id}, '{description}', {price}, {stock}, '{category}', {rest_id})"
+        db.session.execute(insert_query)
+        db.session.commit()
+    return redirect('gotostaff')
+
+@app.route('/edititemsuccess', methods=['GET', 'POST'])
+def edititemsuccess():
+    rest_id = session['rest_id']
+    if request.method == 'POST':
+        form = request.form
+        food_id, description, price, stock, category = form["food_id"].strip(), form["description"].strip(), form["price"].strip(), form["stock"].strip(), form["category"].strip()
+        check_rest_id = f"select 1 from Food where foodid = {food_id} and restid = {rest_id}"
+        if db.session.execute(check_rest_id).fetchone():
+            update_food_query = f"update Food set description = '{description}', price = {price}, availability = {stock}, category = '{category}' where foodid = {food_id}"
+            db.session.execute(update_food_query)
+            db.session.commit()
+        else:
+            flash("This food is not in your restaurant's menu.")
+    return redirect('gotostaff')
+
+def get_next_food_id():
+    check_max_food_id = f"select max(foodid) from Food"
+    max_food_id = db.session.execute(check_max_food_id).fetchone()[0]
+    return max_food_id + 1
+
+def get_rest_id(username):
+    check_restaurant_query = f"select restid from RestaurantStaff where username = '{username}' "
+    rest_id = db.session.execute(check_restaurant_query).fetchone()[0]
+    return rest_id
+
+def get_menu(id):
+    global db
+    check_menu_query = f"select foodid, description, price, availability, category, timesordered from Food where restid = '{id}'"
+    menu = db.session.execute(check_menu_query).fetchall()
+    parsed_menu = [{"foodid": i[0], "description": i[1], "price": float(i[2]), "stock": i[3], "category": i[4], "timesordered": i[5]} for i in menu]
+    return parsed_menu
+
 
 '''
 Manager related: Profile
@@ -225,7 +287,6 @@ def addpromo():
     db.session.execute(addtospecificpromo)
     db.session.commit()
     return redirect('gotopromos')
-
 
 '''
 Manager related: View statistics
