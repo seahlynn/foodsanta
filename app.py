@@ -202,22 +202,30 @@ def showpromohistory():
 def addpromo():
     global db
 
-    promotype = request.form['promotype']
+    promotype = request.form.get('promotype')
     description = request.form['description']
-    discount = int(request.form['discount'])
-    minamnt = int(request.form['minamnt'])
-    appliedto = request.form['appliedto']
+    discount = request.form['discount']
+    minamnt = request.form['minamnt']
+    appliedto = request.form.get('appliedto')
     validfrom = request.form['validfrom']
     validtill = request.form['validtill']
-    cost = int(request.form['cost'])
+    cost = request.form['cost']
     
     fdspromoidquery = f"select fdspromoid from FDSPromo order by fdspromoid desc limit 1"
     fdspromoidresult = db.session.execute(fdspromoidquery).fetchall()
     fdspromoid = fdspromoidresult[0][0] + 1
 
+    if promotype is None or appliedto is None or description == '' or discount == '' or minamnt == '' or cost == '':
+        flash("Please make sure all fields are filled in!")
+        return redirect('gotopromos')
+
     if validtill < validfrom:
         flash("Invalid Promotion dates! Please make sure the start date is before the end date!")
         return redirect('gotopromos')
+
+    discount = int(discount)
+    minamnt = int(minamnt)
+    cost = int(cost)
 
     if promotype == 'PercentOff':
         addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'percentoff', '{validfrom}', '{validtill}', {cost})"
