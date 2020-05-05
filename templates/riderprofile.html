@@ -22,8 +22,27 @@
                     <td>{{ p.number }}</td>
                   </tr>
                   {% endfor %}
-              {% endblock %}
               </table>
+          <h2> Delivery Stats </h2>
+              <table align = 'center'>
+                <tr>
+                  <th> Month </th>
+                  <th> Year </th>
+                  <th> Total Orders Completed </th>
+                  <th> Total Hours Worked </th>
+                  <th> Total Salary Earned </th>
+                </tr>  
+                {% for s in riderstats %}
+                <tr>
+                  <td> s.month </td>
+                  <td> s.year </td>
+                  <td> s.totalOrders </td>
+                  <td> s.totalHours </td>
+                  <td> s.totalSalary </td>
+                </tr>
+                {% endfor %}
+              {% endblock %}
+              </table>    
           </div>
  
           <div class="editprofile" style="width:50%; display: inline-block;">
