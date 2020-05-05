@@ -4,7 +4,8 @@ INSERT INTO Users(username, name, password, phoneNumber, dateCreated) VALUES
 ('bakwah', 'Leewah', 'leewahcool', '91718716', '2020-04-04'),
 ('justning', 'Sining', 'siningcool', '91718716', '2020-04-04'),
 ('managertest', 'ManagerTest', 'managercool', '96567556', '2020-04-05'),
-('ridertest', 'RiderTest', 'ridercool', '96567556', '2020-04-12');
+('fullridertest', 'RiderTest', 'fullridercool', '96567556', '2020-04-12'),
+('partridertest', 'RiderTest', 'partridercool', '96567556', '2020-04-12');
 
 INSERT INTO FDSManagers(username) VALUES
 ('managertest');
@@ -20,20 +21,22 @@ INSERT INTO DeliveryRiders(username) VALUES
 ('lynjaaa'),
 ('bakwah'),
 ('justning'),
-('ridertest');
+('fullridertest'),
+('partridertest');
 
 INSERT INTO FullTimeRiders(username) VALUES
 ('kalsyc'),
 ('lynjaaa'),
 ('bakwah'),
 ('justning'),
-('ridertest');
+('fullridertest');
 
 INSERT INTO PartTimeRiders(username) VALUES
 ('kalsyc'),
 ('lynjaaa'),
 ('bakwah'),
-('justning');
+('justning'),
+('partridertest');
 
 INSERT INTO Locations(username, location, dateAdded) VALUES
 ('justning', '21 Lower Kent Ridge Rd, Singapore 119077', '2020-04-03'),
@@ -123,10 +126,10 @@ INSERT INTO Delivers(orderid, username, rating, location, deliveryFee, timeDepar
 (13, 'justning', 3,  '16 #01-220 College Ave West 138527', 5, '02/01/2020 1650', '02/01/2020 1715', '02/01/2020 1730', 1);
 
 INSERT INTO FDSPromo(fdspromoid, description, type, startTime, endTime, points) VALUES
-(1, '10% off all orders this Circuit Breaker', 'percentoff', '04/18/2020', '04/05/2020', 0),
-(2, '25% off all orders this Valentine Day', 'percentoff', '02/14/2020', '02/28/2020', 30),
-(3, '$5 off all orders for the month of May, minimum order of $50', 'amountoff', '05/01/2020', '05/31/2020', 40),
-(4, '5% off all delivery for the month of May', 'percentoff', '01/05/2020', '05/31/2020', 25);
+(1, '10% off all orders this Circuit Breaker', 'percentoff', '18/04/2020', '05/04/2020', 0),
+(2, '25% off all orders this Valentine Day', 'percentoff', '14/02/2020', '28/02/2020', 30),
+(3, '$5 off all orders for the month of May, minimum order of $50', 'amountoff', '01/05/2020', '31/05/2020', 40),
+(4, '5% off all delivery for the month of May', 'percentoff', '01/05/2020', '31/05/2020', 25);
 
 INSERT INTO DeliveryPromo(deliverypromoid, description, amount, points) values 
 (1, '$1 off delivery', 1, 10),

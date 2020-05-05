@@ -128,7 +128,7 @@ def redirect_accordingly(username):
         return redirect('gotomanagerprofile')
     check_user_rider = f"select 1 from DeliveryRiders where username = '{username}'"
     if db.session.execute(check_user_rider).fetchone():
-        return redirect('gotodelivery')
+        return redirect('gotoriderprofile')
     return redirect('login')
         
 
@@ -840,6 +840,17 @@ def buypromo():
 Riders select existing undelivered orders to pick up and deliver
 
 '''
+@app.route('/gotoriderprofile', methods=['GET'])
+def gotoriderprofile():
+    username = session['username']
+
+    profilequery = f"select name, phoneNumber from Users where username = '{username}'"
+    profileresult = db.session.execute(profilequery)
+    profile = [dict(name = row[0], number = row[1]) for row in profileresult.fetchall()]
+    
+    
+    return render_template('riderprofile.html', profile = profile)
+
 @app.route('/gotodelivery', methods=['GET'])
 def gotodelivery():
     undeliveredOrdersQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False"
@@ -946,8 +957,8 @@ def orderDelivered():
     global db
 
     deliveringOrderId = session['deliveringOrderId']
-    '''username = session['username']'''
-    username = 'justning'
+    username = session['username']
+    '''username = 'justning' '''
     currentTime = datetime.today().strftime("%d/%m/%Y %H%M")
 
     # update delivery
@@ -977,7 +988,16 @@ def orderDelivered():
 
     return render_template('riders_deliveryCompleted.html', numOrders = numOrders)    
 
+@app.route('/gotoschedule', methods=['GET'])
+def gotoschedule():
+    username = session['username']
+    fullriderquery = f"select count(*) from FullTimeRiders where username = '{username}'"
+    fullrider = db.session.execute(fullriderquery).fetchall()[0][0]
 
+    if fullrider == 0:
+        return redirect('getPartTimeSchedule')
+    else:
+        return redirect('getFullTimeSchedule')
     
 @app.route('/getFullTimeSchedule', methods=['GET'])
 def getFullTimeSchedule():
@@ -995,7 +1015,9 @@ def getFullTimeSchedule():
     schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
     
     return render_template('fulltimeschedule.html', schedule = schedule, monthYear = monthYear, noNextSchedule = noNextSchedule)
-    
+
+
+
 @app.route('/getNextFullTimeSchedule', methods=['GET'])
 def getNextFullTimeSchedule():
     username = 'bakwah'

@@ -5,12 +5,12 @@
         <title>FoodSantaTest</title>
     </head>
     <body align = 'center'>
-    {% extends 'base.html' %}
+    {% extends 'riderbase.html' %}
       {% block overall %}
         <div style="display: inline"> 
           <div class="results" style="width:50%; float: left;">
             {% block content %}
-          <h2> Details </h2>
+          <h2> Profile </h2>
               <table align = 'center'>
                   {% for p in profile %}
                   <tr>
@@ -21,38 +21,18 @@
                     <td><h4> Contact Number: </h4></td>
                     <td>{{ p.number }}</td>
                   </tr>
-                  <tr>
-                    <td> <h4> Foodsanta Points: </h4></td>
-                    <td>{{ p.points }}</td>
-                  </tr>
                   {% endfor %}
               {% endblock %}
               </table>
-              <table border='1' align = 'center'>
-                <h4> Card Details </h4>
-                {% for c in cardlist %}
-                <tr>
-                    <td> {{ c.card }} </td>
-                </tr>
-              {% endfor %}
-            </table>
           </div>
  
           <div class="editprofile" style="width:50%; display: inline-block;">
             <h2> Edit Profile </h2>
-            <form method="POST" action="editprofile" autocomplete="off">
+            <form method="POST" action="editmanagerprofile" autocomplete="off">
                 <table  align = 'center'>
                     <tr>
                         <td> Contact: </td>
                         <td> <input type="text" name="contact" placeholder="Update Contact Number"> </td>
-                    </tr>
-                    <tr>
-                        <td> New Card: </td>
-                        <td> <input type="text" name="card" placeholder="Add card"> </td>
-                    </tr>
-                    <tr>
-                        <td> Remove Card: </td>
-                        <td> <input name="delete" list="cards"> </td>
                     </tr>
                     <tr>
                         <td colspan="2"> <input type="Submit" value="Update"> </td>
