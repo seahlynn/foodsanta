@@ -10,10 +10,11 @@
         <form class="" action="/signup" name="signup-form" method="POST">
             <h2 class="text--centered text">Are you ready to join us?</h2>
  
-            <input type="text" placeholder="Username (Your unique username!)" class="input" name="username" maxlength="30"/>
-            <input type="text" placeholder="Name (How would you like to be addressed?)" class="input" name="name" maxlength="30" />
-            <input type="text" placeholder="Password (Maximum 15 characters)" class="input" name="password" maxlength="15"/>
-            <input type="text" placeholder="Retype Password" class="input" name="repassword" maxlength="15"/>
+            <input type="text" pattern="[a-zA-Z][a-zA-Z0-9]*" title="It should only contain alphanumeric characters." placeholder="Username (Your unique username!)" class="input" name="username" maxlength="30"/>
+            <input type="text" pattern="[a-zA-Z][a-zA-Z0-9\s]*" title="It should only contain alphanumeric characters or spaces." placeholder="Name (How would you like to be addressed?)" class="input" name="name" maxlength="30" />
+            <input type="number" placeholder="Phone Number" class="input" name="phoneNumber" maxlength="8" />
+            <input type="text" pattern="[a-zA-Z][a-zA-Z0-9]*" title="It should only contain alphanumeric characters." placeholder="Password (Maximum 15 characters)" class="input" name="password" maxlength="15"/>
+            <input type="text" pattern="[a-zA-Z][a-zA-Z0-9]*" title="It should only contain alphanumeric characters." placeholder="Retype Password" class="input" name="repassword" maxlength="15"/>
 
             {% with messages = get_flashed_messages() %}
                 {% if messages %}

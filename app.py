@@ -1,6 +1,6 @@
 import settings
 import os
-from flask import Flask, render_template, request, session, flash, redirect
+from flask import Flask, render_template, request, session, flash, redirect, escape
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import MetaData
 #from flask_login import LoginManager
@@ -65,11 +65,8 @@ def signup():
 
     if request.method == 'POST':
         form = request.form
-        username, name, password, repassword, user_type = form["username"].strip(), form["name"].strip(), form["password"], form["repassword"], form["usertype"]
-
-        if is_existing_user(username):
-            flash("Username taken! :(")
-            return render_template('signup.html')
+        username, name, password, repassword, user_type, phoneNumber = form["username"].strip(), form["name"].strip(), form["password"],\
+             form["repassword"], form["usertype"], form["phoneNumber"]
 
         if password != repassword:
             flash("Passwords don't match :(")
@@ -86,8 +83,12 @@ def signup():
         if not len(name):
             flash("Name cannot be blank!")
             return render_template('signup.html')
+
+        if is_existing_user(username):
+            flash("Username taken! :(")
+            return render_template('signup.html')
         
-        register_user(username, name, password, user_type)
+        register_user(username, name, password, user_type, phoneNumber)
         return redirect('registration_success')
 
     return render_template('signup.html')
@@ -97,10 +98,10 @@ def registration_success():
     print("Registration successful")
     return render_template('registration_success.html')
 
-def register_user(username, name, password, user_type):
+def register_user(username, name, password, user_type, phoneNumber):
     global db
     date = datetime.today().strftime("%d/%m/%Y")
-    insert_users = f"insert into Users(username, name, password, phoneNumber, dateCreated) values ('{username}','{name}','{password}', '{98782507}' '{date}');"
+    insert_users = f"insert into Users(username, name, password, phoneNumber, dateCreated) values ('{username}','{name}','{password}', '{phoneNumber}' ,'{date}');"
     insert_type = f"insert into {user_type}(username) values ('{username}');"
     db.session.execute(insert_users)
     db.session.execute(insert_type)
@@ -155,7 +156,9 @@ def additemsuccess():
     food_id = get_next_food_id()
     if request.method == 'POST':
         form = request.form
-        description, price, stock, category = form["description"].strip(), form["price"].strip(), form["stock"], form["category"]
+        description, price, stock, category = escape(form["description"].strip()), escape(form["price"]), escape(form["stock"]),\
+             escape(form["category"].strip())
+        print(description, category)
         insert_query = f"insert into Food(foodid, description, price, availability, category, restid) values({food_id}, '{description}', {price}, {stock}, '{category}', {rest_id})"
         db.session.execute(insert_query)
         db.session.commit()
@@ -166,7 +169,8 @@ def edititemsuccess():
     rest_id = session['rest_id']
     if request.method == 'POST':
         form = request.form
-        food_id, description, price, stock, category = form["food_id"].strip(), form["description"].strip(), form["price"].strip(), form["stock"].strip(), form["category"].strip()
+        food_id, description, price, stock, category = form["food_id"], escape(form["description"].strip()), form["price"], form["stock"].strip(),\
+             escape(form["category"].strip())
         check_rest_id = f"select 1 from Food where foodid = {food_id} and restid = {rest_id}"
         if db.session.execute(check_rest_id).fetchone():
             update_food_query = f"update Food set description = '{description}', price = {price}, availability = {stock}, category = '{category}' where foodid = {food_id}"

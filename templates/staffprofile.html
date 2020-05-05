@@ -28,10 +28,10 @@
               {% for f in menu %}
               <tr>
                 <td> {{ f.foodid }}</td>
-                <td>{{ f.description }}</td>
+                <td>{{ f.description | safe }}</td>
                 <td>{{ f.price }}</td>
                 <td>{{ f.stock }}</td>
-                <td> {{ f.category }} </td>
+                <td> {{ f.category | safe }} </td>
                 <td> {{ f.timesordered }}</td>
               </tr>
               {% endfor %}
@@ -41,8 +41,8 @@
             <h2>Add item here</h2>
             <form action="/additemsuccess" name="signup-form" method="POST">
               <input type="text" placeholder="Food description" class="input" name="description" maxlength="30"/>
-              <input type="text" placeholder="Price" class="input" name="price" maxlength="30" />
-              <input type="text" placeholder="Stock" class="input" name="stock" maxlength="15"/>
+              <input type="number" placeholder="Price" class="input" name="price" maxlength="30" />
+              <input type="number" placeholder="Stock" class="input" name="stock" maxlength="15"/>
               <input type="text" placeholder="Category" class="input" name="category" maxlength="15"/>
               <input type="submit" value="Add food" class="text--centered input--submit"/>
             </form>
@@ -50,10 +50,10 @@
           <div>
             <h2>Edit item here</h2>
             <form action="/edititemsuccess" name="signup-form" method="POST">
-              <input type="text" placeholder="Food ID" class="input" name="food_id" maxlength="30"/>
+              <input type="number" placeholder="Food ID" class="input" name="food_id" maxlength="30"/>
               <input type="text" placeholder="Food description" class="input" name="description" maxlength="30"/>
-              <input type="text" placeholder="Price" class="input" name="price" maxlength="30" />
-              <input type="text" placeholder="Stock" class="input" name="stock" maxlength="15"/>
+              <input type="number" placeholder="Price" class="input" name="price" maxlength="30" />
+              <input type="number" placeholder="Stock" class="input" name="stock" maxlength="15"/>
               <input type="text" placeholder="Category" class="input" name="category" maxlength="15"/>
               <input type="submit" value="Edit food" class="text--centered input--submit"/>
             </form>
