@@ -162,6 +162,80 @@ def editmanagerprofile():
     return redirect('gotomanagerprofile')
 
 '''
+Manager related: manage restaurants
+'''
+@app.route('/gotomanagerests', methods=['GET'])
+def gotomanagerests():
+    username = session['username']
+
+    restquery = f"select * from Restaurants"
+    restresult = db.session.execute(restquery)
+    restlist = [dict(restid = row[0], restname = row[1], location = row[3], minamnt = row[2]) for row in restresult.fetchall()]
+    
+    return render_template('managerestaurants.html', restlist = restlist)
+
+@app.route('/addrestaurant', methods=['POST'])
+def addrestaurant():
+    username = session['username']
+
+    restname = request.form['restname']
+    location = request.form['location']
+    minamnt = request.form['minamnt']
+    restidquery = f"select max(restid) from Restaurants"
+    restid = db.session.execute(restidquery).fetchall()[0][0] + 1
+
+    if restname == '' or location =='' or minamnt == '':
+        flash("Please make sure all the fields have been filled!")
+        return redirect('gotomanagerests')
+
+    minamnt = int(minamnt)
+    todo = f"insert into Restaurants values ({restid}, '{restname}', {minamnt}, '{location}')"
+    db.session.execute(todo)
+    db.session.commit()
+    
+    return redirect('gotomanagerests')
+
+@app.route('/editrestaurant', methods=['POST'])
+def editrestaurant():
+    username = session['username']
+
+    restid = request.form['restid']
+    restname = request.form['restname']
+    location = request.form['location']
+    minamnt = request.form['minamnt']
+    
+    if restid == '':
+        flash("Choose the restaurant you want to edit!")
+        return redirect('gotomanagerests')
+
+    restidcheckquery = f"select count(*) from Restaurants where restid = {restid}"
+    restidcheck = db.session.execute(restidcheckquery).fetchall()[0][0]
+
+    if restidcheck == 0:
+        flash("Restaurant ID doesn't exist!")
+        return redirect('gotomanagerests')
+
+    if restname == '' and location =='' and minamnt == '':
+        flash("Please fill in at least one field")
+        return redirect('gotomanagerests')
+
+
+    if minamnt != '':
+        minamnt = int(minamnt)
+        updateamount = f"update Restaurants set minAmt = {minamnt} where restid = {restid}"
+        db.session.execute(updateamount)
+    if location != '':
+        updatelocation = f"update Restaurants set location = '{location}' where restid = {restid}"
+        db.session.execute(updatelocation)
+    if restname != '':
+        updatename = f"update Restaurants set restname = '{restname}' where restid = {restid}"
+        db.session.execute(updatename)
+
+    db.session.commit()
+    
+    return redirect('gotomanagerests')
+
+'''
 Manager related: View, Add, Delete Promos
 '''
 @app.route('/gotopromos', methods=['GET'])
