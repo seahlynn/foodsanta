@@ -5,12 +5,12 @@
         <title>FoodSantaTest</title>
     </head>
     <body align = 'center'>
-    {% extends 'base.html' %}
+    {% extends 'riderbase.html' %}
       {% block overall %}
         <div style="display: inline"> 
           <div class="results" style="width:50%; float: left;">
             {% block content %}
-          <h2> Part Time Schedule </h2>
+          <h2> Part Time Schedule from {{ datem }} to {{ datemEnd }}</h2>
               <table border='1' align = 'center'>
                 {% for s in schedule %}
                 <tr>
@@ -19,6 +19,10 @@
                 </tr>
                 {% endfor %}
             </table>
+            <br></br>
+            <form action="/getNextPartTimeSchedule" name="getnextparttimeschedule">
+                <input type="submit" value="View next week's schedule"/>
+              </form>
           </div>
         </div>
       {% endblock %}

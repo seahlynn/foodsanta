@@ -18,6 +18,7 @@ DROP TABLE IF EXISTS Contains CASCADE;
 DROP TABLE IF EXISTS FDSPromo CASCADE;
 DROP TABLE IF EXISTS UsersPromo CASCADE;
 DROP TABLE IF EXISTS DeliveryPromo CASCADE;
+DROP TABLE IF EXISTS UsersDeliveryPromo CASCADE;
 DROP TABLE IF EXISTS AmountOff CASCADE;
 DROP TABLE IF EXISTS PercentOff CASCADE;
 DROP TABLE IF EXISTS FullTimeRiders CASCADE;
@@ -117,6 +118,7 @@ CREATE TABLE Food (
     foodid          INTEGER,
     description     VARCHAR(50),
     price           decimal NOT NULL,
+    dailylimit		INTEGER NOT NULL CHECK (dailylimit >= 0),
     availability    INTEGER NOT NULL CHECK (availability >= 0),
     category        VARCHAR(20),
     restid          INTEGER NOT NULL,
@@ -189,6 +191,14 @@ CREATE TABLE UsersDeliveryPromo (
 	PRIMARY KEY (deliverypromoid, username)
 );
 
+
+CREATE TABLE RestaurantPromo (
+	fdspromoid		INTEGER,
+	restid 			INTEGER,
+
+    PRIMARY KEY (fdspromoid, restid)     
+);
+
 CREATE TABLE Orders (
 	orderid				INTEGER,
     username			VARCHAR(30),
@@ -237,7 +247,7 @@ CREATE TABLE Delivers (
     username                VARCHAR(30), 
 	rating					INTEGER CHECK ((rating <= 5) AND (rating >= 0)),
 	location 				VARCHAR(100) NOT NULL,
-    deliveryFee             INTEGER NOT NULL,
+    deliveryFee             DECIMAL NOT NULL,
 	timeDepartToRestaurant	TIMESTAMP,
 	timeArrivedAtRestaurant	TIMESTAMP,
 	timeOrderDelivered		TIMESTAMP,
@@ -251,15 +261,7 @@ CREATE TABLE Delivers (
 );
 
 
-CREATE TABLE RestaurantPromo (
-    description     VARCHAR(50),
-    restpromoid     INTEGER,
-    startTime       DATE,
-    endTime         DATE,
-    restid          INTEGER NOT NULL,
 
-    PRIMARY KEY (restpromoid)     
-);
 
 
 CREATE TABLE FullTimeRiders (
@@ -340,11 +342,12 @@ CREATE TABLE DailyWorkShift (
 
 CREATE TABLE CustomerStats (
     username            VARCHAR(30),
-    monthid             INTEGER,
+    month            	INTEGER,
+    year 				INTEGER,
     totalNumOrders      INTEGER,
     totalCostOfOrders   INTEGER,
 
-    PRIMARY KEY (username, monthid),
+    PRIMARY KEY (username, month, year),
 
     FOREIGN KEY (username) REFERENCES Customers
 );
@@ -370,19 +373,19 @@ CREATE TABLE RiderStats (
 	totalHours		INTEGER,
 	totalSalary		INTEGER,
     
-
     PRIMARY KEY (username, month, year),
 
 	FOREIGN KEY (username) REFERENCES DeliveryRiders
 );
 
 CREATE TABLE AllStats (
-    monthid             INTEGER,
+    month               INTEGER,
+    year                INTEGER,
     totalNewCust        INTEGER,
     totalNumOrders      INTEGER, --should be total num of restuarants--
     totalCostOfOrders   INTEGER,
 
-    PRIMARY KEY (monthid)
+    PRIMARY KEY (month, year)
 );
 
 CREATE TABLE Latest (
@@ -405,15 +408,17 @@ begin
         select 1
         from CustomerStats C1
         where C1.username = NEW.username
-        and C1.monthid = (select extract(month from current_timestamp)))) then
-        insert into CustomerStats values(NEW.username, (select extract(month from current_timestamp)), 1, NEW.totalCost);
+        and C1.month = (select extract(month from current_timestamp))
+        and C1.year = (select extract(year from current_timestamp)))) then
+        insert into CustomerStats values(NEW.username, (select extract(month from current_timestamp)), (select extract(year from current_timestamp)), 1, NEW.totalCost);
     /* existing customer */
     else 
         update CustomerStats C2
         set totalNumOrders = totalNumOrders + 1,
             totalCostOfOrders = totalCostOfOrders + NEW.totalCost
         where C2.username = NEW.username
-        and C2.monthid = (select extract(month from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
+        and C2.month = (select extract(month from current_timestamp));
+        and C2.year = (select extract(year from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
 end if;    
 return new;
 end; $$ language plpgsql;        
@@ -425,7 +430,7 @@ create trigger updateCustomerStatsTrigger
     execute function updateCustomerStatsFunction();
 
 /* Increments the total number of distinct customers */
-create or replace function addNewCustomer() 
+create or replace function addNewCustomerFunction() 
 returns trigger as $$
 begin
     if (not exists(
@@ -436,13 +441,15 @@ begin
         if (not exists (
             select 1
             from AllStats
-            where monthid = (select extract(month from current_timestamp)))) 
-        then insert into AllStats values ((select extract(month from current_timestamp)), 0, 0, 0); 
+            where month = (select extract(month from current_timestamp))
+            and year = (select extract(year from current_timestamp)))) 
+        then insert into AllStats values ((select extract(month from current_timestamp)), (select extract(year from current_timestamp)), 0, 0, 0); 
         end if;
 
         update AllStats
         set totalNewCust = totalNewCust + 1
-        where monthid = (select extract(month from current_timestamp));
+        where month = (select extract(month from current_timestamp))
+        and year = (select extract(year from current_timestamp));
 end if;
 return new;
 end; $$ language plpgsql;
@@ -451,7 +458,7 @@ drop trigger if exists addNewCustomerTrigger ON AllStats;
 create trigger addNewCustomerTrigger
     after insert on Customers
     for each row
-    execute function addNewCustomer(); 
+    execute function addNewCustomerFunction(); 
 
 /* Updates allstats with +1 total num of orders and + total cost*/ 
 create or replace function updateAllStatsFunction()
@@ -461,14 +468,16 @@ begin
     if (not exists (
             select 1
             from AllStats
-            where monthid = (select extract(month from current_timestamp)))) 
-            then insert into AllStats values ((select extract(month from current_timestamp)), 0, 1, NEW.totalCost);
+            where month = (select extract(month from current_timestamp))
+            and year = (select extract(year from current_timestamp)))) 
+            then insert into AllStats values ((select extract(month from current_timestamp)), (select extract(year from current_timestamp)), 0, 1, NEW.totalCost);
     /* existing customer */
     else 
         update AllStats
         set totalNumOrders = totalNumOrders + 1,
             totalCostOfOrders = totalCostOfOrders + NEW.totalCost
-        where monthid = (select extract(month from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
+        where month = (select extract(month from current_timestamp))
+        and year = (select extract(year from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
     end if; 
 
 return new;
@@ -479,6 +488,21 @@ create trigger updateAllStatsTrigger
     before insert on Orders
     for each row
     execute function updateAllStatsFunction();
+
+/* Updates rider's total salary after completing a delivery order (fixed delivery bonus = 5)*/
+create or replace function updateRiderDeliveryBonusFunction()
+returns trigger as $$
+begin
+    update RiderStats
+    set totalSalary = totalSalary + 5; 
+return new;
+end; $$ language plpgsql;
+
+drop trigger if exists updateRiderDeliveryBonusTrigger on RiderStats;
+create trigger updateRiderDeliveryBonusTrigger
+    after update of totalOrders on RiderStats
+    for each row
+    execute function updateRiderDeliveryBonusFunction();
 
 /* update Locations for top 5 locations*/ 
 create or replace function updateLocationFunction()
@@ -567,7 +591,7 @@ create trigger addCashMethodTrigger
 
 
 /* deduct customer's points after purchase of promo*/ 
-/*create or replace function deductPointsPromoFunction()
+create or replace function deductPointsPromoFunction()
 returns trigger as $$
 DECLARE
 pointsused INTEGER;
@@ -582,7 +606,7 @@ drop trigger if exists deductPointsPromoTrigger on Customers;
 create trigger deductPointsPromoTrigger
     after insert on UsersPromo
     for each row
-    execute function deductPointsPromoFunction();*/
+    execute function deductPointsPromoFunction();
 
 /* deduct customer's points after purchase of promo*/ 
 create or replace function deductPointsDeliveryFunction()
@@ -601,5 +625,52 @@ create trigger deductPointsDeliveryTrigger
     after insert on UsersDeliveryPromo
     for each row
     execute function deductPointsDeliveryFunction();
+
+/*add promotions under user's promo if points needed to buy is 0*/
+create or replace function addUsersPromoFunction()
+returns trigger as $$
+DECLARE
+pointsused INTEGER;
+customer RECORD;
+begin
+    select into pointsused (select points from FDSPromo where fdspromoid = NEW.fdspromoid);
+
+    if pointsused = 0 then
+	    for customer in
+	        (select username from Customers)
+	    loop
+	    	insert into UsersPromo values (NEW.fdspromoid, customer.username);
+	    end loop;
+	end if;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists addUsersPromoTrigger on UsersPromo;
+create trigger addUsersPromoTrigger
+    after insert on FDSPromo
+    for each row
+    execute function addUsersPromoFunction();
+
+/*add times ordered of food*/
+create or replace function incrementTimesOrderedFoodFunction()
+returns trigger as $$
+DECLARE
+food RECORD;
+begin
+    for food in
+		(select foodid from Food where restid = NEW.restid)
+	loop
+		update Food set timesOrdered = timesOrdered - 1 where foodid = food.foodid;
+	end loop;
+
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists incrementTimesOrderdFoodTrigger on Orders;
+create trigger incrementTimesOrderedFoodTrigger
+    after insert on Orders
+    for each row
+    execute function incrementTimesOrderedFoodFunction();
+
 
 

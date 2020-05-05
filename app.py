@@ -1,10 +1,14 @@
 import settings
 import os
 from flask import Flask, render_template, request, session, flash, redirect, escape
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import MetaData
 #from flask_login import LoginManager
 from datetime import datetime, date, timedelta
+from decimal import *
+
+
 
 app = Flask(__name__) #Initialize FoodSanta
 
@@ -20,6 +24,18 @@ app.config['SECRET_KEY'] = b'random123456789'
 
 db = SQLAlchemy(app)
 #login_manager = LoginManager() 
+
+def updateDailyLimit():
+    todo = f"update Food F1 set availability = (select dailylimit from Food F2 where F1.foodid = F2.foodid)"
+    db.session.execute(todo)
+    db.session.commit()
+    print("Scheduler is alive!")
+
+
+sched = BackgroundScheduler(daemon=True)
+sched.add_job(updateDailyLimit,'cron', hour=0)
+sched.start()
+
 
 @app.route('/', methods=['GET'])
 def index():
@@ -263,6 +279,103 @@ def editmanagerprofile():
     return redirect('gotomanagerprofile')
 
 '''
+Manager related: manage restaurants
+'''
+@app.route('/gotomanagerests', methods=['GET'])
+def gotomanagerests():
+    username = session['username']
+
+    restquery = f"select * from Restaurants"
+    restresult = db.session.execute(restquery)
+    restlist = [dict(restid = row[0], restname = row[1], location = row[3], minamnt = row[2]) for row in restresult.fetchall()]
+    
+    restnamequery = f"select restid, restname from Restaurants"
+    restnameresult = db.session.execute(restnamequery)
+    namelist = [dict(restid = row[0], restname = row[1]) for row in restnameresult.fetchall()]
+
+    staffquery = f"select U.name, U.username from Users U, RestaurantStaff R where U.username = R.username and R.restid is null"
+    staffresult = db.session.execute(staffquery)
+    stafflist = [dict(staffname = row[0], username = row[1]) for row in staffresult.fetchall()]
+
+    return render_template('managerestaurants.html', restlist = restlist, namelist = namelist, stafflist = stafflist)
+
+@app.route('/addrestaurant', methods=['POST'])
+def addrestaurant():
+    username = session['username']
+
+    restname = request.form['restname']
+    location = request.form['location']
+    minamnt = request.form['minamnt']
+    restidquery = f"select max(restid) from Restaurants"
+    restid = int(db.session.execute(restidquery).fetchall()[0][0] or 0) + 1
+
+    if restname == '' or location =='' or minamnt == '':
+        flash("Please make sure all the fields have been filled!")
+        return redirect('gotomanagerests')
+
+    minamnt = int(minamnt)
+    todo = f"insert into Restaurants values ({restid}, '{restname}', {minamnt}, '{location}')"
+    db.session.execute(todo)
+    db.session.commit()
+    
+    return redirect('gotomanagerests')
+
+@app.route('/editrestaurant', methods=['POST'])
+def editrestaurant():
+    username = session['username']
+
+    restid = request.form['restid']
+    restname = request.form['restname']
+    location = request.form['location']
+    minamnt = request.form['minamnt']
+    
+    if restid == '':
+        flash("Choose the restaurant you want to edit!")
+        return redirect('gotomanagerests')
+
+    restidcheckquery = f"select count(*) from Restaurants where restid = {restid}"
+    restidcheck = db.session.execute(restidcheckquery).fetchall()[0][0]
+
+    if restidcheck == 0:
+        flash("Restaurant ID doesn't exist!")
+        return redirect('gotomanagerests')
+
+    if restname == '' and location =='' and minamnt == '':
+        flash("Please fill in at least one field")
+        return redirect('gotomanagerests')
+
+
+    if minamnt != '':
+        minamnt = int(minamnt)
+        updateamount = f"update Restaurants set minAmt = {minamnt} where restid = {restid}"
+        db.session.execute(updateamount)
+    if location != '':
+        updatelocation = f"update Restaurants set location = '{location}' where restid = {restid}"
+        db.session.execute(updatelocation)
+    if restname != '':
+        updatename = f"update Restaurants set restname = '{restname}' where restid = {restid}"
+        db.session.execute(updatename)
+
+    db.session.commit()
+    
+    return redirect('gotomanagerests')
+
+@app.route('/linkstaff', methods=['POST'])
+def linkstaff():
+    restid = request.form.get('restid')
+    username = request.form.get('username')
+    
+    if restid is None or username is None:
+        flash("Please make sure all the fields have been filled!")
+        return redirect('gotomanagerests')
+    
+    todo = f"update RestaurantStaff set restid={restid} where username = '{username}'"
+    db.session.execute(todo)
+    db.session.commit()
+    
+    return redirect('gotomanagerests')
+
+'''
 Manager related: View, Add, Delete Promos
 '''
 @app.route('/gotopromos', methods=['GET'])
@@ -303,18 +416,30 @@ def showpromohistory():
 def addpromo():
     global db
 
-    promotype = request.form['promotype']
+    promotype = request.form.get('promotype')
     description = request.form['description']
-    discount = int(request.form['discount'])
-    minamnt = int(request.form['minamnt'])
-    appliedto = request.form['appliedto']
+    discount = request.form['discount']
+    minamnt = request.form['minamnt']
+    appliedto = request.form.get('appliedto')
     validfrom = request.form['validfrom']
     validtill = request.form['validtill']
-    cost = int(request.form['cost'])
+    cost = request.form['cost']
     
     fdspromoidquery = f"select fdspromoid from FDSPromo order by fdspromoid desc limit 1"
     fdspromoidresult = db.session.execute(fdspromoidquery).fetchall()
     fdspromoid = fdspromoidresult[0][0] + 1
+
+    if promotype is None or appliedto is None or description == '' or discount == '' or minamnt == '' or cost == '':
+        flash("Please make sure all fields are filled in!")
+        return redirect('gotopromos')
+
+    if validtill < validfrom:
+        flash("Invalid Promotion dates! Please make sure the start date is before the end date!")
+        return redirect('gotopromos')
+
+    discount = int(discount)
+    minamnt = int(minamnt)
+    cost = int(cost)
 
     if promotype == 'PercentOff':
         addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'percentoff', '{validfrom}', '{validtill}', {cost})"
@@ -465,7 +590,7 @@ Customer related: View ordering page, order from Menu, add to cart
 def gotorest():
     orderidquery = f"select orderid from Orders order by orderid desc limit 1"
     orderidresult = db.session.execute(orderidquery).fetchall()
-    orderid = int(orderidresult[0][0]) + 1
+    orderid = int(orderidresult[0][0] or 0) + 1
     session['orderid'] = orderid
     session['deliveryfee'] = 4
 
@@ -736,16 +861,16 @@ def checkout():
     boughtdeliverypromoresult = db.session.execute(boughtdeliverypromoquery)
     boughtdeliverypromolist = [dict(deliverypromoid = row[0], description = row[1]) for row in boughtdeliverypromoresult.fetchall()]
 
-    #existing promos available for us
-    promoquery = f"select F.fdspromoid, F.description from FDSPromo F, UsersPromo U where F.fdspromoid = U.fdspromoid and U.username = '{username}'"
+    #existing promos available for user (including the ones for this restaurant)
+    promoquery = f"select fdspromoid, description from FDSPromo where fdspromoid in (select fdspromoid from Userspromo where username = '{username}') and fdspromoid not in (select fdspromoid from RestaurantPromo where restid <> {restid})"
     promoresult = db.session.execute(promoquery)
-    promolist = [dict(deliverypromoid = row[0], description = row[1]) for row in promoresult.fetchall()]
+    promolist = [dict(fdspromoid = row[0], description = row[1]) for row in promoresult.fetchall()]
 
     #get points
     pointsquery = f"select points from Customers where username = '{username}'"
     points = db.session.execute(pointsquery).fetchall()[0][0]
 
-    return render_template('checkout.html', custdetails = custdetails, locationlist = locationlist, paymentlist = paymentlist, deliveryfee = deliveryfee, subtotal = subtotal, total = total, deliverypromolist = deliverypromolist, boughtdeliverypromolist = boughtdeliverypromolist, points = points, promolist = promolist)
+    return render_template('checkout.html', custdetails = custdetails, locationlist = locationlist, paymentlist = paymentlist, deliveryfee = deliveryfee, subtotal = subtotal, total = total, deliverypromolist = deliverypromolist, boughtdeliverypromolist = boughtdeliverypromolist, points = points, boughtpromolist = promolist)
 
 @app.route('/buydeliverypromo', methods=['POST', 'GET'])
 def buydeliverypromo():
@@ -784,7 +909,7 @@ def confirmcheckout():
         return redirect('checkout')
 
     if cardInfo is None:
-        flash("Card cannot be blank!")
+        flash("Please choose a payment method!")
         return redirect('checkout')
 
     #for customer details
@@ -794,15 +919,16 @@ def confirmcheckout():
     
 
     #amount off delivery fee
-    deliverypromo = request.form.get('deliverypromoid')
+    deliverypromoid = request.form.get('deliverypromoid')
 
-    if deliverypromo == 'nonechosen':
+    if deliverypromoid == 'nonechosen':
         amountoff = 0
+        deliverydescription = 'nonechosen'
     else:
-        promoid = db.session.execute(f"select deliverypromoid from DeliveryPromo where description = '{deliverypromo}'").fetchall()[0][0]
-        amountoffquery = f"select amount from DeliveryPromo where deliverypromoid = {promoid}"
+        deliverydescription = db.session.execute(f"select description from DeliveryPromo where deliverypromoid = {deliverypromoid}").fetchall()[0][0]
+        amountoffquery = f"select amount from DeliveryPromo where deliverypromoid = {deliverypromoid}"
         amountoff = db.session.execute(amountoffquery).fetchall()[0][0]
-        session['removepromo'] = f"delete from UsersDeliveryPromo where deliverypromoid = {promoid}"
+        session['removepromo'] = f"delete from UsersDeliveryPromo where deliverypromoid = {deliverypromoid}"
 
     deliveryfee = session['deliveryfee'] - amountoff
 
@@ -814,7 +940,46 @@ def confirmcheckout():
     totalquery = f"select sum(F.price * C.quantity) from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid} and restid = {restid}"
     totalresult = db.session.execute(totalquery).fetchall()
     subtotal = totalresult[0][0]
+    
 
+    #process fds promotions
+    fdspromoid = request.form.get('fdspromoid')
+
+    if fdspromoid != 'nonechosen':
+        typequery = f"select type from FDSPromo where fdspromoid = {fdspromoid}"
+        typeresult = db.session.execute(typequery).fetchall()[0][0]
+
+        if typeresult == 'percentoff':
+            percent = db.session.execute(f"select percent from PercentOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
+            appliedto = db.session.execute(f"select appliedto from PercentOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
+            minamnt = db.session.execute(f"select minAmnt from PercentOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
+
+            if (minamnt > subtotal):
+                flash("You cannot apply this promo! Minimum spending amount has to be $" + str(minamnt))
+                return redirect ('checkout')
+            else:
+                if appliedto == 'delivery':
+                    deliveryfee = round(Decimal((deliveryfee / 100) * (100 - percent)), 2)
+                else:
+                    subtotal = round(Decimal((subtotal / 100) * (100 - percent)), 2)
+        #amount off
+        else:
+            amount = db.session.execute(f"select amount from AmountOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
+            appliedto = db.session.execute(f"select appliedto from AmountOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
+            minamnt = db.session.execute(f"select minAmnt from AmountOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
+
+            if (minamnt > subtotal):
+                flash("You cannot apply this promo! Minimum spending amount has to be " + minamnt)
+                return redirect ('checkout')
+            else:
+                if appliedto == 'delivery':
+                    deliveryfee = deliveryfee - amount
+                else:
+                    subtotal = subtotal - amount
+
+        session['removefdspromo'] = f"delete from UsersPromo where fdspromoid = {fdspromoid}"
+
+    #eventual price 
     total = subtotal + deliveryfee
 
     #temp order 
@@ -830,7 +995,7 @@ def confirmcheckout():
     session['insertdelivery'] = f"insert into Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered, paymentmethodid) values ('{orderid}', null, null, '{location}', '{deliveryfee}', null, null, null, {paymentmethodid})"
     
     
-    return render_template('confirmcheckout.html', custdetails = custdetails, location = location, cardInfo = cardInfo, subtotal = subtotal, total = total, deliverypromo = deliverypromo, deliveryfee = deliveryfee)
+    return render_template('confirmcheckout.html', custdetails = custdetails, location = location, cardInfo = cardInfo, subtotal = subtotal, total = total, deliverypromo = deliverydescription, deliveryfee = deliveryfee)
 
 @app.route('/placeorder', methods=['POST'])
 def placeorder():
@@ -841,6 +1006,10 @@ def placeorder():
     if session.get('removepromo') is not None:
         removepromo = session['removepromo']
         db.session.execute(removepromo)
+
+    if session.get('removefdspromo') is not None:
+        removefdspromo = session['removefdspromo']
+        db.session.execute(removefdspromo)
 
     db.session.execute(insertorder)
     db.session.execute(insertdelivery)
@@ -866,11 +1035,12 @@ def orderstatus():
     
     return render_template('orderstatus.html', orderlist = orderlist, finishedlist = finishedlist)
 
-@app.route('/submitreview', methods=['POST'])
-def submitreview():
+@app.route('/submitreviewandrating', methods=['POST'])
+def submitreviewandrating():
 
     username = session['username']
     review = request.form['review']
+    rating = request.form['rating']
     orderid = int(request.form['orderid'])
     checkquery = f"select count(*) from Reviews where orderid = {orderid}"
     checkresult = db.session.execute(checkquery).fetchall()
@@ -886,7 +1056,28 @@ def submitreview():
         db.session.commit()
 
     flash('Review submitted!')
+
+    checkRquery = f"select count(*) from Delivers where orderid = {orderid} and rating = null"
+    checkRresult = db.session.execute(checkRquery).fetchall()
+    checkR = checkRresult[0][0]
+
+    if (checkR != 0):
+        flash("You have already submitted a rating for this delivery!")
+        return redirect('orderstatus')
+
+    if rating != '':
+        ratingToGive = f"update Delivers set rating = '{rating}' where orderid = '{orderid}'"
+        db.session.execute(ratingToGive)
+        db.session.commit()
+
+    flash('Rating submitted!')
+
     return redirect('orderstatus')
+
+@app.route('/submitrating', methods=['POST'])
+def submitrating():
+    
+    username = session['username']    
 
 @app.route('/neworder', methods=['POST'])
 def neworder():
@@ -904,15 +1095,22 @@ def viewpromos():
     pointsquery = f"select points from Customers where username = '{username}'"
     points = db.session.execute(pointsquery).fetchall()[0][0]
 
-    promoquery = f"select fdspromoid, description, startTime, endTime, points from FDSPromo F where endTime > (select current_date) and fdspromoid not in (select fdspromoid from UsersPromo)"
+    #fds promo
+    promoquery = f"select fdspromoid, description, startTime, endTime, points from FDSPromo F where endTime > (select current_date) and fdspromoid not in (select fdspromoid from UsersPromo) and fdspromoid not in (select fdspromoid from RestaurantPromo)"
     promoresult = db.session.execute(promoquery)
     promolist = [dict(fdspromoid = row[0], description = row[1], validfrom = row[2], validtill = row[3], points = row[4]) for row in promoresult.fetchall()]
     
+    #restaurant promos
+    restpromoquery = f"select P.fdspromoid, P.description, P.startTime, P.endTime, P.points, R.restname from FDSPromo P, RestaurantPromo F, Restaurants R where P.endTime > (select current_date) and P.fdspromoid not in (select fdspromoid from UsersPromo) and P.fdspromoid in (select fdspromoid from RestaurantPromo) and F.restid = R.restid and F.fdspromoid = P.fdspromoid"
+    restpromoresult = db.session.execute(restpromoquery)
+    restpromolist = [dict(fdspromoid = row[0], description = row[1], validfrom = row[2], validtill = row[3], points = row[4], restname = row[5]) for row in restpromoresult.fetchall()]
+
+    #promos user has
     boughtpromoquery = f"select fdspromoid, description, startTime, endTime from FDSPromo where endTime > (select current_date) and fdspromoid in (select fdspromoid from UsersPromo)"
     boughtpromoresult = db.session.execute(boughtpromoquery)
     boughtpromolist = [dict(fdspromoid = row[0], description = row[1], validfrom = row[2], validtill = row[3]) for row in boughtpromoresult.fetchall()]
 
-    return render_template('cuspromopage.html', points = points, promolist = promolist, boughtpromolist = boughtpromolist)
+    return render_template('cuspromopage.html', points = points, promolist = promolist, boughtpromolist = boughtpromolist, restpromolist = restpromolist)
 
 @app.route('/buypromo', methods=['POST', 'GET'])
 def buypromo():
@@ -935,12 +1133,27 @@ def buypromo():
        return redirect('viewpromos')
     else:
         flash("You don't have enough points to purchase this promo! \n You get 1 point for every $1 spent!")
+        return redirect('viewpromos')
 
     
 '''
 Riders select existing undelivered orders to pick up and deliver
 
 '''
+@app.route('/gotoriderprofile', methods=['GET'])
+def gotoriderprofile():
+    username = session['username']
+
+    profilequery = f"select name, phoneNumber from Users where username = '{username}'"
+    profileresult = db.session.execute(profilequery)
+    profile = [dict(name = row[0], number = row[1]) for row in profileresult.fetchall()]
+
+    riderstatsquery = f"select * from RiderStats where username = '{username}'"    
+    riderstatsresult = db.session.execute(riderstatsquery)
+    riderstats = [dict(month = row[0], year = row[1], totalOrders = row[3], totalHours = row[4], totalSalary = row[5]) for row in riderstatsresult.fetchall()]
+    
+    return render_template('riderprofile.html', profile = profile, riderstats = riderstats)
+
 @app.route('/gotodelivery', methods=['GET'])
 def gotodelivery():
     undeliveredOrdersQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False"
@@ -1047,8 +1260,8 @@ def orderDelivered():
     global db
 
     deliveringOrderId = session['deliveringOrderId']
-    '''username = session['username']'''
-    username = 'justning'
+    username = session['username']
+    '''username = 'justning' '''
     currentTime = datetime.today().strftime("%d/%m/%Y %H%M")
 
     # update delivery
@@ -1078,7 +1291,16 @@ def orderDelivered():
 
     return render_template('riders_deliveryCompleted.html', numOrders = numOrders)    
 
+@app.route('/gotoschedule', methods=['GET'])
+def gotoschedule():
+    username = session['username']
+    fullriderquery = f"select count(*) from FullTimeRiders where username = '{username}'"
+    fullrider = db.session.execute(fullriderquery).fetchall()[0][0]
 
+    if fullrider == 0:
+        return redirect('getPartTimeSchedule')
+    else:
+        return redirect('getFullTimeSchedule')
     
 @app.route('/getFullTimeSchedule', methods=['GET'])
 def getFullTimeSchedule():
@@ -1096,7 +1318,9 @@ def getFullTimeSchedule():
     schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
     
     return render_template('fulltimeschedule.html', schedule = schedule, monthYear = monthYear, noNextSchedule = noNextSchedule)
-    
+
+
+
 @app.route('/getNextFullTimeSchedule', methods=['GET'])
 def getNextFullTimeSchedule():
     username = 'bakwah'
@@ -1148,12 +1372,33 @@ def getPartTimeSchedule():
     today = datetime.today()
     monday = today - timedelta(days = today.weekday())
     datem = monday.date()
+    sunday = monday + timedelta(days = 6)
+    datemEnd = sunday.date()
     print(datem)
+    print(datemEnd)
     schedulequery = f"create table dayShift (day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (day, shift, duration) select D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as day, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shift from dayShift"
     scheduleresult = db.session.execute(schedulequery)
     schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
     
-    return render_template('parttimeschedule.html', schedule = schedule)
+    return render_template('parttimeschedule.html', schedule = schedule, datem = datem, datemEnd = datemEnd)
+
+@app.route('/getNextPartTimeSchedule', methods=['GET'])
+def getNextPartTimeSchedule():
+    username = 'bakwah'
+    today = datetime.today()
+    daysToNextMonday = 0 - today.weekday()
+    if daysToNextMonday <= 0:
+        daysToNextMonday += 7
+    nextMonday = today + timedelta(days = daysToNextMonday)
+    datem = nextMonday.date()
+    nextSunday = nextMonday + timedelta(days = 6)
+    datemEnd = nextSunday.date()
+
+    schedulequery = f"create table dayShift (day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (day, shift, duration) select D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as day, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shift from dayShift"
+    scheduleresult = db.session.execute(schedulequery)
+    schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
+    
+    return render_template('nextparttimeschedule.html', schedule = schedule, datem = datem, datemEnd = datemEnd)
 
 @app.route('/newDelivery', methods=['POST'])
 def newDelivery():

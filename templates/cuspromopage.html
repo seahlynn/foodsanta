@@ -16,30 +16,60 @@
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
-                <h2> Current Promotions </h2>
-                <h4> Current Points: {{points}}</h4>
-                <table id="historytable" border="1", style='margin-top: 20px;' align='center'> 
-                    <tr>
-                        <th> PromoID </th>
-                        <th> Promotion </th>
-                        <th> Valid From </th>
-                        <th> Valid Till </th>
-                        <th> Points to Redeem </th>
-                        <th colspan = '2'> Buy </th>
-                    </tr>
-                    {% for p in promolist %}
-                    <form method="POST" action="buypromo">
+                <div id="fdspromo">
+                    <h2> FoodSanta Promotions </h2>
+                    <h4> Current Points: {{points}}</h4>
+                    <table id="historytable" border="1", style='margin-top: 20px;' align='center'> 
                         <tr>
-                          <td> <select name="fdspromoid"> <option value="{{p.fdspromoid}}" SELECTED> {{p.fdspromoid}} </option> </select></td>
-                          <td> {{ p.description }}</td>
-                          <td>{{ p.validfrom }}</td>
-                          <td>{{ p.validtill }}</td>
-                          <td>{{ p.points }}</td>
-                          <td> <input type="Submit" value="Buy Promo"> </td>
+                            <th> PromoID </th>
+                            <th> Promotion </th>
+                            <th> Valid From </th>
+                            <th> Valid Till </th>
+                            <th> Points to Redeem </th>
+                            <th colspan = '2'> Buy </th>
                         </tr>
-                    </form>
-                    {% endfor %}
-                </table>
+                        {% for p in promolist %}
+                        <form method="POST" action="buypromo">
+                            <tr>
+                            <td> <select name="fdspromoid"> <option value="{{p.fdspromoid}}" SELECTED> {{p.fdspromoid}} </option> </select></td>
+                            <td> {{ p.description }}</td>
+                            <td>{{ p.validfrom }}</td>
+                            <td>{{ p.validtill }}</td>
+                            <td>{{ p.points }}</td>
+                            <td> <input type="Submit" value="Buy Promo"> </td>
+                            </tr>
+                        </form>
+                        {% endfor %}
+                    </table>
+                </div>
+                <div id="restid">
+                    <h2> Restaurant Promotions </h2>
+                    <table id="historytable" border="1", style='margin-top: 20px;' align='center'> 
+                        <tr>
+                            <th> PromoID </th>
+                            <th> Restaurant </th>
+                            <th> Promotion </th>
+                            <th> Valid From </th>
+                            <th> Valid Till </th>
+                            <th> Points to Redeem </th>
+                            <th colspan = '2'> Buy </th>
+                        </tr>
+                        {% for p in restpromolist %}
+                        <form method="POST" action="buypromo">
+                            <tr>
+                            <td> <select name="fdspromoid"> <option value="{{p.fdspromoid}}" SELECTED> {{p.fdspromoid}} </option> </select></td>
+                            <td> {{ p.restname }}</td>
+                            <td> {{ p.description }}</td>
+                            <td>{{ p.validfrom }}</td>
+                            <td>{{ p.validtill }}</td>
+                            <td>{{ p.points }}</td>
+                            <td> <input type="Submit" value="Buy Promo"> </td>
+                            </tr>
+                        </form>
+                        {% endfor %}
+                    </table>
+                </div>
+                
             </div>
 
             <div style="width:50%;float: right;">

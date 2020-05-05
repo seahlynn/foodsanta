@@ -15,6 +15,7 @@
         .top {
             height: 7.6%;
             background-color: #01015B;
+            width : 100%;
         }
 
         .links > a {
@@ -28,30 +29,20 @@
 
 
         .links {
-            width: auto;
             height: 40px;
+            padding-top: 15px;
+         
         }
 
         .links > div, .indiv-link > a {
-            display: inline;
-            text-align: center;
-
-        }
-
-        #profile {
             float: left;
-            padding-left: 12px;
-            padding-top: 15px;
+            width: 25%;
+            text-align: center;
         }
-
-        #order {
-            float: right;
-            padding-right: 12px;
-            padding-top: 15px;
-        }
-
+        
         .indiv-link {
             text-decoration: none;
+            width: 25%;
         }
 
         .links > div > p:hover, .indiv-link:hover {
@@ -74,10 +65,13 @@
                 <a href="{{'gotomanagerprofile'}}" class="indiv-link" id="profile"> PROFILE </a>
             </div>
             <div>
-                <a href="{{'gotopromos'}}" class="indiv-link" id="order"> MANAGE PROMOTIONS </a>
+                <a href="{{'gotopromos'}}" class="indiv-link" id="promo"> MANAGE PROMOTIONS </a>
             </div>
             <div>
-                <a href="{{'gotostats'}}" class="indiv-link" id="order"> VIEW STATS </a>
+                <a href="{{'gotostats'}}" class="indiv-link" id="stats"> VIEW STATS </a>
+            </div>
+            <div>
+                <a href="{{'gotomanagerests'}}" class="indiv-link" id="rest"> MANAGE RESTAURANTS </a>
             </div>
         </div>
     </header>
