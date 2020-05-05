@@ -101,7 +101,7 @@ def registration_success():
 def register_user(username, name, password, user_type):
     global db
     date = datetime.today().strftime("%d/%m/%Y")
-    insert_users = f"insert into Users(username, name, password, phoneNumber, dateCreated) values ('{username}','{name}','{password}', '{98782507}' '{date}');"
+    insert_users = f"insert into Users(username, name, password, phoneNumber, dateCreated) values ('{username}','{name}','{password}', '{98782507}', '{date}');"
     insert_type = f"insert into {user_type}(username) values ('{username}');"
     db.session.execute(insert_users)
     db.session.execute(insert_type)
@@ -160,6 +160,109 @@ def editmanagerprofile():
     db.session.commit()
 
     return redirect('gotomanagerprofile')
+
+'''
+Manager related: manage restaurants
+'''
+@app.route('/gotomanagerests', methods=['GET'])
+def gotomanagerests():
+    username = session['username']
+
+    restquery = f"select * from Restaurants"
+    restresult = db.session.execute(restquery)
+    restlist = [dict(restid = row[0], restname = row[1], location = row[3], minamnt = row[2]) for row in restresult.fetchall()]
+    
+    restnamequery = f"select restname from Restaurants"
+    restnameresult = db.session.execute(restnamequery)
+    namelist = [dict(restname = row[0]) for row in restnameresult.fetchall()]
+
+    staffquery = f"select U.name from Users U, RestaurantStaff R where U.username = R.username and R.restid is null"
+    staffresult = db.session.execute(staffquery)
+    stafflist = [dict(staffname = row[0]) for row in staffresult.fetchall()]
+
+    return render_template('managerestaurants.html', restlist = restlist, namelist = namelist, stafflist = stafflist)
+
+@app.route('/addrestaurant', methods=['POST'])
+def addrestaurant():
+    username = session['username']
+
+    restname = request.form['restname']
+    location = request.form['location']
+    minamnt = request.form['minamnt']
+    restidquery = f"select max(restid) from Restaurants"
+    restid = db.session.execute(restidquery).fetchall()[0][0] + 1
+
+    if restname == '' or location =='' or minamnt == '':
+        flash("Please make sure all the fields have been filled!")
+        return redirect('gotomanagerests')
+
+    minamnt = int(minamnt)
+    todo = f"insert into Restaurants values ({restid}, '{restname}', {minamnt}, '{location}')"
+    db.session.execute(todo)
+    db.session.commit()
+    
+    return redirect('gotomanagerests')
+
+@app.route('/editrestaurant', methods=['POST'])
+def editrestaurant():
+    username = session['username']
+
+    restid = request.form['restid']
+    restname = request.form['restname']
+    location = request.form['location']
+    minamnt = request.form['minamnt']
+    
+    if restid == '':
+        flash("Choose the restaurant you want to edit!")
+        return redirect('gotomanagerests')
+
+    restidcheckquery = f"select count(*) from Restaurants where restid = {restid}"
+    restidcheck = db.session.execute(restidcheckquery).fetchall()[0][0]
+
+    if restidcheck == 0:
+        flash("Restaurant ID doesn't exist!")
+        return redirect('gotomanagerests')
+
+    if restname == '' and location =='' and minamnt == '':
+        flash("Please fill in at least one field")
+        return redirect('gotomanagerests')
+
+
+    if minamnt != '':
+        minamnt = int(minamnt)
+        updateamount = f"update Restaurants set minAmt = {minamnt} where restid = {restid}"
+        db.session.execute(updateamount)
+    if location != '':
+        updatelocation = f"update Restaurants set location = '{location}' where restid = {restid}"
+        db.session.execute(updatelocation)
+    if restname != '':
+        updatename = f"update Restaurants set restname = '{restname}' where restid = {restid}"
+        db.session.execute(updatename)
+
+    db.session.commit()
+    
+    return redirect('gotomanagerests')
+
+@app.route('/linkstaff', methods=['POST'])
+def linkstaff():
+    username = session['username']
+
+    restname = request.form['restname']
+    location = request.form['location']
+    minamnt = request.form['minamnt']
+    restidquery = f"select max(restid) from Restaurants"
+    restid = db.session.execute(restidquery).fetchall()[0][0] + 1
+
+    if restname == '' or location =='' or minamnt == '':
+        flash("Please make sure all the fields have been filled!")
+        return redirect('gotomanagerests')
+
+    minamnt = int(minamnt)
+    todo = f"insert into Restaurants values ({restid}, '{restname}', {minamnt}, '{location}')"
+    db.session.execute(todo)
+    db.session.commit()
+    
+    return redirect('gotomanagerests')
 
 '''
 Manager related: View, Add, Delete Promos

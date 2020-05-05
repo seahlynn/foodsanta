@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'managerbase.html' %}
+      {% block overall %}
+        <div style="display: inline"> 
+          <div class="results" style="width:50%; float: left;">
+             <h2> Restaurants under FoodSanta </h2>
+             <table id="restauranttable" border="1", style='margin-top: 20px;' align='center'> 
+                <tr>
+                    <th> Restaurant ID </th>
+                    <th> Restaurant </th>
+                    <th> Location </th>
+                    <th> Min Amount </th>
+                </tr>
+                {% for p in restlist %}
+                <tr>
+                    <td> {{ p.restid }}</td>
+                    <td>{{ p.restname }}</td>
+                    <td>{{ p.location }}</td>
+                    <td> ${{ p.minamnt }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+          </div>
+ 
+          <div style="width:50%; display: inline-block;">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 15px;"><b>{{ message }}</b></h2>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div id = "addrest"> 
+                <h2> Add Restaurant </h2>
+                <form method="POST" action="addrestaurant" autocomplete="off">
+                    <table align='center'>
+                        <tr>
+                            <td> Restaurant Name: </td>
+                            <td> <input type="text" name="restname" placeholder="Restaurant Name"> </td>
+                        </tr>
+                        <tr>
+                            <td> Location: </td>
+                            <td> <input type="text" name="location" placeholder= "Location"> </td>
+                        </tr>
+                        <tr>
+                            <td> Min. Amount: </td>
+                            <td> <input type="text" name="minamnt" placeholder="Minimum Amount to be Spent"> </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"> <input type="Submit" value="Add Restaurant"> </td>
+                        </tr>
+                    </table>  
+                </form>
+            </div>
+
+            <div id="editrest">
+                <h2> Edit Restaurant </h2>
+                <form method="POST" action="editrestaurant" autocomplete="off">
+                    <table align='center'>
+                        <tr>
+                            <td> Restaurant ID: </td>
+                            <td> <input type="number" min="1" name="restid" placeholder="Input ID number of Restaurant to edit"> </td>
+                        </tr>
+                        <tr>
+                            <td> Restaurant Name: </td>
+                            <td> <input type="text" name="restname" placeholder="Restaurant Name"> </td>
+                        </tr>
+                        <tr>
+                            <td> Location: </td>
+                            <td> <input type="text" name="location" placeholder= "Location"> </td>
+                        </tr>
+                        <tr>
+                            <td> Min. Amount: </td>
+                            <td> <input type="text" name="minamnt" placeholder="Minimum Amount to be Spent"> </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"> <input type="Submit" value="Edit Restaurant"> </td>
+                        </tr>
+                    </table>  
+                </form>
+            </div>
+
+            <div id="linkstaff">
+                <h2> Add Staff to Restaurant </h2>
+                <form method="POST" action="linkstaff" autocomplete="off">
+                    <table align='center'>
+                        <tr>
+                            <td> Restaurant Name: </td>
+                            <td> <input name="restname" list="restnames"> </td>
+                        </tr>
+                        <tr>
+                            <td> Staff Name: </td>
+                            <td> <input name="staffname" list="staffnames"> </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"> <input type="Submit" value="Add Staff under Restaurant"> </td>
+                        </tr>
+                    </table>  
+                </form>
+
+                <datalist id="restnames">
+                    {% for r in namelist %}
+                      <option value="{{r.restname}}">
+                    {% endfor %}
+                </datalist>
+
+                <datalist id="staffnames">
+                    {% for r in stafflist %}
+                      <option value="{{r.staffname}}">
+                    {% endfor %}
+                </datalist>
+
+            </div>
+          </div>
+        </div>
+        
+      {% endblock %}
+    </body>
+</html>
+
+<!--
+  
+-->
