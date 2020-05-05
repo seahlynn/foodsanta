@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "C:\\Users\\Kalsyc\\.virtualenvs\\foodsanta-DeErVdmp\\Scripts\\python.exe"
+    "python.pythonPath": "C:\\Users\\Kalsyc\\.virtualenvs\\foodsanta-DeErVdmp\\Scripts\\python.exe",
+    "python.linting.pylintArgs": ["--load-plugins", "pylint-flask"]
 }

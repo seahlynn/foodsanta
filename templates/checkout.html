@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'base.html' %}
+      {% block overall %}
+        <div style="display:inline;"> 
+
+            <div style="width:50%; display:inline-block;">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 15px;"><b>{{ message }}</b></h2>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                {% block details %}
+                <h2> Details </h2>
+                <form method="POST" action="confirmcheckout" autocomplete="off">
+                    <table  align = 'center'>
+                        {% for p in custdetails %}
+                        <tr>
+                            <td> Name: </td>
+                            <td> {{p.name}} </td>
+                        </tr>
+                        <tr>
+                            <td> Contact: </td>
+                            <td> {{p.number}} </td>
+                        </tr>
+                        <tr>
+                            <td> Location: </td>
+                            <td> <input name="location" list="locations"> </td>
+                        </tr>
+                        <tr>
+                            <td> Payment Method: </td>
+                            <td> 
+                                <select name="payment">
+                                    {% for r in paymentlist %}
+                                    <option value="{{r.method}}" SELECTED> {{r.method}} </option>
+                                    {% endfor %}
+                                    <option value="" disabled selected> Payment Method </option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td> Delivery Fee: </td>
+                            <td> ${{deliveryfee}} </td>
+                        </tr>
+                        <tr>
+                            <td> Delivery Off: </td>
+                            <td>
+                                <select name="deliverypromoid">
+                                    {% for r in boughtdeliverypromolist %}
+                                      <option value="{{r.description}}" SELECTED> {{r.description}} </option>
+                                    {% endfor %}
+                                    <option value="nonechosen"> Choose a Promo </option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td> Subtotal: </td>
+                            <td> ${{subtotal}} </td>
+                        </tr>
+                        <tr>
+                            <td> Total: </td>
+                            <td> ${{total}} </td>
+                        </tr>
+                        <!--<tr>
+                            <td> Promo Codes: </td>
+                            <td> <input name="promoid" list="promos"> </td>
+                        </tr>-->
+                        <tr style="padding: 10px"> 
+                            <td> </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"> <input type="Submit" value="Confirm CheckOut"> </td>
+                        </tr>
+                        {% endfor %}
+                        {% endblock %}
+                    </table>  
+                </form>
+                <form method="POST" action="viewcart">
+                    <button type="submit"> Back to Cart </button>         
+                </form>
+            </div>
+
+            <datalist id="locations">
+                {% for r in locationlist %}
+                  <option value="{{r.location}}">
+                {% endfor %}
+            </datalist>
+
+            <datalist id="payments">
+                {% for r in paymentlist %}
+                  <option value="{{r.method}}">
+                {% endfor %}
+            </datalist>
+
+            <datalist id="deliverypromos">
+                {% for r in boughtdeliverypromolist %}
+                  <option value="{{r.description}}">
+                {% endfor %}
+            </datalist>
+
+            <datalist id="promos">
+                {% for r in promolist %}
+                  <option value="{{r.description}}">
+                {% endfor %}
+            </datalist>
+
+            <div style="width:50%; float: right;">
+                <h2> Delivery Off </h2>
+                <h4> Current Points: {{points}}</h4>
+                <table id="historytable" border="1", style='margin-top: 20px;' align='center'> 
+                    <tr>
+                        <th> PromoID </th>
+                        <th> Promotion </th>
+                        <th> Points to Redeem </th>
+                        <th colspan = '2'> Buy </th>
+                    </tr>
+                    {% for p in deliverypromolist %}
+                    <form method="POST" action="buydeliverypromo">
+                        <tr>
+                          <td> <select name="deliverypromoid"> <option value="{{p.deliverypromoid}}" SELECTED> {{p.deliverypromoid}} </option> </select></td>
+                          <td> {{ p.description }}</td>
+                          <td>{{ p.points }}</td>
+                          <td> <input type="Submit" value="Buy Promo"> </td>
+                        </tr>
+                    </form>
+                    {% endfor %}
+                </table>
+            </div>
+
+        </div>
+        {% endblock %}
+    </body>
+</html>

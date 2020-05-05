@@ -16,6 +16,10 @@ DROP TABLE IF EXISTS AllStats CASCADE;
 DROP TABLE IF EXISTS Food CASCADE;
 DROP TABLE IF EXISTS Contains CASCADE;
 DROP TABLE IF EXISTS FDSPromo CASCADE;
+DROP TABLE IF EXISTS UsersPromo CASCADE;
+DROP TABLE IF EXISTS DeliveryPromo CASCADE;
+DROP TABLE IF EXISTS AmountOff CASCADE;
+DROP TABLE IF EXISTS PercentOff CASCADE;
 DROP TABLE IF EXISTS FullTimeRiders CASCADE;
 DROP TABLE IF EXISTS PartTimeRiders CASCADE;
 DROP TABLE IF EXISTS RiderStats CASCADE;
@@ -126,14 +130,23 @@ CREATE TABLE Food (
 --insertion into from table needs to check if restid is same as all other restid
 CREATE TABLE FDSPromo (
     fdspromoid      INTEGER,
-    description     VARCHAR(50),
-    type 			VARCHAR(50),
+    description     VARCHAR(200) NOT NULL,
+    type 			VARCHAR(50) NOT NULL,
     CONSTRAINT chck_type CHECK (type IN ('percentoff', 'amountoff')),
-    startTime       DATE,
-    endTime         DATE,
+    startTime       DATE NOT NULL,
+    endTime         DATE NOT NULL,
     points 			INTEGER default 0,
 
     PRIMARY KEY (fdspromoid)
+);
+
+CREATE TABLE DeliveryPromo (
+    deliverypromoid      INTEGER,
+    description     VARCHAR(200) NOT NULL,
+    amount 			INTEGER not null,
+    points 			INTEGER default 0,
+
+    PRIMARY KEY (deliverypromoid)
 );
 
 CREATE TABLE PercentOff (
@@ -156,6 +169,24 @@ CREATE TABLE AmountOff (
 
 	FOREIGN KEY (fdspromoid) REFERENCES FDSPromo ON DELETE CASCADE ON UPDATE CASCADE,
 	PRIMARY KEY (fdspromoid)
+);
+
+CREATE TABLE UsersPromo (
+	fdspromoid		INTEGER,
+	username		VARCHAR(30),
+
+	FOREIGN KEY (fdspromoid) REFERENCES FDSPromo ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (username) REFERENCES Customers  ON DELETE CASCADE ON UPDATE CASCADE,
+	PRIMARY KEY (fdspromoid, username)
+);
+
+CREATE TABLE UsersDeliveryPromo (
+	deliverypromoid		INTEGER,
+	username		VARCHAR(30),
+
+	FOREIGN KEY (deliverypromoid) REFERENCES DeliveryPromo ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (username) REFERENCES Customers  ON DELETE CASCADE ON UPDATE CASCADE,
+	PRIMARY KEY (deliverypromoid, username)
 );
 
 CREATE TABLE Orders (
@@ -533,5 +564,42 @@ create trigger addCashMethodTrigger
     after insert on Customers
     for each row
     execute function addCashMethodFunction();
+
+
+/* deduct customer's points after purchase of promo*/ 
+/*create or replace function deductPointsPromoFunction()
+returns trigger as $$
+DECLARE
+pointsused INTEGER;
+begin
+    select into pointsused (select points from FDSPromo where fdspromoid = NEW.fdspromoid);
+
+    update Customers C set points = points - pointsused where C.username = NEW.username;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists deductPointsPromoTrigger on Customers;
+create trigger deductPointsPromoTrigger
+    after insert on UsersPromo
+    for each row
+    execute function deductPointsPromoFunction();*/
+
+/* deduct customer's points after purchase of promo*/ 
+create or replace function deductPointsDeliveryFunction()
+returns trigger as $$
+DECLARE
+pointsused INTEGER;
+begin
+    select into pointsused (select points from DeliveryPromo where deliverypromoid = NEW.deliverypromoid);
+
+    update Customers C set points = points - pointsused where C.username = NEW.username;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists deductPointsDeliveryTrigger on Customers;
+create trigger deductPointsDeliveryTrigger
+    after insert on UsersDeliveryPromo
+    for each row
+    execute function deductPointsDeliveryFunction();
 
 
