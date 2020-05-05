@@ -54,7 +54,7 @@
                                 <select name="deliverypromoid">
                                     <option value="nonechosen" selected> Choose a Promo </option>
                                     {% for r in boughtdeliverypromolist %}
-                                      <option value="{{r.description}}" > {{r.description}} </option>
+                                      <option value="{{r.deliverypromoid}}" > {{r.description}} </option>
                                     {% endfor %}
                                 </select>
                             </td>
@@ -65,7 +65,7 @@
                                 <select name="fdspromoid" style="text-align-last:center;">
                                     <option value="nonechosen" selected> Choose a Promo </option>
                                     {% for r in boughtpromolist %}
-                                      <option value="{{r.description}}" > {{r.description}} </option>
+                                      <option value="{{r.fdspromoid}}" > {{r.description}} </option>
                                     {% endfor %}
                                 </select>
                             </td>

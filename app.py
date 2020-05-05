@@ -245,15 +245,14 @@ def editrestaurant():
 
 @app.route('/linkstaff', methods=['POST'])
 def linkstaff():
-    restname = request.form['restname']
-    staffname = request.form['staffname']
+    restid = request.form.get('restid')
+    username = request.form.get('username')
     
-    if restname == '' or staffname =='':
+    if restid is None or username is None:
         flash("Please make sure all the fields have been filled!")
         return redirect('gotomanagerests')
-
     
-    todo = f"insert into Restaurants values "
+    todo = f"update RestaurantStaff set restid={restid} where username = '{username}'"
     db.session.execute(todo)
     db.session.commit()
     
@@ -749,7 +748,7 @@ def checkout():
     #existing promos available for user
     promoquery = f"select fdspromoid, description from FDSPromo where fdspromoid in (select fdspromoid from Userspromo where username = '{username}')"
     promoresult = db.session.execute(promoquery)
-    promolist = [dict(deliverypromoid = row[0], description = row[1]) for row in promoresult.fetchall()]
+    promolist = [dict(fdspromoid = row[0], description = row[1]) for row in promoresult.fetchall()]
 
     #get points
     pointsquery = f"select points from Customers where username = '{username}'"
@@ -804,15 +803,16 @@ def confirmcheckout():
     
 
     #amount off delivery fee
-    deliverypromo = request.form.get('deliverypromoid')
+    deliverypromoid = request.form.get('deliverypromoid')
 
-    if deliverypromo == 'nonechosen':
+    if deliverypromoid == 'nonechosen':
         amountoff = 0
+        deliverypromo = 'nonechosen'
     else:
-        promoid = db.session.execute(f"select deliverypromoid from DeliveryPromo where description = '{deliverypromo}'").fetchall()[0][0]
-        amountoffquery = f"select amount from DeliveryPromo where deliverypromoid = {promoid}"
+        deliverypromo = f"select description from DeliveryPromo where deliverypromoid = {deliverypromoid}"
+        amountoffquery = f"select amount from DeliveryPromo where deliverypromoid = {deliverypromoid}"
         amountoff = db.session.execute(amountoffquery).fetchall()[0][0]
-        session['removepromo'] = f"delete from UsersDeliveryPromo where deliverypromoid = {promoid}"
+        session['removepromo'] = f"delete from UsersDeliveryPromo where deliverypromoid = {deliverypromoid}"
 
     deliveryfee = session['deliveryfee'] - amountoff
 
@@ -826,10 +826,9 @@ def confirmcheckout():
     subtotal = totalresult[0][0]
 
     #process fds promotions
-    fdspromo = request.form.get('fdspromoid')
+    fdspromoid = request.form.get('fdspromoid')
 
-    if fdspromo != 'nonechosen':
-        fdspromoid = db.session.execute(f"select fdspromoid from FDSPromo where description = '{fdspromo}'").fetchall()[0][0]
+    if fdspromoid != 'nonechosen':
         typequery = f"select type from FDSPromo where fdspromoid = {fdspromoid}"
         typeresult = db.session.execute(typequery).fetchall()[0][0]
 
