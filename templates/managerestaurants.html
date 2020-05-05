@@ -22,7 +22,7 @@
                     <td> {{ p.restid }}</td>
                     <td>{{ p.restname }}</td>
                     <td>{{ p.location }}</td>
-                    <td>{{ p.minamnt }}</td>
+                    <td> ${{ p.minamnt }}</td>
                 </tr>
                 {% endfor %}
             </table>
@@ -86,8 +86,38 @@
                     </table>  
                 </form>
             </div>
-            
 
+            <div id="linkstaff">
+                <h2> Add Staff to Restaurant </h2>
+                <form method="POST" action="linkstaff" autocomplete="off">
+                    <table align='center'>
+                        <tr>
+                            <td> Restaurant Name: </td>
+                            <td> <input name="restname" list="restnames"> </td>
+                        </tr>
+                        <tr>
+                            <td> Staff Name: </td>
+                            <td> <input name="staffname" list="staffnames"> </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"> <input type="Submit" value="Add Staff under Restaurant"> </td>
+                        </tr>
+                    </table>  
+                </form>
+
+                <datalist id="restnames">
+                    {% for r in namelist %}
+                      <option value="{{r.restname}}">
+                    {% endfor %}
+                </datalist>
+
+                <datalist id="staffnames">
+                    {% for r in stafflist %}
+                      <option value="{{r.staffname}}">
+                    {% endfor %}
+                </datalist>
+
+            </div>
           </div>
         </div>
         
