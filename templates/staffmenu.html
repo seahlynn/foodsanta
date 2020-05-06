@@ -16,8 +16,8 @@
               {% endfor %}
           {% endif %}
           {% endwith %}
-					<h3>{{"Restaurant name: " + details.restname}}</h3>
-					<h3>{{"Location: " + details.location}}</h3>
+					<h3>{{"Restaurant name: " + details.restname | safe}}</h3>
+					<h3>{{"Location: " + details.location | safe}}</h3>
 					<div display='inline-block'>
 						<div float='left'>
 							<h3>Minimum Amount: {{details.minAmt}}</h3>
@@ -38,7 +38,8 @@
               <th> Food ID </th>
               <th> Description </th>
               <th> Price </th>
-              <th> Stock </th>
+              <th> Current Stock (today) </th>
+              <th> Daily Limit </th>
               <th> Category </th>
               <th> Times ordered </th>
               <th> Delete? </th>
@@ -48,6 +49,7 @@
                 <td>{{ f.description | safe }}</td>
                 <td>{{ f.price }}</td>
                 <td>{{ f.stock }}</td>
+                <td>{{ f.dailylimit }}</td>
                 <td> {{ f.category | safe }} </td>
                 <td> {{ f.timesordered }}</td>
                 <td>
@@ -65,8 +67,8 @@
           <form action="/additemsuccess" name="signup-form" method="POST">
             <input type="text" required placeholder="Food description" class="input" name="description" maxlength="50"/>
             <input type="number" required placeholder="Price" class="input" name="price"/>
-            <input type="number" required placeholder="Stock" class="input" name="stock"/>
-            <input type="text" required placeholder="Category" class="input" name="category" maxlength="20"/>
+            <input type="number" required placeholder="Stock/Limit" class="input" name="stock"/>
+            <input type="text" required pattern='[a-zA-Z0-9][a-zA-Z0-9\s]*' placeholder="Category" class="input" name="category" maxlength="20"/>
             <input type="submit" required value="Add food" class="text--centered input--submit"/>
           </form>
         </div>
@@ -77,6 +79,7 @@
             <input type="text" required placeholder="Food description" class="input" name="description" maxlength="50"/>
             <input type="number" required placeholder="Price" class="input" name="price"/>
             <input type="number" required placeholder="Stock" class="input" name="stock"/>
+            <input type="number" required placeholder="Limit" class="input" name="limit"/>
             <input type="text" required placeholder="Category" class="input" name="category" maxlength="20"/>
             <input type="submit" value="Edit food" class="text--centered input--submit"/>
           </form>

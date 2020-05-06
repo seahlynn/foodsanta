@@ -290,8 +290,7 @@ def additemsuccess():
         form = request.form
         description, price, stock, category = escape(form["description"].strip()), escape(form["price"]), escape(form["stock"]),\
              escape(form["category"].strip())
-        print(description, category)
-        insert_query = f"insert into Food(foodid, description, price, availability, category, restid) values({food_id}, '{description}', {price}, {stock}, '{category}', {rest_id})"
+        insert_query = f"insert into Food(foodid, description, price, availability, dailylimit, category, restid) values({food_id}, '{description}', {price}, {stock}, {stock}, '{category}', {rest_id})"
         db.session.execute(insert_query)
         db.session.commit()
     return redirect('gotostaff')
@@ -301,11 +300,11 @@ def edititemsuccess():
     rest_id = session['rest_id']
     if request.method == 'POST':
         form = request.form
-        food_id, description, price, stock, category = form["food_id"], escape(form["description"].strip()), form["price"], form["stock"].strip(),\
+        food_id, description, price, stock, limit, category = form["food_id"], escape(form["description"].strip()), form["price"], form["stock"].strip(), form["limit"].strip(), \
              escape(form["category"].strip())
         check_rest_id = f"select 1 from Food where foodid = {food_id} and restid = {rest_id}"
         if db.session.execute(check_rest_id).fetchone():
-            update_food_query = f"update Food set description = '{description}', price = {price}, availability = {stock}, category = '{category}' where foodid = {food_id}"
+            update_food_query = f"update Food set description = '{description}', price = {price}, availability = {stock}, dailylimit = {limit}, category = '{category}' where foodid = {food_id}"
             db.session.execute(update_food_query)
             db.session.commit()
         else:
@@ -374,9 +373,9 @@ def get_rest_id(username):
 
 def get_menu(id):
     global db
-    check_menu_query = f"select foodid, description, price, availability, category, timesordered from Food where restid = '{id}'"
+    check_menu_query = f"select foodid, description, price, availability, category, timesordered, dailylimit from Food where restid = '{id}'"
     menu = db.session.execute(check_menu_query).fetchall()
-    parsed_menu = [{"foodid": i[0], "description": i[1], "price": float(i[2]), "stock": i[3], "category": i[4], "timesordered": i[5]} for i in menu]
+    parsed_menu = [{"foodid": i[0], "description": i[1], "price": float(i[2]), "stock": i[3], "category": i[4], "timesordered": i[5], "dailylimit":i[6]} for i in menu]
     return parsed_menu
 
 

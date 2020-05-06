@@ -402,6 +402,7 @@ create trigger updateCustomerStatsTrigger
     for each row
     execute function updateCustomerStatsFunction();
 
+
 /* Updates restaurant's total number of orders and total cost spent on orders */
 create or replace function updateRestaurantStatsFunction()
 returns trigger as $$
