@@ -21,12 +21,11 @@
               <td> To deliver to from customer location: </td>
               <td>{{ allocatedOrder.custLocation }}</td>
             </tr>            
-            {% endfor %}
           </table>
         </div>
 
         <br>
-        <form method="POST" action="collectFromRestaurant">
+        <form action="collectFromRestaurant">
           <button type="submit"> Ok! Let's make this delivery </button>         
         </form>
       {% endblock %}  

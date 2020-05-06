@@ -9,8 +9,6 @@ from sqlalchemy.exc import InternalError
 from datetime import datetime, date, timedelta
 from decimal import *
 
-
-
 app = Flask(__name__) #Initialize FoodSanta
 
 if settings.debug:
@@ -96,10 +94,6 @@ def signup():
         if len(password) < 8:
             flash("Password cannot be shorter than 8 characters!")
             return render_template('signup.html')
-        
-        if not len(name):
-            flash("Name cannot be blank!")
-            return render_template('signup.html')
 
         if is_existing_user(username):
             flash("Username taken! :(")
@@ -114,6 +108,11 @@ def signup():
 def registration_success():
     print("Registration successful")
     return render_template('registration_success.html')
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    session.clear()
+    return redirect('login')
 
 def register_user(username, name, password, user_type, phoneNumber):
     global db
@@ -153,6 +152,7 @@ def redirect_accordingly(username):
     check_user_staff = f"select 1 from RestaurantStaff where username = '{username}'"
     if db.session.execute(check_user_staff).fetchone():
         return redirect('gotostaff')
+    flash("An error has occurred. Please try logging in again.")
     return redirect('login')
 
 '''
@@ -169,7 +169,35 @@ def gotostaff():
     menu = get_menu(rest_id)
     promohist = get_promo_hist(rest_id)
     details = get_rest_details(rest_id)
-    return render_template('staffprofile.html', menu=menu, details=details, promohist=promohist)
+    return render_template('staffmenu.html', menu=menu, details=details, promohist=promohist)
+
+@app.route('/gotostaffstats', methods=['GET', 'POST'])
+def gotostaffstats():
+    rest_id = session['rest_id']
+    all_promos = get_promo_hist(rest_id)
+    return render_template('staffstats.html', monthstats=None, promostats=None, allpromos=all_promos)
+
+@app.route('/checkpromostaffstats', methods=['GET', 'POST'])
+def checkpromostaffstats():
+    rest_id = session['rest_id']
+    all_promos = get_promo_hist(rest_id)
+    if request.method == 'POST':
+        form = request.form
+        id = form['fdspromoid']
+        promo_stats = get_rest_promo_stats(id)
+    return render_template('staffstats.html', monthstats=None, promostats=promo_stats, allpromos=all_promos)
+
+@app.route('/checkmonthstaffstats', methods=['GET', 'POST'])
+def checkmonthstaffstats():
+    rest_id = session['rest_id']
+    all_promos = get_promo_hist(rest_id)
+    if request.method == 'POST':
+        form = request.form
+        month = form['month']
+        year = form['year']
+        month_stats = get_month_stats(month, year)
+        return render_template('staffstats.html', monthstats=month_stats, promostats=None, allpromos=all_promos)
+    return redirect('gotostaffstats')
 
 @app.route('/deleteitemsuccess', methods=['GET', 'POST'])
 def deleteitemsuccess():
@@ -246,6 +274,15 @@ def addpromosuccess():
     return redirect('gotostaff')
 
 
+@app.route('/gotostaffsettings', methods=['GET', 'POST'])
+def gotostaffsettings():
+    username = session['username']
+    rest_id = get_rest_id(username)
+    details = get_rest_details(rest_id)
+    user_details = get_user_details(username)
+    return render_template('staffsettings.html', details=details, user_details=user_details)
+
+
 @app.route('/additemsuccess', methods=['GET', 'POST'])
 def additemsuccess():
     rest_id = session['rest_id']
@@ -254,8 +291,7 @@ def additemsuccess():
         form = request.form
         description, price, stock, category = escape(form["description"].strip()), escape(form["price"]), escape(form["stock"]),\
              escape(form["category"].strip())
-        print(description, category)
-        insert_query = f"insert into Food(foodid, description, price, availability, category, restid) values({food_id}, '{description}', {price}, {stock}, '{category}', {rest_id})"
+        insert_query = f"insert into Food(foodid, description, price, availability, dailylimit, category, restid) values({food_id}, '{description}', {price}, {stock}, {stock}, '{category}', {rest_id})"
         db.session.execute(insert_query)
         db.session.commit()
     return redirect('gotostaff')
@@ -265,22 +301,56 @@ def edititemsuccess():
     rest_id = session['rest_id']
     if request.method == 'POST':
         form = request.form
-        food_id, description, price, stock, category = form["food_id"], escape(form["description"].strip()), form["price"], form["stock"].strip(),\
+        food_id, description, price, stock, limit, category = form["food_id"], escape(form["description"].strip()), form["price"], form["stock"].strip(), form["limit"].strip(), \
              escape(form["category"].strip())
         check_rest_id = f"select 1 from Food where foodid = {food_id} and restid = {rest_id}"
         if db.session.execute(check_rest_id).fetchone():
-            update_food_query = f"update Food set description = '{description}', price = {price}, availability = {stock}, category = '{category}' where foodid = {food_id}"
+            update_food_query = f"update Food set description = '{description}', price = {price}, availability = {stock}, dailylimit = {limit}, category = '{category}' where foodid = {food_id}"
             db.session.execute(update_food_query)
             db.session.commit()
         else:
             flash("This food is not in your restaurant's menu.")
     return redirect('gotostaff')
 
+def get_month_stats(month, year):
+    global db
+    rest_id = session['rest_id']
+    check_total_query = f"select numCompletedOrders, totalOrdersCost from RestaurantStats where month = {month} and year = {year} and restid = {rest_id}"
+    total_details = db.session.execute(check_total_query).fetchone()
+    check_top_five = f"select foodid, description, sum(quantity) as total from Orders natural join Contains natural join Food where\
+         restid = {rest_id} and extract(month from orderCreatedTime) = {month} and extract(year from orderCreatedTime) = {year} group by foodid, description order by total desc limit 5;"
+    top_five = db.session.execute(check_top_five).fetchall()
+    parsed_five = [dict(foodid=i[0], description=i[1], total=i[2]) for i in top_five]
+    if not total_details:
+        parsed_details = dict(numCompletedOrders=None, totalOrdersCost=None, topFive=parsed_five)
+    else:
+        parsed_details = dict(numCompletedOrders=total_details[0], totalOrdersCost=total_details[1], topFive=parsed_five)
+    return parsed_details
+
+def get_rest_promo_stats(id):
+    global db
+    rest_id = session['rest_id']
+    check_duration_query = f"select F.startTime, F.endTime, abs(F.startTime::date - endTime::date) as dateDiff, description from FDSPromo F where fdspromoid = {id}"
+    duration_details = db.session.execute(check_duration_query).fetchone()
+    start_time = duration_details[0]
+    end_time = duration_details[1]
+    check_orders_query = f"select count(*) as total from Orders where restid = {rest_id} and DATE(orderCreatedTime) >= '{start_time}' and DATE(orderCreatedTime) <= '{end_time}'"
+    num_orders = db.session.execute(check_orders_query).fetchone()[0]
+    details = dict(startTime=start_time, endTime=end_time, diff=duration_details[2], total=num_orders, description=duration_details[3])
+    return details
+
+def get_user_details(id):
+    global db
+    check_user_query = f"select * from Users where username = '{id}'"
+    user_details = db.session.execute(check_user_query).fetchone()
+    parsed_details = dict(username=user_details[0], name=user_details[1], phonenumber=user_details[3])
+    return parsed_details
+
 def get_promo_hist(id):
     global db
-    check_promo_query = f"select * from FDSPromo natural join RestaurantPromo where restid = {id}"
+    check_promo_query = f"select distinct * from FDSPromo natural join RestaurantPromo where restid = {id}"
     promo_hist = db.session.execute(check_promo_query).fetchall()
-    parsed_hist = [dict(fdspromoid=i[0], description=i[1], starttime=i[3], endtime=i[4], type=i[2], points=i[5]) for i in promo_hist]
+    parsed_hist = [dict(fdspromoid=i[0], description=i[1], starttime=i[6], endtime=i[7], type=i[2], points=i[8], minamt=i[4], discount=i[3]) for i in promo_hist]
     return parsed_hist
 
 
@@ -307,9 +377,9 @@ def get_rest_id(username):
 
 def get_menu(id):
     global db
-    check_menu_query = f"select foodid, description, price, availability, category, timesordered from Food where restid = '{id}'"
+    check_menu_query = f"select foodid, description, price, availability, category, timesordered, dailylimit from Food where restid = '{id}'"
     menu = db.session.execute(check_menu_query).fetchall()
-    parsed_menu = [{"foodid": i[0], "description": i[1], "price": float(i[2]), "stock": i[3], "category": i[4], "timesordered": i[5]} for i in menu]
+    parsed_menu = [{"foodid": i[0], "description": i[1], "price": float(i[2]), "stock": i[3], "category": i[4], "timesordered": i[5], "dailylimit":i[6]} for i in menu]
     return parsed_menu
 
 
@@ -323,7 +393,6 @@ def gotomanagerprofile():
     profilequery = f"select name, phoneNumber from Users where username = '{username}'"
     profileresult = db.session.execute(profilequery)
     profile = [dict(name = row[0], number = row[1]) for row in profileresult.fetchall()]
-    
     
     return render_template('managerprofile.html', profile = profile)
 
@@ -1169,28 +1238,76 @@ Customer related: View order status, order history, submit review
 def orderstatus():
 
     username = session['username']
-    '''orderid = session['orderid']
 
-    # allocate an available rider to deliver
-    # rider is currently working (either part time or full time)
-    # rider is not currently taking an order that has not been delivered
-    checkavailableriderquery = f"select distinct username from DeliveryRiders F natural join MonthlyWorkSchedule M where not exists (select 1 from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Delivers.username = F.username and Orders.delivered = False and Orders.selectedByRider = True) union select distinct username from DeliveryRiders F natural join WeeklyWorkSchedule W where not exists (select 1 from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Delivers.username = F.username and Orders.delivered = False and Orders.selectedByRider = True) "
-    availableriders = db.session.execute(checkavailableriderquery).fetchall()
-    numavailableriders = len(availableriders)
-    randridernum = randrange(0, numavailableriders, 0)
-    randrider = availableriders[randridernum]
-    riderusername = randrider[0]
-    updateriderpicked = f"update Delivers set username = '{riderusername}' where orderid = '{orderid}'"
-    updateorderselectedbyrider = f"update Orders set selectedByRider = True where orderid = '{orderid}'"
-    db.session.execute(updateriderpicked)
-    db.session.execute(updateorderselectedbyrider)
-    db.session.commit()'''
+    # check if there is an order that has yet to be allocated
+    checkifunallocatedorder = f"select count(*) from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Orders.selectedByRider = False and Orders.delivered = False"
+    checkifunallocatedorderresult = db.session.execute(checkifunallocatedorder).fetchall()
 
-    inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant from Orders O, Delivers D, Restaurants R where D.orderid = O.orderid and O.username = '{username}' and O.delivered = False and R.restid = O.restid"
+    if checkifunallocatedorderresult[0][0] != 0:
+
+        orderidquery = f"select Delivers.orderid from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Orders.selectedByRider = False and Orders.delivered = False"
+        orderid = db.session.execute(orderidquery).fetchall()[0][0]
+
+        # allocate an available rider to deliver
+        # rider is currently working (either part time or full time)
+        # rider is not currently taking an order that has not been delivered
+        checkavailableriderquery = f"select distinct * \
+        from PartTimeRiders P natural join WeeklyWorkSchedule W natural join DailyWorkShift D \
+        where D.day = (select extract(isodow from current_timestamp) - 1) \
+        and D.starthour < (select extract(hour from current_timestamp)) \
+        and D.duration > (D.starthour - (select extract(hour from current_timestamp))) \
+        and not exists ( \
+            select 1 \
+            from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
+            where Delivers.username = P.username \
+            and Orders.selectedByRider = True \
+            and Orders.delivered = False)"
+        availableriders = db.session.execute(checkavailableriderquery).fetchall()
+        numavailableriders = len(availableriders)
+
+        if numavailableriders != 0:
+            randridernum = random.randint(0, numavailableriders)
+            randrider = availableriders[randridernum]
+            riderusername = randrider[0]
+
+        else:
+            nextavailriderquery = f"select distinct P.username, D1.timeDepartToRestaurant \
+            from (PartTimeRiders P natural join WeeklyWorkSchedule W natural join DailyWorkShift D) \
+            join (Delivers D1 join Orders on (D1.orderid = Orders.orderid)) on (P.username = D1.username) \
+            where D.day = (select extract(isodow from current_timestamp) - 1) \
+            and D.starthour < (select extract(hour from current_timestamp)) \
+            and D.duration > (D.starthour - (select extract(hour from current_timestamp))) \
+            and exists ( \
+                select 1 \
+                from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
+                where Delivers.username = P.username \
+                and Orders.selectedByRider = True \
+                and Orders.delivered = False ) \
+            order by D1.timeDepartToRestaurant    \
+            limit 1"
+            nextavailriderresult = db.session.execute(nextavailriderquery).fetchall()
+            riderusername = nextavailriderresult[0]
+    
+        updateriderpicked = f"update Delivers set username = '{riderusername}' where orderid = '{orderid}'"
+        updateorderselectedbyrider = f"update Orders set selectedByRider = True where orderid = '{orderid}'"
+        db.session.execute(updateriderpicked)
+        db.session.execute(updateorderselectedbyrider)
+        db.session.commit()
+
+    inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant \
+    from Orders O, Delivers D, Restaurants R \
+    where D.orderid = O.orderid \
+    and O.username = '{username}' \
+    and O.delivered = False \
+    and R.restid = O.restid"
     progressresult = db.session.execute(inprogressquery)
     orderlist = [dict(rest = row[0], timeordered = row[1], orderpicked = row[2], pickedup = row[3]) for row in progressresult.fetchall()]
 
-    finishedquery = f"select R.restName, O.totalCost, D.timeOrderDelivered, O.orderid from Orders O, Delivers D, Restaurants R where D.orderid = O.orderid and O.username = '{username}' and R.restid = O.restid and O.delivered = True"
+    finishedquery = f"select R.restName, O.totalCost, D.timeOrderDelivered, O.orderid \
+    from Orders O, Delivers D, Restaurants R \
+    where D.orderid = O.orderid \
+    and O.username = '{username}' \
+    and R.restid = O.restid and O.delivered = True"
     finishedresult = db.session.execute(finishedquery)
     finishedlist = [dict(rest = row[0], total = row[1], received = row[2], orderid = row[3]) for row in finishedresult.fetchall()]
     
@@ -1218,7 +1335,9 @@ def submitreviewandrating():
 
         flash('Review submitted!')
 
-    checkRquery = f"select count(*) from Delivers where orderid = {orderid} and rating is not null"
+    checkRquery = f"select count(*) \
+    from Delivers \
+    where orderid = {orderid} and rating is not null"
     checkRresult = db.session.execute(checkRquery).fetchall()
     checkR = checkRresult[0][0]
 
@@ -1227,7 +1346,9 @@ def submitreviewandrating():
         return redirect('orderstatus')
 
     if rating != '':
-        ratingToGive = f"update Delivers set rating = '{rating}' where orderid = '{orderid}'"
+        ratingToGive = f"update Delivers \
+        set rating = '{rating}' \
+        where orderid = '{orderid}'"
         db.session.execute(ratingToGive)
         db.session.commit()
 
@@ -1243,7 +1364,6 @@ def submitrating():
 @app.route('/neworder', methods=['POST'])
 def neworder():
     return redirect('gotorest')
-
 
 '''
 Customer related: View and purchase promos
@@ -1317,15 +1437,24 @@ def gotoriderprofile():
 @app.route('/gotodelivery', methods=['GET'])
 def gotodelivery():
     username = session['username']  
-    hasallocatedOrdersQuery = f"select count(*) from Delivers natural join Orders where Delivers.username = '{username}' and Orders.delivered = False and Orders.selectedByRider = True"
+
+    # check if rider has been allocated an order that has yet to be delivered
+    hasallocatedOrdersQuery = f"select count(*) \
+    from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
+    where Delivers.username = '{username}' \
+    and Orders.delivered = False \
+    and Orders.selectedByRider = True"
     hasallocatedOrdersResult = db.session.execute(hasallocatedOrdersQuery).fetchall()
 
     if hasallocatedOrdersResult[0][0] != 0:
         # there exists an allocated order (just pull one)
-        allocatedorderquery = f"select Delivers.orderid, Orders.custLocation, Restaurants.location from Delivers natural join (Orders join Restaurants on (Orders.restid = Restaurants.restid)) where Delivers.username = '{username}' and Orders.delivered = False limit 1"
+        allocatedorderquery = f"select Delivers.orderid, Orders.custLocation, Restaurants.location \
+        from Delivers join (Orders join Restaurants on (Orders.restid = Restaurants.restid)) on (Delivers.orderid = Orders.orderid) \
+        where Delivers.username = '{username}' and Orders.delivered = False \
+        limit 1"
         allocatedOrderresult = db.session.execute(allocatedorderquery)
         allocatedOrder = [dict(orderid = row[0], custLocation = row[1], restLocation = row[2]) for row in allocatedOrderresult.fetchall()]
-        session['deliveringOrderId'] = allocatedOrderresult[0][0]
+        session['deliveringOrderId'] = allocatedOrder[0]['orderid']
         return render_template('riders_viewAllocatedOrder.html', allocatedOrder = allocatedOrder)
 
     else:
@@ -1342,7 +1471,11 @@ def getUndeliveredOrders():
     global db
 
     # orders available for pick up are displayed in a table with orderid, restaurant location and customer location
-    undeliveredOrdersQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False"
+    undeliveredOrdersQuery = f"select orderid, \
+    (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation \
+    from Orders \
+    where preparedByRest = False \
+    and selectedByRider = False"
     undeliveredOrdersResult = db.session.execute(undeliveredOrdersQuery)
     ordersToPickUp = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in undeliveredOrdersResult.fetchall()]
 
@@ -1351,7 +1484,11 @@ def getUndeliveredOrders():
     session['deliveringOrderId'] = chosenOrderId
 
     # display order chosen
-    chosenOrderQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False and orderid = {chosenOrderId}"
+    chosenOrderQuery = f"select orderid, \
+    (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation \
+    from Orders where preparedByRest = False \
+    and selectedByRider = False \
+    and orderid = {chosenOrderId}"
     chosenOrderResult = db.session.execute(chosenOrderQuery)
 
     chosenOrderInfo = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in chosenOrderResult.fetchall()]
@@ -1394,12 +1531,17 @@ def collectFromRestaurant():
 
     # timestamp for when he leaves for the restaurant
     currentTime = datetime.now().strftime("%d/%m/%Y %H%M")
-    updateLeaveTime = f"update Delivers set timeDepartToRestaurant='{currentTime}' where orderid = '{deliveringOrderId}' and username = '{username}'"
+    updateLeaveTime = f"update Delivers set timeDepartToRestaurant= '{currentTime}' where orderid = '{deliveringOrderId}' and username = '{username}'"
     db.session.execute(updateLeaveTime)
     db.session.commit()
 
     # retrieve restaurant address to display
-    restLocationQuery = f'select location from Restaurants where restid in (select distinct restid from Orders where Orders.orderid = {deliveringOrderId})'
+    restLocationQuery = f'select location \
+    from Restaurants \
+    where restid in \
+    (select distinct restid \
+        from Orders \
+        where Orders.orderid = {deliveringOrderId})'
     restLocationResult = db.session.execute(restLocationQuery).fetchall()
     restLocation = restLocationResult[0][0]
 
@@ -1429,7 +1571,9 @@ def deliverToCustomer():
     deliveringOrderId = session['deliveringOrderId']
     username = session['username']
 
-    custLocationQuery = f'select custLocation from Orders where Orders.orderid = {deliveringOrderId}'
+    custLocationQuery = f'select custLocation \
+    from Orders \
+    where Orders.orderid = {deliveringOrderId}'
     custLocationResult = db.session.execute(custLocationQuery).fetchall()
     custLocation = custLocationResult[0][0]
 
@@ -1779,30 +1923,63 @@ def deletePartTimeScheduleResult():
 
     return render_template('scheduledeleteparttimeresult.html', datem = datem, datemEnd = datemEnd, message = message, errorMessage = errorMessage)
     
-@app.route('/getRidersPerHour', methods=['GET'])
+@app.route('/getRidersPerHour', methods=['GET', 'POST'])
 def getRidersPerHour():
-    today = datetime.today()
-    currMonth = datetime(today.year, today.month, 1).date()
-    monday = (today - timedelta(days = today.weekday())).date()
+    if request.method == "POST":
+        form = request.form
+        day = datetime.strptime(form.get('day'), '%Y-%m-%d')
+    else:
+        today = datetime.today()
+        day = (today - timedelta(days = today.weekday()) + timedelta(days = 7)) #defaults to next monday
+    monday = (day - timedelta(days = day.weekday()))
+    tuesday = (monday + timedelta(days = 1)).date()
+    wednesday = (monday + timedelta(days = 2)).date()
+    thursday = (monday + timedelta(days = 3)).date()
+    friday = (monday + timedelta(days = 4)).date()
+    saturday = (monday + timedelta(days = 5)).date()
+    sunday = (monday + timedelta(days = 6)).date()
+    monday = monday.date()
 
+    if not isRidersPerHourPresent(monday):
+        generateRidersPerHour(day)
+
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{monday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    mondaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{tuesday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    tuesdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{wednesday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    wednesdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{thursday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    thursdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{friday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    fridaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{saturday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    saturdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{sunday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    sundaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+
+    maxDay = (datetime.today() + timedelta(days = 6 - datetime.today().weekday()) + timedelta(days = 7)).date() #defaults to sunday of next week, relative to today
+    print(maxDay)
+    return render_template('ridersperhour.html', mondaysch = mondaysch, tuesdaysch = tuesdaysch, wednesdaysch = wednesdaysch, thursdaysch = thursdaysch, fridaysch = fridaysch, saturdaysch = saturdaysch, sundaysch = sundaysch, monday = monday, sunday = sunday, maxDay = maxDay)
+
+def isRidersPerHourPresent(inputMonday):
+    monday = inputMonday
     isWeekCalculated = f"select count(*) from RidersPerHour where day >= '{monday}'"
     isWeekCalculatedResult = int(db.session.execute(isWeekCalculated).fetchall()[0][0] or 0)
-    if not isWeekCalculatedResult:
-        print('generating for this week') 
-        generateRidersPerHour()
+    return isWeekCalculatedResult
 
-    currDay = today.date()
-    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{currDay}' group by hour"
-    scheduleResult = db.session.execute(scheduleQuery)
-    schedule = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
-    
-    return render_template('ridersperhour.html', schedule = schedule)
-
-def generateRidersPerHour():
+def generateRidersPerHour(inputDate):
     #for currentWeek
-    today = datetime.today()
-    currMonth = datetime(today.year, today.month, 1).date()
-    monday = (today - timedelta(days = today.weekday())).date()
+    day = inputDate
+    currMonth = datetime(day.year, day.month, 1).date()
+    monday = (day - timedelta(days = day.weekday())).date()
 
     dayArray = (0, 1, 2, 3, 4, 5, 6)
     shift1 = (10, 11, 12, 13, 15, 16, 17, 18)
@@ -1866,6 +2043,7 @@ def generateRidersPerHour():
             duration = row[2]
             for i in range(duration):
                 hour = startHour + i
+                print('hour: ', hour)
                 insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
                 insertionResult = db.session.execute(insertion)  
 
