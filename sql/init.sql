@@ -285,15 +285,6 @@ CREATE TABLE MonthlyWorkSchedule (
     wkStartDay         INTEGER NOT NULL
                        CHECK (wkStartDay in (0, 1, 2, 3, 4, 5, 6)),
     completed          BOOLEAN NOT NULL,
-
-    PRIMARY KEY (mwsid),
-
-    FOREIGN KEY (username) REFERENCES FullTimeRiders
-);
-
-CREATE TABLE FixedWeeklySchedule (
-    fwsid               INTEGER,
-    mwsid               INTEGER,
     day1                INTEGER NOT NULL
                         CHECK (day1 in (0, 1, 2, 3)),
     day2                INTEGER NOT NULL
@@ -305,10 +296,29 @@ CREATE TABLE FixedWeeklySchedule (
     day5                INTEGER NOT NULL
                         CHECK (day5 in (0, 1, 2, 3)),
 
-    PRIMARY KEY (fwsid),
+    PRIMARY KEY (mwsid),
 
-    FOREIGN KEY (mwsid) REFERENCES MonthlyWorkSchedule
+    FOREIGN KEY (username) REFERENCES FullTimeRiders
 );
+
+-- CREATE TABLE FixedWeeklySchedule (
+--     fwsid               INTEGER,
+--     mwsid               INTEGER,
+--     day1                INTEGER NOT NULL
+--                         CHECK (day1 in (0, 1, 2, 3)),
+--     day2                INTEGER NOT NULL
+--                         CHECK (day2 in (0, 1, 2, 3)),
+--     day3                INTEGER NOT NULL
+--                         CHECK (day3 in (0, 1, 2, 3)),
+--     day4                INTEGER NOT NULL
+--                         CHECK (day4 in (0, 1, 2, 3)),
+--     day5                INTEGER NOT NULL
+--                         CHECK (day5 in (0, 1, 2, 3)),
+
+--     PRIMARY KEY (fwsid),
+
+--     FOREIGN KEY (mwsid) REFERENCES MonthlyWorkSchedule
+-- );
 
 CREATE TABLE WeeklyWorkSchedule (
     wwsid               INTEGER,
@@ -335,6 +345,15 @@ CREATE TABLE DailyWorkShift (
     PRIMARY KEY (dwsid, startHour),
 
     FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
+);
+
+CREATE TABLE RiderPerHour (
+    rphid               INTEGER,
+    day                 DATE,
+    hour                INTEGER,
+    count               INTEGER,
+
+    PRIMARY KEY (rphid)
 );
 
 -- FDS Manager purposes
@@ -603,8 +622,8 @@ create trigger deductPointsDeliveryTrigger
     for each row
     execute function deductPointsDeliveryFunction();
 
-/* update weekly work schedule hours*/ 
-create or replace function updateWwsHoursFunction()
+/* update weekly work schedule hours upon insertion*/ 
+create or replace function updateWwsHoursOnInsertFunction()
 returns trigger as $$
 DECLARE
 hours INTEGER;
@@ -627,11 +646,41 @@ begin
 return new;
 end; $$ language plpgsql;        
 
-drop trigger if exists updateWwsHoursTrigger on DailyWorkShift;
-create trigger updateWwsHoursTrigger
+drop trigger if exists updateWwsHoursOnInsertTrigger on DailyWorkShift;
+create trigger updateWwsHoursOnInsertTrigger
     before insert on DailyWorkShift
     for each row
-    execute function updateWwsHoursFunction();
+    execute function updateWwsHoursOnInsertFunction();
+
+/* update weekly work schedule hours upon deletion*/ 
+create or replace function updateWwsHoursOnDeleteFunction()
+returns trigger as $$
+DECLARE
+hours INTEGER;
+existingDay TEXT;
+begin
+    update WeeklyWorkSchedule
+    set wwsHours = wwsHours - OLD.duration
+    where wwsid = OLD.wwsid;
+
+    select wwsHours into hours
+        from WeeklyWorkSchedule
+        where wwsid = OLD.wwsid;
+
+    select case when OLD.day = 0 then 'Monday' when OLD.day = 1 then 'Tuesday' when OLD.day = 2 then 'Wednesday' when OLD.day = 3 then 'Thursday' when OLD.day = 4 then 'Friday' when OLD.day = 5 then 'Saturday' when OLD.day = 6 then 'Sunday' end into existingDay
+        from DailyWorkShift
+        where wwsid = OLD.wwsid;
+    if hours < 10 then
+        raise exception 'FoodSanta: A shift you are trying to delete (%hrs to %hrs on %) results in you working less than 10 hours this week! Ho ho ho!', OLD.startHour * 100, (OLD.startHour + OLD.duration) * 100, existingDay;
+    end if;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists updateWwsHoursOnDeleteTrigger on DailyWorkShift;
+create trigger updateWwsHoursOnDeleteTrigger
+    after delete on DailyWorkShift
+    for each row
+    execute function updateWwsHoursOnDeleteFunction();
 
 /* check validity of a new part time shift hours*/
 create or replace function validPartTimeShiftFunction()
@@ -657,3 +706,27 @@ create trigger validPartTimeShiftTrigger
     after insert on DailyWorkShift
     for each row
     execute function validPartTimeShiftFunction();
+
+/* check if a new part time shift hours exceeds 10pm*/
+create or replace function tenPmPartTimeShiftFunction()
+returns trigger as $$
+DECLARE
+day TEXT;
+startHour INTEGER;
+duration INTEGER;
+begin
+    select case when d1.day = 0 then 'Monday' when d1.day = 1 then 'Tuesday' when d1.day = 2 then 'Wednesday' when d1.day = 3 then 'Thursday' when d1.day = 4 then 'Friday' when d1.day = 5 then 'Saturday' when d1.day = 6 then 'Sunday' end, d1.startHour, d1.duration into day, startHour, duration
+        from DailyWorkShift d1
+        where d1.dwsid = NEW.dwsid
+        and   (NEW.startHour + NEW.duration) > 22;
+    if startHour is not null then
+        raise exception 'FoodSanta: A shift you are trying to add (%hrs to %hrs on %) exceeds the working hours of 2200hrs! Ho ho ho!', NEW.startHour * 100, ((NEW.startHour + NEW.duration) % 24) * 100, day;
+    end if;
+    return null;
+end; $$ language plpgsql;        
+
+drop trigger if exists tenPmPartTimeShiftTrigger on DailyWorkShift;
+create trigger tenPmPartTimeShiftTrigger
+    after insert on DailyWorkShift
+    for each row
+    execute function tenPmPartTimeShiftFunction();

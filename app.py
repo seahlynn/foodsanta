@@ -1051,7 +1051,7 @@ def getFullTimeSchedule():
     today = datetime.today()
     datem = datetime(today.year, today.month, 1).date()
     monthYear = datem.strftime('%B') + ' ' + str(today.year)
-    scheduleQuery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select M.wkStartDay, F.day1 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 1) % 7, F.day2 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 2) % 7, F.day3 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 3) % 7, F.day4 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 4) % 7, F.day5 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shiftString from dayShift order by day, shift;"
+    scheduleQuery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select wkStartDay, day1 from MonthlyWorkSchedule  where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 1) % 7, day2 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 2) % 7, day3 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 3) % 7, day4 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 4) % 7, day5 from MonthlyWorkSchedule M where mnthStartDay = '{datem}' and username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shiftString from dayShift order by day, shift;"
     scheduleResult = db.session.execute(scheduleQuery)
     schedule = [dict(day = row[0], shift = row[1]) for row in scheduleResult.fetchall()]
 
@@ -1070,17 +1070,15 @@ def generateNextMonth():
     datem = datetime(today.year, today.month, 1).date()
     nextMonth = datetime(today.year, today.month + 1 % 12, 1).date()
     newMwsidQuery = f"select max(mwsid) from MonthlyWorkSchedule"
-    newFwsidQuery = f"select max(fwsid) from FixedWeeklySchedule"
     newMwsid = int(db.session.execute(newMwsidQuery).fetchall()[0][0] or 0) + 1
-    newFwsid = int(db.session.execute(newFwsidQuery).fetchall()[0][0] or 0) + 1
 
     scheduleQuery = f"select max(mwsid) from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'"
     scheduleResult = int(db.session.execute(scheduleQuery).fetchall()[0][0] or 0)
     if scheduleResult != 0: #current month has schedule to duplicate
-        insertion = f"insert into MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed) select '{newMwsid}', '{username}', '{nextMonth}', wkStartDay, false from MonthlyWorkSchedule where mwsid = '{scheduleResult}'; insert into FixedWeeklySchedule(fwsid, mwsid, day1, day2, day3, day4, day5) select '{newFwsid}', '{newMwsid}', day1, day2, day3, day4, day5 from FixedWeeklySchedule where mwsid = '{scheduleResult}'; commit;" 
+        insertion = f"insert into MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed, day1, day2, day3, day4, day5) select '{newMwsid}', '{username}', '{nextMonth}', wkStartDay, false, day1, day2, day3, day4, day5 from MonthlyWorkSchedule where mwsid = '{scheduleResult}'; commit;" 
         insertionResult = db.session.execute(insertion)
     else:
-        insertion = f"insert into MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed) values ('{newMwsid}', '{username}', '{nextMonth}', 2, false); insert into FixedWeeklySchedule(fwsid, mwsid, day1, day2, day3, day4, day5) values ('{newFwsid}', '{newMwsid}', 3, 2, 3, 2, 3); commit;"
+        insertion = f"insert into MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed, day1, day2, day3, day4, day5) values ('{newMwsid}', '{username}', '{nextMonth}', 2, false, 3, 2, 3, 2, 3); commit;"
         insertionResult = db.session.execute(insertion)
     return;
 
@@ -1090,7 +1088,7 @@ def getNextFullTimeSchedule():
     today = datetime.today()
     datem = datetime(today.year, today.month + 1 % 12, 1).date()
     monthYear = datem.strftime('%B') + ' ' + str(today.year)
-    scheduleQuery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select M.wkStartDay, F.day1 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 1) % 7, F.day2 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 2) % 7, F.day3 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 3) % 7, F.day4 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 4) % 7, F.day5 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shiftString from dayShift order by day, shift;"
+    scheduleQuery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select wkStartDay, day1 from MonthlyWorkSchedule  where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 1) % 7, day2 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 2) % 7, day3 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 3) % 7, day4 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 4) % 7, day5 from MonthlyWorkSchedule M where mnthStartDay = '{datem}' and username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shiftString from dayShift order by day, shift;"
     scheduleResult = db.session.execute(scheduleQuery)
     schedule = [dict(day = row[0], shift = row[1]) for row in scheduleResult.fetchall()]
     
@@ -1113,7 +1111,7 @@ def getPrevFullTimeScheduleResult():
         monthYearRaw = str(form.get('monthYear')) + '-01'
         datem = datetime.strptime(monthYearRaw, '%Y-%m-%d')
         monthYear = datem.strftime('%B') + ' ' + str(datem.year)
-        scheduleQuery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select M.wkStartDay, F.day1 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 1) % 7, F.day2 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 2) % 7, F.day3 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 3) % 7, F.day4 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 4) % 7, F.day5 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shiftString from dayShift order by day, shift;"
+        scheduleQuery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select wkStartDay, day1 from MonthlyWorkSchedule  where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 1) % 7, day2 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 2) % 7, day3 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 3) % 7, day4 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 4) % 7, day5 from MonthlyWorkSchedule M where mnthStartDay = '{datem}' and username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shiftString from dayShift order by day, shift;"
         scheduleResult = db.session.execute(scheduleQuery)
         schedule = [dict(day = row[0], shift = row[1]) for row in scheduleResult.fetchall()]
     
@@ -1145,7 +1143,7 @@ def setFullTimeScheduleResult():
         day5 = form.get('day5')
         mwsidQuery = f"select mwsid from MonthlyWorkSchedule where username = '{username}' and mnthStartDay = '{datem}';"
         mwsid = db.session.execute(mwsidQuery).fetchall()[0][0]
-        newScheduleQuery = f"begin; update MonthlyWorkSchedule set mwsid = '{mwsid}', wkStartDay = '{startDay}', completed = false where mwsid = '{mwsid}'; update FixedWeeklySchedule set day1 = '{day1}', day2 = '{day2}', day3 = '{day3}', day4 = '{day4}', day5 = '{day5}' where mwsid = '{mwsid}'; commit;"
+        newScheduleQuery = f"begin; update MonthlyWorkSchedule set mwsid = '{mwsid}', wkStartDay = '{startDay}', completed = false, day1 = '{day1}', day2 = '{day2}', day3 = '{day3}', day4 = '{day4}', day5 = '{day5}' where mwsid = '{mwsid}'; commit;"
         newScheduleResult = db.session.execute(newScheduleQuery)
 
     return render_template('schedulesetfulltimeresult.html', monthYear = monthYear)
@@ -1260,9 +1258,9 @@ def setPartTimeSchedule():
     nextSunday = nextMonday + timedelta(days = 6)
     datemEnd = nextSunday.date()
 
-    schedulequery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (day, shift, duration) select D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shiftString from dayShif order by day, shift"
+    schedulequery = f"drop table if exists dayShift; create table dayShift (dwsid integer, day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (dwsid, day, shift, duration) select D.dwsid, D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select dwsid, case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shiftString from dayShift order by day, shift"
     scheduleresult = db.session.execute(schedulequery)
-    schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
+    schedule = [dict(dwsid = row[0], day = row[1], shift = row[2]) for row in scheduleresult.fetchall()]
 
     return render_template('schedulesetparttime.html', schedule = schedule, datem = datem, datemEnd = datemEnd)
 
@@ -1305,6 +1303,36 @@ def setPartTimeScheduleResult():
             print(errorMessage)
 
     return render_template('schedulesetparttimeresult.html', datem = datem, datemEnd = datemEnd, message = message, errorMessage = errorMessage)
+
+@app.route('/deletePartTimeScheduleResult', methods=['GET', 'POST'])
+def deletePartTimeScheduleResult():
+    username = session['username']
+    today = datetime.today()
+    daysToNextMonday = 0 - today.weekday()
+    if daysToNextMonday <= 0:
+        daysToNextMonday += 7
+    nextMonday = today + timedelta(days = daysToNextMonday)
+    datem = nextMonday.date()
+    nextSunday = nextMonday + timedelta(days = 6)
+    datemEnd = nextSunday.date()
+    message = 'aborted'
+    errorMessage = ''
+    
+    if request.method == 'POST':
+        form = request.form
+        dwsid = int(form.get('dwsid'))
+        deletionQuery = f"delete from DailyWorkShift where dwsid = '{dwsid}'; commit;"
+        try:
+            deletionResult = db.session.execute(deletionQuery)
+            db.session.commit()
+            message = 'completed'
+        except InternalError as e:
+            startIndex = str(e).find('FoodSanta: ')
+            endIndex = str(e).find('Ho ho ho!') + 9
+            errorMessage = str(e)[startIndex:endIndex]
+            print(errorMessage)
+
+    return render_template('scheduledeleteparttimeresult.html', datem = datem, datemEnd = datemEnd, message = message, errorMessage = errorMessage)
 
 @app.route('/newDelivery', methods=['POST'])
 def newDelivery():

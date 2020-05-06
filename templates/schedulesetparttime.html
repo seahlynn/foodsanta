@@ -16,6 +16,9 @@
                 <tr>
                   <th>{{ s.day }}</th>
                   <td>{{ s.shift }}</td>
+                  <td><form action="/deletePartTimeScheduleResult", name="deleteparttimeschedule-form", method="POST">
+                    <button name="dwsid" type="submit" value="{{ s.dwsid }}">Delete shift</button>
+                  </form></td>
                 </tr>
                 {% endfor %}
             </table>
@@ -32,9 +35,9 @@
                   <option value="6">Sunday</option>
                 </select>
                 <label for="startHour">Starting Hour (between 10 and 21):</label>
-                <input type="number" id="startHour" name="startHour" min="10" max="21">
+                <input type="number" id="startHour" name="startHour" required min="10" max="21">
                 <label for="duration">Duration (between 1 and 4):</label>
-                <input type="number" id="duration" name="duration" min="1" max="4">
+                <input type="number" id="duration" name="duration" required min="1" max="4">
                 <input type="submit" value="Submit">
               </form>
             <br></br>
