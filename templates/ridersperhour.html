@@ -12,16 +12,10 @@
             {% block content %}
           <h2> Riders per Hour</h2>
               <table border='1' align = 'center'>
-                {% set hourCount == 10 %}
                 {% for s in schedule %}
                 <tr>
-                  {% if s.hour = hourCount %}
                   <th>{{ s.hour }}00 hrs</th>
                   <td>{{ s.count }} rider(s)</td>
-                  {% else %}
-                  <th>{{ hourCount }}00 hrs</th>
-                  <td>0 rider(s)</td>
-                  {% endif %}
                 </tr>
                 {% endfor %}
             </table>
