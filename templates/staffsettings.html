@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'staffbase.html' %}
+      {% block overall %}
+      <div>
+        <h1>User & Restaurant Details</h1>
+        <p>Username: {{user_details.username}}</p>
+        <p>Name: {{user_details.name}}</p>
+        <p>Phone Number: {{user_details.phonenumber}}</p>
+        <p>Restaurant: {{details.restname}}</p>
+        <p>Rest ID: {{details.restid}}</p>
+        <p>Location: {{details.location}}</p>
+      </div>
+      {% endblock %}
+    </body>
+</html>
+
+<!--
+  
+-->

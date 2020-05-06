@@ -8,8 +8,6 @@ from sqlalchemy.schema import MetaData
 from datetime import datetime, date, timedelta
 from decimal import *
 
-
-
 app = Flask(__name__) #Initialize FoodSanta
 
 if settings.debug:
@@ -113,6 +111,11 @@ def signup():
 def registration_success():
     print("Registration successful")
     return render_template('registration_success.html')
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    session.clear()
+    return redirect('login')
 
 def register_user(username, name, password, user_type, phoneNumber):
     global db
@@ -244,6 +247,14 @@ def addpromosuccess():
     db.session.commit()
     return redirect('gotostaff')
 
+@app.route('/gotostaffsettings', methods=['GET', 'POST'])
+def gotostaffsettings():
+    username = session['username']
+    rest_id = get_rest_id(username)
+    details = get_rest_details(rest_id)
+    user_details = get_user_details(username)
+    return render_template('staffsettings.html', details=details, user_details=user_details)
+
 
 @app.route('/additemsuccess', methods=['GET', 'POST'])
 def additemsuccess():
@@ -274,6 +285,13 @@ def edititemsuccess():
         else:
             flash("This food is not in your restaurant's menu.")
     return redirect('gotostaff')
+
+def get_user_details(id):
+    global db
+    check_user_query = f"select * from Users where username = '{id}'"
+    user_details = db.session.execute(check_user_query).fetchone()
+    parsed_details = dict(username=user_details[0], name=user_details[1], phonenumber=user_details[3])
+    return parsed_details
 
 def get_promo_hist(id):
     global db
@@ -322,7 +340,6 @@ def gotomanagerprofile():
     profilequery = f"select name, phoneNumber from Users where username = '{username}'"
     profileresult = db.session.execute(profilequery)
     profile = [dict(name = row[0], number = row[1]) for row in profileresult.fetchall()]
-    
     
     return render_template('managerprofile.html', profile = profile)
 
