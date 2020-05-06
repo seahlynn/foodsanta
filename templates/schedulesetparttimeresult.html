@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'riderbase.html' %}
+      {% block overall %}
+        <div style="display: inline"> 
+          <div class="results" style="width:100%;">
+            {% block content %}
+          <h2> New Part Time Schedule from {{ datem }} to {{ datemEnd }} was {{ message }}</h2>
+            <p>{{ errorMessage }}</p>
+            </table>
+            <br></br>
+            <form action="/setPartTimeSchedule" name="getfulltimeschedule">
+              <input type="submit" value="Back"/>
+            </form>
+          </div>
+        </div>
+      {% endblock %}
+    </body>
+    {% endblock %}
+</html>
+
+<!--
+  
+-->

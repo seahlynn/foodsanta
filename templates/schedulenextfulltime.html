@@ -8,7 +8,7 @@
     {% extends 'riderbase.html' %}
       {% block overall %}
         <div style="display: inline"> 
-          <div class="results" style="width:50%; float: left;">
+          <div class="results" style="width:100%;">
             {% block content %}
           <h2> Full Time Schedule for {{ monthYear }}</h2>
               <table border='1' align = 'center'>
@@ -20,15 +20,12 @@
                 {% endfor %}
             </table>
             <br></br>
-            {% if noNextSchedule %}
-              <form action="/setFullTimeSchedule" name="setfulltimeschedule">
-                <input type="submit" value="Submit next month's schedule"/>
-              </form>
-            {% else %}
-              <form action="/getNextFullTimeSchedule" name="getnextfulltimeschedule">
-                <input type="submit" value="View next month's schedule"/>
-              </form>
-            {% endif %}
+            <form action="/setFullTimeSchedule" name="setfulltimeschedule">
+                <input type="submit" value="Update next month's schedule"/>
+            </form>
+            <form action="/getFullTimeSchedule" name="getfulltimeschedule">
+              <input type="submit" value="Back"/>
+            </form>
           </div>
         </div>
       {% endblock %}

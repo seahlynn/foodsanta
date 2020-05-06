@@ -8,9 +8,9 @@
     {% extends 'riderbase.html' %}
       {% block overall %}
         <div style="display: inline"> 
-          <div class="results" style="width:50%; float: left;">
+          <div class="results" style="width:100%;">
             {% block content %}
-          <h2> New Full Time Schedule for {{ monthYear }}</h2>
+          <h2> Update Full Time Schedule for {{ monthYear }}</h2>
               <form action="/setFullTimeScheduleResult", name="fulltimeschedule-form", method="post">
                 <label for="startDay">Starting Day</label>
                 <select id="startDay" name="startDay">
