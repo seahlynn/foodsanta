@@ -312,14 +312,11 @@ CREATE TABLE WeeklyWorkSchedule (
 CREATE TABLE DailyWorkShift (
     dwsid               INTEGER,
     wwsid               INTEGER,
-<<<<<<< HEAD
     day                 INTEGER NOT NULL,
     startHour           INTEGER NOT NULL
-=======
     day                 INTEGER
                         CHECK (day in (0, 1, 2, 3, 4, 5, 6)),
     startHour           INTEGER
->>>>>>> 72a108e4c992a992075a2548d2094e699d6a33cd
                         CHECK (startHour >= 10 AND startHour <= 22),
     duration            INTEGER NOT NULL
                         CHECK (duration in (1, 2, 3, 4)),
