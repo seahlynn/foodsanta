@@ -17,25 +17,52 @@
             {% endif %}
           {% endwith %}
         </div>
-        <div class="container" >
-          <form name="chosen" action="restresults" method='GET'>
-            <h1 for="restaurant"> Search for a Restaurant </h1>
-              <input name="chosen" list="restlist" onchange="this.form.submit()">
-          </form>
-
-          <datalist id="restlist">
-            {% for r in restlist %}
-              <option value="{{r.restname}}">
-            {% endfor %}
-        </datalist>
-
+        <div class="container" style="width:50%;">
+          <div> 
+            <form name="chosen" action="restresults" method='GET' autocomplete="off">
+              <h2 for="restaurant"> Search for a Restaurant </h2>
+                <input name="chosen" list="restlist" onchange="this.form.submit()">
+            </form>
+  
+            <datalist id="restlist">
+              {% for r in restlist %}
+                <option value="{{r.restname}}">
+              {% endfor %}
+            </datalist>
+          </div>
+          <div>
+            <div style="width:50%; float:left;"> 
+              <h3> Category </h3>
+              <form action="catresults" method='GET' autocomplete="off">
+                  <input name="category" list="catlist" onchange="this.form.submit()">
+              </form>
+              <datalist id="catlist">
+                {% for r in catlist %}
+                  <option value="{{r.cat}}">
+                {% endfor %}
+              </datalist>
+            </div>
+            
+            <div style="width:50%; display:inline-block"> 
+              <form name="chosen" action="restresults" method='GET' autocomplete="off">
+                <h3>Restaurants offering {{category}} </h3>
+                  <input name="chosen" list="catrestlist" onchange="this.form.submit()">
+              </form>
+              <datalist id="catrestlist">
+                {% for r in catrestlist %}
+                  <option value="{{r.restname}}">
+                {% endfor %}
+              </datalist>
+            </div>
+          </div>
         </div>
+          
         <br>
 
         <div> 
           <div class="results" style="width:50%; float: left;">
             {% block content %}
-          <h2> Menu </h2>
+          <h2> Menu for {{rest}} </h2>
               <table border='1' align = 'center' style="margin-top: 0px;">
                   <tr>
                     <th> Category </th>

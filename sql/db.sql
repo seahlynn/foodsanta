@@ -33,7 +33,7 @@ INSERT INTO DeliveryRiders(username) VALUES
 
 INSERT INTO FullTimeRiders(username) VALUES
 ('kalsyc'),
-('lynjaaa'),
+('bakwah'),
 ('fullridertest');
 
 INSERT INTO PartTimeRiders(username) VALUES
