@@ -339,11 +339,13 @@ INSERT INTO PaymentMethods(paymentmethodid, username, cardInfo) VALUES
 (107, 'user3', 'american express card');
 
 
-INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed) VALUES
-(1, 'bakwah', '2020-05-01', 1, false);
+INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed, day1, day2, day3, day4, day5) VALUES
+(1, 'fullridertest', '2020-05-01', 1, false, 0, 1, 2, 3, 0);
 
+/*
 INSERT INTO FixedWeeklySchedule(fwsid, mwsid, day1, day2, day3, day4, day5) VALUES
 (1, 1, 0, 1, 2, 3, 0);
+*/
 
 INSERT INTO WeeklyWorkSchedule(wwsid, username, startDate, wwsHours, completed) VALUES
 (1, 'partridertest', '2020-04-27', 12, false);
@@ -354,9 +356,9 @@ INSERT INTO DailyWorkShift(dwsid, wwsid, day, startHour, duration) VALUES
 (3, 1, 1, 10, 4);
 
 INSERT INTO Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered, paymentmethodid) VALUES
-(2, 'bakwah', 4,  '469 Bukit Timah Rd Singapore 259756', 5, '04/07/2020 1240', '04/07/2020 1300', '04/07/2020 1320', 1),
+(2, 'fullridertest', 4,  '469 Bukit Timah Rd Singapore 259756', 5, '04/07/2020 1240', '04/07/2020 1300', '04/07/2020 1320', 1),
 (7, 'user48', 3,  '16 #01-220 College Ave West 138527', 5, '04/07/2020 1640', '04/07/2020 1650', '04/07/2020 1715', 1),
-(11, 'user31', 3,  '13 Computing Drive Singapore 117417', 5, '03/02/2020 1805', '03/02/2020 1815', '03/02/2020 1830', 1),
+(11, 'fullridertest', 3,  '13 Computing Drive Singapore 117417', 5, '03/02/2020 1805', '03/02/2020 1815', '03/02/2020 1830', 1),
 (13, 'bakwah', 3,  '16 #01-220 College Ave West 138527', 5, '02/01/2020 1650', '02/01/2020 1715', '02/01/2020 1730', 1);
 
 INSERT INTO FDSPromo(fdspromoid, description, type, value, minAmnt, appliedto, startTime, endTime, points) VALUES

@@ -184,11 +184,7 @@ CREATE TABLE Orders (
 	orderid				INTEGER,
     username			VARCHAR(30) NOT NULL,
     custLocation        VARCHAR(100) NOT NULL,
-<<<<<<< HEAD
-	orderCreatedTime	TIMESTAMP,
-=======
 	orderCreatedTime	TIMESTAMP NOT NULL, 
->>>>>>> 4f97379c97fde848f35166e50a70076ff5883705
 	totalCost			decimal NOT NULL,
 	fdspromoid			INTEGER,
     paymentmethodid     INTEGER NOT NULL,
@@ -215,13 +211,8 @@ CREATE TABLE Reviews (
 );
 
 CREATE TABLE Contains (
-<<<<<<< HEAD
     orderid     INTEGER NOT NULL,
     foodid      INTEGER NOT NULL,
-=======
-    orderid     INTEGER,
-    foodid      INTEGER,
->>>>>>> 4f97379c97fde848f35166e50a70076ff5883705
     quantity    INTEGER NOT NULL,
 
     PRIMARY KEY (orderid, foodid),
@@ -727,11 +718,7 @@ DECLARE
 foodrec RECORD;
 begin
     for foodrec in
-<<<<<<< HEAD
-		(select foodid from Contains natural join Orders where orderid = NEW.orderid and username = NEW.username)
-=======
 		(select foodid from Contains where orderid = NEW.orderid)
->>>>>>> 4f97379c97fde848f35166e50a70076ff5883705
 	loop
 		update Food set timesOrdered = timesOrdered + 1 where foodid = foodrec.foodid;
 	end loop;
