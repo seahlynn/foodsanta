@@ -4,7 +4,6 @@ DROP TABLE IF EXISTS Customers CASCADE;
 DROP TABLE IF EXISTS CustomerStats CASCADE;
 DROP TABLE IF EXISTS FDSManagers CASCADE;
 DROP TABLE IF EXISTS RestaurantStaff CASCADE;
-DROP TABLE IF EXISTS CustomerStats CASCADE;
 DROP TABLE IF EXISTS Restaurants CASCADE;
 DROP TABLE IF EXISTS RestaurantStats CASCADE;
 DROP TABLE IF EXISTS RestaurantPromo CASCADE;
@@ -212,8 +211,8 @@ CREATE TABLE Reviews (
 );
 
 CREATE TABLE Contains (
-    orderid     INTEGER,
-    foodid      INTEGER,
+    orderid     INTEGER NOT NULL,
+    foodid      INTEGER NOT NULL,
     quantity    INTEGER NOT NULL,
 
     PRIMARY KEY (orderid, foodid),
@@ -349,10 +348,10 @@ CREATE TABLE CustomerStats (
 
 CREATE TABLE RestaurantStats (
     restid              INTEGER,
-    numCompletedOrders  INTEGER,
-    totalOrdersCost     INTEGER,
     month               INTEGER,
     year                INTEGER,
+    numCompletedOrders  INTEGER,
+    totalOrdersCost     INTEGER,
 
     PRIMARY KEY (restid, month, year),
 
@@ -423,6 +422,37 @@ create trigger updateCustomerStatsTrigger
     before insert on Orders
     for each row
     execute function updateCustomerStatsFunction();
+
+
+/* Updates restaurant's total number of orders and total cost spent on orders */
+create or replace function updateRestaurantStatsFunction()
+returns trigger as $$
+begin
+    /* restid first entry */
+    if (not exists(
+        select 1
+        from RestaurantStats R1
+        where R1.restid = NEW.restid
+        and R1.month = (select extract(month from current_timestamp))
+        and R1.year = (select extract(year from current_timestamp)))) then
+        insert into RestaurantStats values(NEW.restid, (select extract(month from current_timestamp)), (select extract(year from current_timestamp)), 1, NEW.totalCost);
+    /* restid not first entry of monthyear */
+    else
+        update RestaurantStats R2
+        set numCompletedOrders = numCompletedOrders + 1,
+            totalOrdersCost = totalOrdersCost + NEW.totalCost
+        where R2.restid = NEW.restid
+        and R2.month = (select extract(month from current_timestamp))
+        and R2.year = (select extract(year from current_timestamp)); 
+end if;    
+return new;
+end; $$ language plpgsql;
+
+drop trigger if exists updateRestaurantStatsTrigger on RestaurantStats;
+create trigger updateRestaurantStatsTrigger
+    before insert on Orders
+    for each row
+    execute function updateRestaurantStatsFunction();
 
 /* Increments the total number of distinct customers */
 create or replace function addNewCustomerFunction() 
@@ -694,7 +724,7 @@ begin
 	end loop;
 
 return new;
-end; $$ language plpgsql;        
+end; $$ language plpgsql;
 
 drop trigger if exists incrementTimesOrderdFoodTrigger on Orders;
 create trigger incrementTimesOrderedFoodTrigger

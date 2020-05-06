@@ -9,8 +9,6 @@ from sqlalchemy.exc import InternalError
 from datetime import datetime, date, timedelta
 from decimal import *
 
-
-
 app = Flask(__name__) #Initialize FoodSanta
 
 if settings.debug:
@@ -96,10 +94,6 @@ def signup():
         if len(password) < 8:
             flash("Password cannot be shorter than 8 characters!")
             return render_template('signup.html')
-        
-        if not len(name):
-            flash("Name cannot be blank!")
-            return render_template('signup.html')
 
         if is_existing_user(username):
             flash("Username taken! :(")
@@ -114,6 +108,11 @@ def signup():
 def registration_success():
     print("Registration successful")
     return render_template('registration_success.html')
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    session.clear()
+    return redirect('login')
 
 def register_user(username, name, password, user_type, phoneNumber):
     global db
@@ -153,6 +152,7 @@ def redirect_accordingly(username):
     check_user_staff = f"select 1 from RestaurantStaff where username = '{username}'"
     if db.session.execute(check_user_staff).fetchone():
         return redirect('gotostaff')
+    flash("An error has occurred. Please try logging in again.")
     return redirect('login')
 
 '''
@@ -169,7 +169,35 @@ def gotostaff():
     menu = get_menu(rest_id)
     promohist = get_promo_hist(rest_id)
     details = get_rest_details(rest_id)
-    return render_template('staffprofile.html', menu=menu, details=details, promohist=promohist)
+    return render_template('staffmenu.html', menu=menu, details=details, promohist=promohist)
+
+@app.route('/gotostaffstats', methods=['GET', 'POST'])
+def gotostaffstats():
+    rest_id = session['rest_id']
+    all_promos = get_promo_hist(rest_id)
+    return render_template('staffstats.html', monthstats=None, promostats=None, allpromos=all_promos)
+
+@app.route('/checkpromostaffstats', methods=['GET', 'POST'])
+def checkpromostaffstats():
+    rest_id = session['rest_id']
+    all_promos = get_promo_hist(rest_id)
+    if request.method == 'POST':
+        form = request.form
+        id = form['fdspromoid']
+        promo_stats = get_rest_promo_stats(id)
+    return render_template('staffstats.html', monthstats=None, promostats=promo_stats, allpromos=all_promos)
+
+@app.route('/checkmonthstaffstats', methods=['GET', 'POST'])
+def checkmonthstaffstats():
+    rest_id = session['rest_id']
+    all_promos = get_promo_hist(rest_id)
+    if request.method == 'POST':
+        form = request.form
+        month = form['month']
+        year = form['year']
+        month_stats = get_month_stats(month, year)
+        return render_template('staffstats.html', monthstats=month_stats, promostats=None, allpromos=all_promos)
+    return redirect('gotostaffstats')
 
 @app.route('/deleteitemsuccess', methods=['GET', 'POST'])
 def deleteitemsuccess():
@@ -246,6 +274,15 @@ def addpromosuccess():
     return redirect('gotostaff')
 
 
+@app.route('/gotostaffsettings', methods=['GET', 'POST'])
+def gotostaffsettings():
+    username = session['username']
+    rest_id = get_rest_id(username)
+    details = get_rest_details(rest_id)
+    user_details = get_user_details(username)
+    return render_template('staffsettings.html', details=details, user_details=user_details)
+
+
 @app.route('/additemsuccess', methods=['GET', 'POST'])
 def additemsuccess():
     rest_id = session['rest_id']
@@ -254,8 +291,7 @@ def additemsuccess():
         form = request.form
         description, price, stock, category = escape(form["description"].strip()), escape(form["price"]), escape(form["stock"]),\
              escape(form["category"].strip())
-        print(description, category)
-        insert_query = f"insert into Food(foodid, description, price, availability, category, restid) values({food_id}, '{description}', {price}, {stock}, '{category}', {rest_id})"
+        insert_query = f"insert into Food(foodid, description, price, availability, dailylimit, category, restid) values({food_id}, '{description}', {price}, {stock}, {stock}, '{category}', {rest_id})"
         db.session.execute(insert_query)
         db.session.commit()
     return redirect('gotostaff')
@@ -265,22 +301,53 @@ def edititemsuccess():
     rest_id = session['rest_id']
     if request.method == 'POST':
         form = request.form
-        food_id, description, price, stock, category = form["food_id"], escape(form["description"].strip()), form["price"], form["stock"].strip(),\
+        food_id, description, price, stock, limit, category = form["food_id"], escape(form["description"].strip()), form["price"], form["stock"].strip(), form["limit"].strip(), \
              escape(form["category"].strip())
         check_rest_id = f"select 1 from Food where foodid = {food_id} and restid = {rest_id}"
         if db.session.execute(check_rest_id).fetchone():
-            update_food_query = f"update Food set description = '{description}', price = {price}, availability = {stock}, category = '{category}' where foodid = {food_id}"
+            update_food_query = f"update Food set description = '{description}', price = {price}, availability = {stock}, dailylimit = {limit}, category = '{category}' where foodid = {food_id}"
             db.session.execute(update_food_query)
             db.session.commit()
         else:
             flash("This food is not in your restaurant's menu.")
     return redirect('gotostaff')
 
+def get_month_stats(month, year):
+    global db
+    rest_id = session['rest_id']
+    check_total_query = f"select numCompletedOrders, totalOrdersCost from RestaurantStats where month = {month} and year = {year} and restid = {rest_id}"
+    total_details = db.session.execute(check_total_query).fetchone()
+    check_top_five = f"select foodid, description, sum(quantity) as total from Orders natural join Contains natural join Food where\
+         restid = {rest_id} and extract(month from orderCreatedTime) = {month} and extract(year from orderCreatedTime) = {year} group by foodid, description order by total desc limit 5;"
+    top_five = db.session.execute(check_top_five).fetchall()
+    parsed_five = [dict(foodid=i[0], description=i[1], total=i[2]) for i in top_five]
+    parsed_details = dict(numCompletedOrders=total_details[0], totalOrdersCost=total_details[1], topFive=parsed_five)
+    return parsed_details
+
+def get_rest_promo_stats(id):
+    global db
+    rest_id = session['rest_id']
+    check_duration_query = f"select F.startTime, F.endTime, abs(F.startTime::date - endTime::date) as dateDiff, description from FDSPromo F where fdspromoid = {id}"
+    duration_details = db.session.execute(check_duration_query).fetchone()
+    start_time = duration_details[0]
+    end_time = duration_details[1]
+    check_orders_query = f"select count(*) as total from Orders where restid = {rest_id} and DATE(orderCreatedTime) >= '{start_time}' and DATE(orderCreatedTime) <= '{end_time}'"
+    num_orders = db.session.execute(check_orders_query).fetchone()[0]
+    details = dict(startTime=start_time, endTime=end_time, diff=duration_details[2], total=num_orders, description=duration_details[3])
+    return details
+
+def get_user_details(id):
+    global db
+    check_user_query = f"select * from Users where username = '{id}'"
+    user_details = db.session.execute(check_user_query).fetchone()
+    parsed_details = dict(username=user_details[0], name=user_details[1], phonenumber=user_details[3])
+    return parsed_details
+
 def get_promo_hist(id):
     global db
-    check_promo_query = f"select * from FDSPromo natural join RestaurantPromo where restid = {id}"
+    check_promo_query = f"select distinct * from FDSPromo natural join RestaurantPromo where restid = {id}"
     promo_hist = db.session.execute(check_promo_query).fetchall()
-    parsed_hist = [dict(fdspromoid=i[0], description=i[1], starttime=i[3], endtime=i[4], type=i[2], points=i[5]) for i in promo_hist]
+    parsed_hist = [dict(fdspromoid=i[0], description=i[1], starttime=i[6], endtime=i[7], type=i[2], points=i[8], minamt=i[4], discount=i[3]) for i in promo_hist]
     return parsed_hist
 
 
@@ -307,9 +374,9 @@ def get_rest_id(username):
 
 def get_menu(id):
     global db
-    check_menu_query = f"select foodid, description, price, availability, category, timesordered from Food where restid = '{id}'"
+    check_menu_query = f"select foodid, description, price, availability, category, timesordered, dailylimit from Food where restid = '{id}'"
     menu = db.session.execute(check_menu_query).fetchall()
-    parsed_menu = [{"foodid": i[0], "description": i[1], "price": float(i[2]), "stock": i[3], "category": i[4], "timesordered": i[5]} for i in menu]
+    parsed_menu = [{"foodid": i[0], "description": i[1], "price": float(i[2]), "stock": i[3], "category": i[4], "timesordered": i[5], "dailylimit":i[6]} for i in menu]
     return parsed_menu
 
 
@@ -323,7 +390,6 @@ def gotomanagerprofile():
     profilequery = f"select name, phoneNumber from Users where username = '{username}'"
     profileresult = db.session.execute(profilequery)
     profile = [dict(name = row[0], number = row[1]) for row in profileresult.fetchall()]
-    
     
     return render_template('managerprofile.html', profile = profile)
 

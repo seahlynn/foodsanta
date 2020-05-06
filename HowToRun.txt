@@ -5,6 +5,7 @@ Install postgreSQL & pgAdmin
 Go to Command Prompt/Shell:pip
 pip install pipenv //Need a pipenv to generate piplock file (if not generated)
 pipenv shell //Start pipenv (virtual env) for python so that the modules are not installed globally
+pipenv install apscheduler (or pip install apscheduler)
 pipenv install flask
 pipenv install psycopg2
 pipenv install psycopg2-binary
