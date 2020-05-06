@@ -314,9 +314,6 @@ CREATE TABLE DailyWorkShift (
     wwsid               INTEGER,
     day                 INTEGER NOT NULL,
     startHour           INTEGER NOT NULL
-    day                 INTEGER
-                        CHECK (day in (0, 1, 2, 3, 4, 5, 6)),
-    startHour           INTEGER
                         CHECK (startHour >= 10 AND startHour <= 22),
     duration            INTEGER NOT NULL
                         CHECK (duration in (1, 2, 3, 4)),
