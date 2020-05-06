@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'riderbase.html' %}
+      {% block overall %}
+        <div style="display: inline"> 
+          <div class="results" style="width:100%;">
+            {% block content %}
+          <h2> New Full-Time Schedule for {{ monthYear }} was successfully submitted</h2>
+            </table>
+            <br></br>
+            <form action="/getFullTimeSchedule" name="getfulltimeschedule">
+              <input type="submit" value="Back"/>
+            </form>
+          </div>
+        </div>
+      {% endblock %}
+    </body>
+    {% endblock %}
+</html>
+
+<!--
+  
+-->

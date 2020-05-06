@@ -24,22 +24,28 @@
                   {% endfor %}
               </table>
           <h2> Delivery Stats </h2>
-              <table align = 'center'>
+          {% for s in riderstats %}
+              <table border="1" align = 'center'>
                 <tr>
-                  <th> Month </th>
-                  <th> Year </th>
-                  <th> Total Orders Completed </th>
-                  <th> Total Hours Worked </th>
-                  <th> Total Salary Earned </th>
-                </tr>  
-                {% for s in riderstats %}
-                <tr>
-                  <td> s.month </td>
-                  <td> s.year </td>
-                  <td> s.totalOrders </td>
-                  <td> s.totalHours </td>
-                  <td> s.totalSalary </td>
-                </tr>
+                        <td> Month: </td>
+                        <td>{{ s.month }}</td>
+                    </tr>
+                    <tr>
+                        <td> Year: </td>
+                        <td>{{ s.year }}</td>
+                    </tr>
+                    <tr>
+                        <td> Total Orders Completed: </td>
+                        <td>{{ s.totalOrders }}</td>
+                    </tr>
+                    <tr>
+                        <td> Total Hours Worked: </td>
+                        <td>{{ s.totalHours }}</td>
+                    </tr>
+                    <tr>
+                        <td> Total Salary Earned: </td>
+                        <td>{{ s.totalSalary }}</td>
+                    </tr>
                 {% endfor %}
               {% endblock %}
               </table>    
@@ -51,7 +57,7 @@
                 <table  align = 'center'>
                     <tr>
                         <td> Contact: </td>
-                        <td> <input type="tel" maxlength ="8" minlength ="8" name="contact" placeholder="Update Contact Number"> </td>
+                        <td> <input type="tel" pattern="[89]{1}[0-9]{7}" name="contact" placeholder="Update Contact Number"> </td>
                     </tr>
                     <tr>
                         <td colspan="2"> <input type="Submit" value="Update"> </td>

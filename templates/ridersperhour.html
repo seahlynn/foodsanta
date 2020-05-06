@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'managerbase.html' %}
+      {% block overall %}
+        <div style="display: inline"> 
+          <div class="results" style="width:100%;">
+            {% block content %}
+          <h2> Riders per Hour for {{ monday }} to {{ sunday }}</h2>
+              <table border='1' align = 'center'>
+                <h3>Monday</h3>
+                <tr>
+                  {% for s in mondaysch %}
+                  <th>{{ s.hour }}00 hrs</th>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  {% for s in mondaysch %}
+                  <td>{{ s.count }} rider(s)</td>
+                  {% endfor %}
+                </tr>
+              </table>  
+              <h3>Tuesday</h3>
+              <table border='1' align = 'center'>
+                <tr>
+                  {% for s in tuesdaysch %}
+                  <th>{{ s.hour }}00 hrs</th>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  {% for s in tuesdaysch %}
+                  <td>{{ s.count }} rider(s)</td>
+                  {% endfor %}
+                </tr>
+              </table>  
+              <h3>Wednesday</h3>
+              <table border='1' align = 'center'>
+                <tr>
+                  {% for s in wednesdaysch %}
+                  <th>{{ s.hour }}00 hrs</th>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  {% for s in wednesdaysch %}
+                  <td>{{ s.count }} rider(s)</td>
+                  {% endfor %}
+                </tr>
+              </table>  
+              <h3>Thursday</h3>
+              <table border='1' align = 'center'>
+                <tr>
+                  {% for s in thursdaysch %}
+                  <th>{{ s.hour }}00 hrs</th>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  {% for s in thursdaysch %}
+                  <td>{{ s.count }} rider(s)</td>
+                  {% endfor %}
+                </tr>
+              </table>  
+              <h3>Friday</h3>
+              <table border='1' align = 'center'>
+                <tr>
+                  {% for s in fridaysch %}
+                  <th>{{ s.hour }}00 hrs</th>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  {% for s in fridaysch %}
+                  <td>{{ s.count }} rider(s)</td>
+                  {% endfor %}
+                </tr>
+              </table>  
+              <h3>Saturday</h3>
+              <table border='1' align = 'center'>
+                <tr>
+                  {% for s in saturdaysch %}
+                  <th>{{ s.hour }}00 hrs</th>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  {% for s in saturdaysch %}
+                  <td>{{ s.count }} rider(s)</td>
+                  {% endfor %}
+                </tr>
+              </table>  
+              <h3>Sunday</h3>
+              <table border='1' align = 'center'>
+                <tr>
+                  {% for s in sundaysch %}
+                  <th>{{ s.hour }}00 hrs</th>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  {% for s in sundaysch %}
+                  <td>{{ s.count }} rider(s)</td>
+                  {% endfor %}
+                </tr>
+              </table>  
+            <br></br>
+            <form action="/getRidersPerHour" name="getridersperhour" method='POST'>
+              <input type="date" id="day" name="day" required max="{{ maxDay }}">
+              <input type="submit">
+            </form>
+            <br></br>
+            <form action="/gotomanagerprofile">
+              <input type="submit" value="Back"/>
+            </form>
+            <br></br>
+            <br></br>
+          </div>
+        </div>
+      {% endblock %}
+    </body>
+    {% endblock %}
+</html>
+
+<!--
+  
+-->

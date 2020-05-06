@@ -8,9 +8,14 @@
     {% extends 'riderbase.html' %}
       {% block overall %}
         <div style="display: inline"> 
-          <div class="results" style="width:50%; float: left;">
+          <div class="results" style="width:100%;">
             {% block content %}
-          <h2> New Full-Time Schedule for {{ monthYear }} was successfully submitted</h2>
+          <h2> Select a past month to view: </h2>
+              <table border='1' align = 'center'>
+                <form action="/getPrevFullTimeScheduleResult" name="getprevfulltimescheduleresult" method='POST'>
+                  <input type="month" id="monthYear" name="monthYear" required max="{{ monthYear }}" value="{{ monthYear}}">
+                  <input type="submit">
+                </form>
             </table>
             <br></br>
             <form action="/getFullTimeSchedule" name="getfulltimeschedule">

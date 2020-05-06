@@ -26,15 +26,16 @@ DROP TABLE IF EXISTS WeeklyWorkSchedule CASCADE;
 DROP TABLE IF EXISTS FixedWeeklySchedule CASCADE;
 DROP TABLE IF EXISTS MonthlyWorkSchedule CASCADE;
 DROP TABLE IF EXISTS DailyWorkShift CASCADE;
+DROP TABLE IF EXISTS RidersPerHour CASCADE;
 DROP TABLE IF EXISTS Latest CASCADE;
 
 
 CREATE TABLE Users (
     username            VARCHAR(30),    
-    name                VARCHAR(30),
-    password            VARCHAR(15),
-    phoneNumber         VARCHAR(8),
-    dateCreated			date,
+    name                VARCHAR(30) NOT NULL,
+    password            VARCHAR(15) NOT NULL,
+    phoneNumber         VARCHAR(8) NOT NULL,
+    dateCreated			date NOT NULL,
 
     PRIMARY KEY (username)
 );
@@ -84,8 +85,8 @@ CREATE TABLE Locations (
 -- but payment method can also be cash.. then how? can set paymentmethodid = 1 for cash? 2 onwards is for card
 CREATE TABLE PaymentMethods (
 	paymentmethodid	INTEGER,
-	username  		VARCHAR(30),
-	cardInfo		VARCHAR(60),
+	username  		VARCHAR(30) NOT NULL,
+	cardInfo		VARCHAR(60) NOT NULL,
 
 	PRIMARY KEY (paymentmethodid),
 
@@ -95,7 +96,7 @@ CREATE TABLE PaymentMethods (
 --insertion of food into Contains table has to decrease availability by one (use trigger under contains)
 CREATE TABLE Restaurants (
     restid      INTEGER,
-    restName    VARCHAR(50),
+    restName    VARCHAR(50) NOT NULL,
     minAmt      INTEGER NOT NULL,
     location    VARCHAR(100) NOT NULL,
 
@@ -114,11 +115,11 @@ CREATE TABLE RestaurantStaff (
 
 CREATE TABLE Food ( 
     foodid          INTEGER,
-    description     VARCHAR(50),
+    description     VARCHAR(50) NOT NULL,
     price           decimal NOT NULL,
     dailylimit		INTEGER NOT NULL CHECK (dailylimit >= 0),
     availability    INTEGER NOT NULL CHECK (availability >= 0),
-    category        VARCHAR(20),
+    category        VARCHAR(20) NOT NULL,
     restid          INTEGER NOT NULL,
     timesordered    INTEGER NOT NULL DEFAULT 0,
 
@@ -181,14 +182,18 @@ CREATE TABLE RestaurantPromo (
 
 CREATE TABLE Orders (
 	orderid				INTEGER,
-    username			VARCHAR(30),
+    username			VARCHAR(30) NOT NULL,
     custLocation        VARCHAR(100) NOT NULL,
+<<<<<<< HEAD
 	orderCreatedTime	TIMESTAMP,
+=======
+	orderCreatedTime	TIMESTAMP NOT NULL, 
+>>>>>>> 4f97379c97fde848f35166e50a70076ff5883705
 	totalCost			decimal NOT NULL,
 	fdspromoid			INTEGER,
     paymentmethodid     INTEGER NOT NULL,
-    preparedByRest      BOOLEAN NOT NULL DEFAULT False, -- should this be null / datetime instead
-    selectedByRider     BOOLEAN NOT NULL DEFAULT False,
+    preparedByRest      BOOLEAN NOT NULL DEFAULT FALSE, -- should this be null / datetime instead
+    selectedByRider     BOOLEAN NOT NULL DEFAULT FALSE,
     restid              INTEGER NOT NULL,
     delivered   		BOOLEAN NOT NULL DEFAULT FALSE,
 
@@ -210,8 +215,13 @@ CREATE TABLE Reviews (
 );
 
 CREATE TABLE Contains (
+<<<<<<< HEAD
     orderid     INTEGER NOT NULL,
     foodid      INTEGER NOT NULL,
+=======
+    orderid     INTEGER,
+    foodid      INTEGER,
+>>>>>>> 4f97379c97fde848f35166e50a70076ff5883705
     quantity    INTEGER NOT NULL,
 
     PRIMARY KEY (orderid, foodid),
@@ -228,7 +238,7 @@ CREATE TABLE Delivers (
 	timeDepartToRestaurant	TIMESTAMP,
 	timeArrivedAtRestaurant	TIMESTAMP,
 	timeOrderDelivered		TIMESTAMP,
-	paymentmethodid			INTEGER not null, 			
+	paymentmethodid			INTEGER NOT NULL, 			
 
 	PRIMARY KEY (orderid),
 
@@ -260,15 +270,6 @@ CREATE TABLE MonthlyWorkSchedule (
     wkStartDay         INTEGER NOT NULL
                        CHECK (wkStartDay in (0, 1, 2, 3, 4, 5, 6)),
     completed          BOOLEAN NOT NULL,
-
-    PRIMARY KEY (mwsid),
-
-    FOREIGN KEY (username) REFERENCES FullTimeRiders
-);
-
-CREATE TABLE FixedWeeklySchedule (
-    fwsid               INTEGER,
-    mwsid               INTEGER,
     day1                INTEGER NOT NULL
                         CHECK (day1 in (0, 1, 2, 3)),
     day2                INTEGER NOT NULL
@@ -280,16 +281,35 @@ CREATE TABLE FixedWeeklySchedule (
     day5                INTEGER NOT NULL
                         CHECK (day5 in (0, 1, 2, 3)),
 
-    PRIMARY KEY (fwsid),
+    PRIMARY KEY (mwsid),
 
-    FOREIGN KEY (mwsid) REFERENCES MonthlyWorkSchedule
+    FOREIGN KEY (username) REFERENCES FullTimeRiders
 );
+
+-- CREATE TABLE FixedWeeklySchedule (
+--     fwsid               INTEGER,
+--     mwsid               INTEGER,
+--     day1                INTEGER NOT NULL
+--                         CHECK (day1 in (0, 1, 2, 3)),
+--     day2                INTEGER NOT NULL
+--                         CHECK (day2 in (0, 1, 2, 3)),
+--     day3                INTEGER NOT NULL
+--                         CHECK (day3 in (0, 1, 2, 3)),
+--     day4                INTEGER NOT NULL
+--                         CHECK (day4 in (0, 1, 2, 3)),
+--     day5                INTEGER NOT NULL
+--                         CHECK (day5 in (0, 1, 2, 3)),
+
+--     PRIMARY KEY (fwsid),
+
+--     FOREIGN KEY (mwsid) REFERENCES MonthlyWorkSchedule
+-- );
 
 CREATE TABLE WeeklyWorkSchedule (
     wwsid               INTEGER,
     username            VARCHAR(30),
-    startDate           DATE,
-    wwsHours            INTEGER,
+    startDate           DATE NOT NULL,
+    wwsHours            INTEGER NOT NULL,
     completed           BOOLEAN NOT NULL,
 
     PRIMARY KEY (wwsid),
@@ -300,15 +320,25 @@ CREATE TABLE WeeklyWorkSchedule (
 CREATE TABLE DailyWorkShift (
     dwsid               INTEGER,
     wwsid               INTEGER,
-    day                 INTEGER,
-    startHour           INTEGER
+    day                 INTEGER NOT NULL,
+    startHour           INTEGER NOT NULL
                         CHECK (startHour >= 10 AND startHour <= 22),
-    duration            INTEGER
+    duration            INTEGER NOT NULL
                         CHECK (duration in (1, 2, 3, 4)),
 
     PRIMARY KEY (dwsid, startHour),
 
     FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
+);
+
+CREATE TABLE RidersPerHour (
+    username            VARCHAR(30),
+    day                 DATE,
+    hour                INTEGER,
+
+    PRIMARY KEY (username, day, hour),
+
+    FOREIGN KEY (username) REFERENCES DeliveryRiders
 );
 
 -- FDS Manager purposes
@@ -498,7 +528,10 @@ create or replace function updateRiderDeliveryBonusFunction()
 returns trigger as $$
 begin
     update RiderStats
-    set totalSalary = totalSalary + 5; 
+    set totalSalary = totalSalary + 5
+    where month = (select extract(month from current_timestamp)
+    and year = (select extract(year from current_timestamp)
+    and username = NEW.username; 
 return new;
 end; $$ language plpgsql;
 
@@ -534,28 +567,6 @@ create trigger updateLocationTrigger
     execute function updateLocationFunction();
 
 /* update availability of food items*/ 
-/*create or replace function updateAvailFoodFunction()
-returns trigger as $$
-DECLARE 
-containrow RECORD;
-begin
-    for containrow in
-        (select foodid, quantity from Contains C where C.orderid = NEW.orderid)
-    loop
-        update Food
-        set availability = availability - containrow.quantity
-        where foodid = containrow.foodid;
-    end loop;
-return new;
-end; $$ language plpgsql;        
-
-drop trigger if exists updateAvailFoodTrigger on Food;
-create trigger updateAvailFoodTrigger
-    before insert on Orders
-    for each row
-    execute function updateAvailFoodFunction();*/
-
-/* update availability of food items*/ 
 create or replace function decreaseAvailFoodFunction()
 returns trigger as $$
 begin
@@ -577,13 +588,13 @@ returns trigger as $$
 begin
     update Food
     set availability = availability + 1
-    where foodid = NEW.foodid;
+    where foodid = OLD.foodid;
 return new;
 end; $$ language plpgsql;        
 
 drop trigger if exists increaseAvailFoodTrigger on Food;
 create trigger increaseAvailFoodTrigger
-    before delete on Contains
+    after delete on Contains
     for each row
     execute function increaseAvailFoodFunction();
 
@@ -716,7 +727,11 @@ DECLARE
 foodrec RECORD;
 begin
     for foodrec in
+<<<<<<< HEAD
 		(select foodid from Contains natural join Orders where orderid = NEW.orderid and username = NEW.username)
+=======
+		(select foodid from Contains where orderid = NEW.orderid)
+>>>>>>> 4f97379c97fde848f35166e50a70076ff5883705
 	loop
 		update Food set timesOrdered = timesOrdered + 1 where foodid = foodrec.foodid;
 	end loop;
@@ -731,4 +746,111 @@ create trigger incrementTimesOrderedFoodTrigger
     execute function incrementTimesOrderedFoodFunction();
 
 
+/* update weekly work schedule hours upon insertion*/ 
+create or replace function updateWwsHoursOnInsertFunction()
+returns trigger as $$
+DECLARE
+hours INTEGER;
+existingDay TEXT;
+begin
+    update WeeklyWorkSchedule
+    set wwsHours = wwsHours + NEW.duration
+    where wwsid = NEW.wwsid;
 
+    select wwsHours into hours
+        from WeeklyWorkSchedule
+        where wwsid = NEW.wwsid;
+
+    select case when NEW.day = 0 then 'Monday' when NEW.day = 1 then 'Tuesday' when NEW.day = 2 then 'Wednesday' when NEW.day = 3 then 'Thursday' when NEW.day = 4 then 'Friday' when NEW.day = 5 then 'Saturday' when NEW.day = 6 then 'Sunday' end into existingDay
+        from DailyWorkShift
+        where wwsid = NEW.wwsid;
+    if hours > 44 then
+        raise exception 'FoodSanta: A shift you are trying to add (%hrs to %hrs on %) results in you working more than 48 hours this week! Ho ho ho!', NEW.startHour * 100, (NEW.startHour + NEW.duration) * 100, existingDay;
+    end if;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists updateWwsHoursOnInsertTrigger on DailyWorkShift;
+create trigger updateWwsHoursOnInsertTrigger
+    before insert on DailyWorkShift
+    for each row
+    execute function updateWwsHoursOnInsertFunction();
+
+/* update weekly work schedule hours upon deletion*/ 
+create or replace function updateWwsHoursOnDeleteFunction()
+returns trigger as $$
+DECLARE
+hours INTEGER;
+existingDay TEXT;
+begin
+    update WeeklyWorkSchedule
+    set wwsHours = wwsHours - OLD.duration
+    where wwsid = OLD.wwsid;
+
+    select wwsHours into hours
+        from WeeklyWorkSchedule
+        where wwsid = OLD.wwsid;
+
+    select case when OLD.day = 0 then 'Monday' when OLD.day = 1 then 'Tuesday' when OLD.day = 2 then 'Wednesday' when OLD.day = 3 then 'Thursday' when OLD.day = 4 then 'Friday' when OLD.day = 5 then 'Saturday' when OLD.day = 6 then 'Sunday' end into existingDay
+        from DailyWorkShift
+        where wwsid = OLD.wwsid;
+    if hours < 10 then
+        raise exception 'FoodSanta: A shift you are trying to delete (%hrs to %hrs on %) results in you working less than 10 hours this week! Ho ho ho!', OLD.startHour * 100, (OLD.startHour + OLD.duration) * 100, existingDay;
+    end if;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists updateWwsHoursOnDeleteTrigger on DailyWorkShift;
+create trigger updateWwsHoursOnDeleteTrigger
+    after delete on DailyWorkShift
+    for each row
+    execute function updateWwsHoursOnDeleteFunction();
+
+/* check validity of a new part time shift hours*/
+create or replace function validPartTimeShiftFunction()
+returns trigger as $$
+DECLARE
+existingDay TEXT;
+existingStartHour INTEGER;
+existingDuration INTEGER;
+begin
+    select case when d1.day = 0 then 'Monday' when d1.day = 1 then 'Tuesday' when d1.day = 2 then 'Wednesday' when d1.day = 3 then 'Thursday' when d1.day = 4 then 'Friday' when d1.day = 5 then 'Saturday' when d1.day = 6 then 'Sunday' end, d1.startHour, d1.duration into existingDay, existingStartHour, existingDuration
+        from DailyWorkShift d1, DailyWorkShift d2
+        where d1.wwsid = NEW.wwsid and d1.day = NEW.day and d2.dwsid = new.dwsid and d1.dwsid <> d2.dwsid
+        and   ((d1.startHour <= NEW.startHour and NEW.startHour <= d1.startHour + d1.duration)
+        or    (d1.startHour <= NEW.startHour + NEW.duration and NEW.startHour + NEW.duration <= d1.startHour + d1.duration));
+    if existingStartHour is not null then
+        raise exception 'FoodSanta: A shift you are trying to add (%hrs to %hrs on %) clashes with an existing shift (%hrs to %hrs)! Ho ho ho!', NEW.startHour * 100, (NEW.startHour + NEW.duration) * 100, existingDay, existingStartHour * 100, (existingStartHour + existingDuration) * 100;
+    end if;
+    return null;
+end; $$ language plpgsql;        
+
+drop trigger if exists validPartTimeShiftTrigger on DailyWorkShift;
+create trigger validPartTimeShiftTrigger
+    after insert on DailyWorkShift
+    for each row
+    execute function validPartTimeShiftFunction();
+
+/* check if a new part time shift hours exceeds 10pm*/
+create or replace function tenPmPartTimeShiftFunction()
+returns trigger as $$
+DECLARE
+day TEXT;
+startHour INTEGER;
+duration INTEGER;
+begin
+    select case when d1.day = 0 then 'Monday' when d1.day = 1 then 'Tuesday' when d1.day = 2 then 'Wednesday' when d1.day = 3 then 'Thursday' when d1.day = 4 then 'Friday' when d1.day = 5 then 'Saturday' when d1.day = 6 then 'Sunday' end, d1.startHour, d1.duration into day, startHour, duration
+        from DailyWorkShift d1
+        where d1.dwsid = NEW.dwsid
+        and   (NEW.startHour + NEW.duration) > 22;
+    if startHour is not null then
+        raise exception 'FoodSanta: A shift you are trying to add (%hrs to %hrs on %) exceeds the working hours of 2200hrs! Ho ho ho!', NEW.startHour * 100, ((NEW.startHour + NEW.duration) % 24) * 100, day;
+    end if;
+    return null;
+end; $$ language plpgsql;        
+
+drop trigger if exists tenPmPartTimeShiftTrigger on DailyWorkShift;
+create trigger tenPmPartTimeShiftTrigger
+    after insert on DailyWorkShift
+    for each row
+    execute function tenPmPartTimeShiftFunction();

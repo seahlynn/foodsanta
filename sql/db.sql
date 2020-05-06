@@ -86,7 +86,7 @@ INSERT INTO Food(foodid, description, restid, price, dailylimit, availability, c
 --- INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid) VALUES (1, 1, '21 Lower Kent Ridge Rd, Singapore 119077', '04/07/2020 1230', 13.80, NULL, 1, False, False, 1);
 
 INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid, delivered) VALUES 
-(2, 'justning', '469 Bukit Timah Rd Singapore 259756', '04/07/2020 1230', 10.80, NULL, 1, False, True, 1, False),
+(2, 'justning', '469 Bukit Timah Rd Singapore 259756', '04/07/2020 1230', 10.80, NULL, 1, False, False, 1, False),
 (3, 'kalsyc', '20 Heng Mui Keng Terrace Singapore 119618', '04/07/2020 1320', 23.80, NULL, 1, False, False, 1, False),
 (4, 'kalsyc', '12 Kent Ridge Dr Singapore 119243', '04/07/2020 1330', 18.80, NULL, 1, False, False, 1, False),
 (5, 'kalsyc', '2 College Ave West Stephen Riady Centre Singapore 138607', '04/07/2020 1350', 13.80, NULL, 1, False, False, 1, False),
@@ -106,22 +106,22 @@ INSERT INTO PaymentMethods(paymentmethodid, username, cardInfo) VALUES
 (7, 'justning', 'uob card'),
 (8, 'justning', 'stanchart card');
 
-INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed) VALUES
-(1, 'bakwah', '2020-05-01', 1, false);
+INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed, day1, day2, day3, day4, day5) VALUES
+(1, 'fullridertest', '2020-05-01', 1, false, 0, 1, 2, 3, 0);
 
-INSERT INTO FixedWeeklySchedule(fwsid, mwsid, day1, day2, day3, day4, day5) VALUES
-(1, 1, 0, 1, 2, 3, 0);
+-- INSERT INTO FixedWeeklySchedule(fwsid, mwsid, day1, day2, day3, day4, day5) VALUES
+-- (1, 1, 0, 1, 2, 3, 0);
 
 INSERT INTO WeeklyWorkSchedule(wwsid, username, startDate, wwsHours, completed) VALUES
-(1, 'partridertest', '2020-04-27', 12, false);
+(1, 'partridertest', '2020-05-04', 0, false);
 
 INSERT INTO DailyWorkShift(dwsid, wwsid, day, startHour, duration) VALUES
 (1, 1, 0, 10, 4),
 (2, 1, 0, 18, 4),
-(3, 1, 1, 10, 4);
+(3, 1, 2, 10, 4);
 
 INSERT INTO Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered, paymentmethodid) VALUES
-(2, 'justning', 4,  '469 Bukit Timah Rd Singapore 259756', 5, '04/07/2020 1240', '04/07/2020 1300', '04/07/2020 1320', 1),
+(2, 'partridertest', 4, '469 Bukit Timah Rd Singapore 259756', 5, NULL, NULL, NULL, 1),
 (7, 'justning', 3,  '16 #01-220 College Ave West 138527', 5, '04/07/2020 1640', '04/07/2020 1650', '04/07/2020 1715', 1),
 (11, 'justning', 3,  '13 Computing Drive Singapore 117417', 5, '03/02/2020 1805', '03/02/2020 1815', '03/02/2020 1830', 1),
 (13, 'justning', 3,  '16 #01-220 College Ave West 138527', 5, '02/01/2020 1650', '02/01/2020 1715', '02/01/2020 1730', 1);

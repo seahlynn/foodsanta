@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, session, flash, redirect, esc
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import MetaData
+from sqlalchemy.exc import InternalError
 #from flask_login import LoginManager
 from datetime import datetime, date, timedelta
 from decimal import *
@@ -40,8 +41,8 @@ def index():
     print("Root page accessed")
     if settings.test:
 
-        #return redirect('login')
         return redirect('login')
+        # return redirect('/getRidersPerHour')
 
         
     return render_template('index.html')
@@ -431,7 +432,7 @@ def gotomanagerests():
 def addrestaurant():
     username = session['username']
 
-    restname = request.form['restname']
+    restname = str(escape(request.form['restname']))
     location = request.form['location']
     minamnt = request.form['minamnt']
     restidquery = f"select max(restid) from Restaurants"
@@ -453,7 +454,7 @@ def editrestaurant():
     username = session['username']
 
     restid = request.form['restid']
-    restname = request.form['restname']
+    restname = escape(request.form['restname'])
     location = request.form['location']
     minamnt = request.form['minamnt']
     
@@ -545,7 +546,7 @@ def addpromo():
     global db
 
     promotype = request.form.get('promotype')
-    description = request.form['description']
+    description = escape(request.form['description'])
     discount = request.form['discount']
     minamnt = request.form['minamnt']
     appliedto = request.form.get('appliedto')
@@ -771,9 +772,14 @@ def gotorest():
 
     query = f"select * from Restaurants"
     result = db.session.execute(query)
-        
     restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
-    return render_template('restaurants.html', restlist = restlist)
+
+    query = f"select distinct category from Food"
+    result = db.session.execute(query)
+    catlist = [dict(cat = row[0]) for row in result.fetchall()]
+        
+    
+    return render_template('restaurants.html', restlist = restlist, catlist = catlist)
 
 
 @app.route('/restresults', methods=['GET', 'POST'])
@@ -785,8 +791,14 @@ def restresults():
     result = db.session.execute(query)
     restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
     
+    restname = escape(request.args['chosen'])
+    checkrestid = db.session.execute(f"select count(*) from Restaurants where restname = '{restname}'").fetchall()[0][0]
+    
+    if checkrestid == 0:
+        flash("Sorry, there is no such restaurant!")
+        return redirect('gotorest')
 
-    restid = int(request.args['chosen'])
+    restid = db.session.execute(f"select restid from Restaurants where restname = '{restname}'").fetchall()[0][0]
     query = f"SELECT * FROM Food WHERE restid = {restid} and availability > 0 order by category, description"
     result = db.session.execute(query)
     foodlist = [dict(food= row[1], price = row[2], foodid = row[0], avail=row[4], cat = row[5]) for row in result.fetchall()]
@@ -797,36 +809,59 @@ def restresults():
     if checklatest != 0:
         latestRestID = db.session.execute(f"select restid from Latest where orderid = {orderid}").fetchall()[0][0]
         restaurantName = db.session.execute(f"select restName from Restaurants where restid = {latestRestID}").fetchall()[0][0]
+        checkcart = db.session.execute(f"select count(*) from Contains where orderid = {orderid}").fetchall()[0][0]
 
-        if restid != latestRestID:
+        if restid != latestRestID and checkcart != 0:
             flash("You have items in your cart under " + restaurantName + "! Each order can only be from one restaurant!")
 
     query = f"select R.reviewdesc, O.username from Reviews R, Orders O where R.orderid = O.orderid and O.restid = {restid}"
     result = db.session.execute(query)
     reviewlist = [dict(username= row[1], review = row[0]) for row in result.fetchall()]
 
+    query = f"select distinct category from Food"
+    result = db.session.execute(query)
+    catlist = [dict(cat = row[0]) for row in result.fetchall()]
+
     query = f"select minAmt from Restaurants where restid = {restid}"
     result = db.session.execute(query).fetchall()
     minAmt = result[0][0]
 
-    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, reviewlist = reviewlist, minAmt = minAmt)
+    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, reviewlist = reviewlist, minAmt = minAmt, catlist = catlist, rest = restname)
+
+@app.route('/catresults', methods=['GET', 'POST'])
+def catresults():
+    global db
+    category = request.args['category']
+    print(category)
+
+    query = f"select * from Restaurants"
+    result = db.session.execute(query)
+    restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
+
+    query = f"select distinct category from Food"
+    result = db.session.execute(query)
+    catlist = [dict(cat = row[0]) for row in result.fetchall()]
+
+    query = f"select distinct restname from Restaurants R natural join Food F where F.category = '{category}'"
+    result = db.session.execute(query)
+    catrestlist = [dict(restname = row[0]) for row in result.fetchall()]
+
+    return render_template('restaurants.html', restlist = restlist, catrestlist = catrestlist, catlist = catlist, category = category)
 
 @app.route('/addtocart', methods=['POST'])
 def addtocart():
     global db
+    username = session['username']
+    orderid = session['orderid']
 
     #add record into Contains table
     foodid = int(request.form['foodid'])
     query = f"select * from Food where foodid = {foodid}"
     result = db.session.execute(query).fetchall()
 
-    username = session['username']
-    orderid = session['orderid']
-    description = result[0][1]
     check = f"select count(*) from Contains where foodid = {foodid} and orderid = {orderid}"
     checkresult = db.session.execute(check).fetchall()
     
-
     if checkresult[0][0]:
         availquery = f"select availability from Food where foodid = {foodid}"
         availresult = db.session.execute(availquery).fetchall()
@@ -838,7 +873,7 @@ def addtocart():
   
         todo = f"update Contains set quantity = quantity + 1 where foodid = {foodid} and orderid = {orderid}"
     else:
-        todo = f"insert into Contains (orderid, foodid, username, description, quantity) values ('{orderid}', {foodid}, '{username}', '{description}', 1)"
+        todo = f"insert into Contains (orderid, foodid, quantity) values ('{orderid}', {foodid}, 1)"
     
     db.session.execute(todo)
     db.session.commit()
@@ -865,6 +900,10 @@ def addtocart():
     result = db.session.execute(query)
     foodlist = [dict(food = row[1], price = row[2], foodid = row[0], avail=row[4], cat = row[5]) for row in result.fetchall()]
     
+    query = f"select distinct category from Food"
+    result = db.session.execute(query)
+    catlist = [dict(cat = row[0]) for row in result.fetchall()]
+
     query = f"select * from Restaurants"
     result = db.session.execute(query)
     restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
@@ -874,7 +913,7 @@ def addtocart():
     result = db.session.execute(query).fetchall()
     minAmt = result[0][0]
 
-    return render_template('restaurants.html', restlist = restlist, minAmt = minAmt, foodlist = foodlist)
+    return render_template('restaurants.html', restlist = restlist, minAmt = minAmt, foodlist = foodlist, catlist = catlist)
 
 
 '''
@@ -898,7 +937,7 @@ def viewcart():
     restid = restidresult[0][0]
     
     #for cart 
-    orderquery = f"select C.description, F.price, C.quantity, F.foodid from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid} and restid = {restid}"
+    orderquery = f"select F.description, F.price, C.quantity, F.foodid from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid} and restid = {restid}"
     orderresult = db.session.execute(orderquery)
     orderlist = [dict(food = row[0], price = row[1], quantity = row[2], foodid = row[3]) for row in orderresult.fetchall()]
 
@@ -933,11 +972,13 @@ def deletefromcart():
 
     if quantity == 1:
         todo = f"delete from Contains where foodid = {foodid} and orderid = {orderid}"
+        print(quantity)
+        db.session.execute(todo)
     else :
         newquantity = quantity - 1
         todo = f"update Contains set quantity = {newquantity} where foodid = {foodid} and orderid = {orderid}"
-
-    db.session.execute(todo)
+        db.session.execute(todo)
+    
     db.session.commit()
     return redirect('viewcart')
 
@@ -962,7 +1003,12 @@ def backto():
     result = db.session.execute(query).fetchall()
     minAmt = result[0][0]
 
-    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, minAmt = minAmt)
+    #category list for search
+    query = f"select distinct category from Food"
+    result = db.session.execute(query)
+    catlist = [dict(cat = row[0]) for row in result.fetchall()]
+
+    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, minAmt = minAmt, catlist = catlist)
 
 
 '''
@@ -1189,6 +1235,23 @@ Customer related: View order status, order history, submit review
 def orderstatus():
 
     username = session['username']
+    '''orderid = session['orderid']
+
+    # allocate an available rider to deliver
+    # rider is currently working (either part time or full time)
+    # rider is not currently taking an order that has not been delivered
+    checkavailableriderquery = f"select distinct username from DeliveryRiders F natural join MonthlyWorkSchedule M where not exists (select 1 from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Delivers.username = F.username and Orders.delivered = False and Orders.selectedByRider = True) union select distinct username from DeliveryRiders F natural join WeeklyWorkSchedule W where not exists (select 1 from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Delivers.username = F.username and Orders.delivered = False and Orders.selectedByRider = True) "
+    availableriders = db.session.execute(checkavailableriderquery).fetchall()
+    numavailableriders = len(availableriders)
+    randridernum = randrange(0, numavailableriders, 0)
+    randrider = availableriders[randridernum]
+    riderusername = randrider[0]
+    updateriderpicked = f"update Delivers set username = '{riderusername}' where orderid = '{orderid}'"
+    updateorderselectedbyrider = f"update Orders set selectedByRider = True where orderid = '{orderid}'"
+    db.session.execute(updateriderpicked)
+    db.session.execute(updateorderselectedbyrider)
+    db.session.commit()'''
+
     inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant from Orders O, Delivers D, Restaurants R where D.orderid = O.orderid and O.username = '{username}' and O.delivered = False and R.restid = O.restid"
     progressresult = db.session.execute(inprogressquery)
     orderlist = [dict(rest = row[0], timeordered = row[1], orderpicked = row[2], pickedup = row[3]) for row in progressresult.fetchall()]
@@ -1203,7 +1266,7 @@ def orderstatus():
 def submitreviewandrating():
 
     username = session['username']
-    review = request.form['review']
+    review = escape(request.form['review'])
     rating = request.form['rating']
     orderid = int(request.form['orderid'])
     checkquery = f"select count(*) from Reviews where orderid = {orderid}"
@@ -1298,10 +1361,9 @@ def buypromo():
     else:
         flash("You don't have enough points to purchase this promo! \n You get 1 point for every $1 spent!")
         return redirect('viewpromos')
-
     
 '''
-Riders select existing undelivered orders to pick up and deliver
+Riders accept allocated undelivered orders to pick up and deliver
 
 '''
 @app.route('/gotoriderprofile', methods=['GET'])
@@ -1320,11 +1382,26 @@ def gotoriderprofile():
 
 @app.route('/gotodelivery', methods=['GET'])
 def gotodelivery():
-    undeliveredOrdersQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False"
-    undeliveredOrdersResult = db.session.execute(undeliveredOrdersQuery)
-    ordersToPickUp = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in undeliveredOrdersResult.fetchall()]
+    username = session['username']  
+    hasallocatedOrdersQuery = f"select count(*) from Delivers natural join Orders where Delivers.username = '{username}' and Orders.delivered = False and Orders.selectedByRider = True"
+    hasallocatedOrdersResult = db.session.execute(hasallocatedOrdersQuery).fetchall()
 
-    return render_template('riders_selectUndeliveredOrders.html', ordersToPickUp = ordersToPickUp)
+    if hasallocatedOrdersResult[0][0] != 0:
+        # there exists an allocated order (just pull one)
+        allocatedorderquery = f"select Delivers.orderid, Orders.custLocation, Restaurants.location from Delivers natural join (Orders join Restaurants on (Orders.restid = Restaurants.restid)) where Delivers.username = '{username}' and Orders.delivered = False limit 1"
+        allocatedOrderresult = db.session.execute(allocatedorderquery)
+        allocatedOrder = [dict(orderid = row[0], custLocation = row[1], restLocation = row[2]) for row in allocatedOrderresult.fetchall()]
+        session['deliveringOrderId'] = allocatedOrderresult[0][0]
+        return render_template('riders_viewAllocatedOrder.html', allocatedOrder = allocatedOrder)
+
+    else:
+        # has no allocated order 
+        # go to new html page that will lead back to profile
+        return render_template('riders_nodeliveriesnow.html')
+
+    #undeliveredOrdersQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False"
+    #undeliveredOrdersResult = db.session.execute(undeliveredOrdersQuery)
+    #ordersToPickUp = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in undeliveredOrdersResult.fetchall()]    
 
 @app.route('/getUndeliveredOrders', methods=['POST', 'GET'])
 def getUndeliveredOrders():
@@ -1345,7 +1422,7 @@ def getUndeliveredOrders():
 
     chosenOrderInfo = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in chosenOrderResult.fetchall()]
     
-    return render_template('riders_selectUndeliveredOrders.html', chosenOrderInfo = chosenOrderInfo, ordersToPickUp = ordersToPickUp)
+    return render_template('riders_selectUndeliveredOrders.html', chosenOrderInfo = chosenOrderInfo)
 
 @app.route('/processOrderSelectedForDelivery', methods=['POST', 'GET'])
 def processOrderSelectedForDelivery():
@@ -1369,7 +1446,6 @@ def processOrderSelectedForDelivery():
     deliveryFee = 3 # to be edited later
     # maybe can change to update Delivers instead of insert into
     updateDelivery = f"update Delivers set username = '{username}' where orderid = {deliveringOrderId}"
-    
     db.session.execute(updateDelivery)
     db.session.commit()
 
@@ -1381,6 +1457,12 @@ def collectFromRestaurant():
 
     deliveringOrderId = session['deliveringOrderId']
     username = session['username']
+
+    # timestamp for when he leaves for the restaurant
+    currentTime = datetime.now().strftime("%d/%m/%Y %H%M")
+    updateLeaveTime = f"update Delivers set timeDepartToRestaurant='{currentTime}' where orderid = '{deliveringOrderId}' and username = '{username}'"
+    db.session.execute(updateLeaveTime)
+    db.session.commit()
 
     # retrieve restaurant address to display
     restLocationQuery = f'select location from Restaurants where restid in (select distinct restid from Orders where Orders.orderid = {deliveringOrderId})'
@@ -1455,6 +1537,14 @@ def orderDelivered():
 
     return render_template('riders_deliveryCompleted.html', numOrders = numOrders)    
 
+@app.route('/newDelivery', methods=['POST'])
+def newDelivery():
+    return redirect('gotodelivery')
+    
+@app.route('/returnToProfile', methods=['POST'])
+def returnToProfile():
+    return redirect('gotoriderprofile')
+
 @app.route('/gotoschedule', methods=['GET'])
 def gotoschedule():
     username = session['username']
@@ -1468,47 +1558,88 @@ def gotoschedule():
     
 @app.route('/getFullTimeSchedule', methods=['GET'])
 def getFullTimeSchedule():
-    username = 'bakwah'
+    username = session['username']
     today = datetime.today()
     datem = datetime(today.year, today.month, 1).date()
     monthYear = datem.strftime('%B') + ' ' + str(today.year)
-    schedulequery = f"create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select M.wkStartDay, F.day1 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 1) % 7, F.day2 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 2) % 7, F.day3 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 3) % 7, F.day4 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 4) % 7, F.day5 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as day, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shift from dayShift;"
-    scheduleresult = db.session.execute(schedulequery)
+    scheduleQuery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select wkStartDay, day1 from MonthlyWorkSchedule  where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 1) % 7, day2 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 2) % 7, day3 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 3) % 7, day4 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 4) % 7, day5 from MonthlyWorkSchedule M where mnthStartDay = '{datem}' and username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shiftString from dayShift order by day, shift;"
+    scheduleResult = db.session.execute(scheduleQuery)
+    schedule = [dict(day = row[0], shift = row[1]) for row in scheduleResult.fetchall()]
+
     nextMonth = datetime(today.year, today.month + 1 % 12, 1).date()
     nextScheduleQuery = f"select count(*) from MonthlyWorkSchedule where mnthStartDay = '{nextMonth}'"
     nextScheduleResult = db.session.execute(nextScheduleQuery).fetchall()[0][0]
-    noNextSchedule = nextScheduleResult == 0
-    print(noNextSchedule)
-    schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
+    if nextScheduleResult == 0:
+        generateNextMonth()
     
-    return render_template('fulltimeschedule.html', schedule = schedule, monthYear = monthYear, noNextSchedule = noNextSchedule)
+    return render_template('schedulefulltime.html', schedule = schedule, monthYear = monthYear)
 
+def generateNextMonth():
+    username = session['username']
+    #check if current month has schedule to duplicate
+    today = datetime.today()
+    datem = datetime(today.year, today.month, 1).date()
+    nextMonth = datetime(today.year, today.month + 1 % 12, 1).date()
+    newMwsidQuery = f"select max(mwsid) from MonthlyWorkSchedule"
+    newMwsid = int(db.session.execute(newMwsidQuery).fetchall()[0][0] or 0) + 1
 
+    scheduleQuery = f"select max(mwsid) from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'"
+    scheduleResult = int(db.session.execute(scheduleQuery).fetchall()[0][0] or 0)
+    if scheduleResult != 0: #current month has schedule to duplicate
+        insertion = f"insert into MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed, day1, day2, day3, day4, day5) select '{newMwsid}', '{username}', '{nextMonth}', wkStartDay, false, day1, day2, day3, day4, day5 from MonthlyWorkSchedule where mwsid = '{scheduleResult}'; commit;" 
+        insertionResult = db.session.execute(insertion)
+    else:
+        insertion = f"insert into MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed, day1, day2, day3, day4, day5) values ('{newMwsid}', '{username}', '{nextMonth}', 2, false, 3, 2, 3, 2, 3); commit;"
+        insertionResult = db.session.execute(insertion)
+    return;
 
 @app.route('/getNextFullTimeSchedule', methods=['GET'])
 def getNextFullTimeSchedule():
-    username = 'bakwah'
+    username = session['username']
     today = datetime.today()
     datem = datetime(today.year, today.month + 1 % 12, 1).date()
     monthYear = datem.strftime('%B') + ' ' + str(today.year)
-    scheduleQuery = f"create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select M.wkStartDay, F.day1 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 1) % 7, F.day2 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 2) % 7, F.day3 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 3) % 7, F.day4 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; insert into dayShift (day, shift) select (M.wkStartDay + 4) % 7, F.day5 from MonthlyWorkSchedule M, FixedWeeklySchedule F where M.mwsid = F.mwsid and M.mnthStartDay = '{datem}' and M.username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as day, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shift from dayShift;"
+    scheduleQuery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select wkStartDay, day1 from MonthlyWorkSchedule  where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 1) % 7, day2 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 2) % 7, day3 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 3) % 7, day4 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 4) % 7, day5 from MonthlyWorkSchedule M where mnthStartDay = '{datem}' and username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shiftString from dayShift order by day, shift;"
     scheduleResult = db.session.execute(scheduleQuery)
     schedule = [dict(day = row[0], shift = row[1]) for row in scheduleResult.fetchall()]
     
-    return render_template('nextfulltimeschedule.html', schedule = schedule, monthYear = monthYear)
+    return render_template('schedulenextfulltime.html', schedule = schedule, monthYear = monthYear)
+
+@app.route('/getPrevFullTimeSchedule', methods=['GET'])
+def getPrevFullTimeSchedule():
+    username = session['username']
+    today = datetime.today()
+    monthYear = str(datetime(today.year, today.month, 1).date())[:-3]
+    
+    return render_template('scheduleprevfulltime.html', monthYear = monthYear)
+
+@app.route('/getPrevFullTimeScheduleResult', methods=['GET', 'POST'])
+def getPrevFullTimeScheduleResult():
+    username = session['username']
+
+    if request.method == 'POST':
+        form = request.form
+        monthYearRaw = str(form.get('monthYear')) + '-01'
+        datem = datetime.strptime(monthYearRaw, '%Y-%m-%d')
+        monthYear = datem.strftime('%B') + ' ' + str(datem.year)
+        scheduleQuery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select wkStartDay, day1 from MonthlyWorkSchedule  where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 1) % 7, day2 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 2) % 7, day3 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 3) % 7, day4 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 4) % 7, day5 from MonthlyWorkSchedule M where mnthStartDay = '{datem}' and username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shiftString from dayShift order by day, shift;"
+        scheduleResult = db.session.execute(scheduleQuery)
+        schedule = [dict(day = row[0], shift = row[1]) for row in scheduleResult.fetchall()]
+    
+    return render_template('scheduleprevfulltimeresult.html', schedule = schedule, monthYear = monthYear)
 
 @app.route('/setFullTimeSchedule', methods=['GET'])
 def setFullTimeSchedule():
-    username = "bakwah"
+    username = session['username']
     today = datetime.today()
     datem = datetime(today.year, today.month + 1 % 12, 1).date()
     monthYear = datem.strftime('%B') + ' ' + str(today.year)
 
-    return render_template('setfulltimeschedule.html', monthYear = monthYear)
+    return render_template('schedulesetfulltime.html', monthYear = monthYear)
 
 @app.route('/setFullTimeScheduleResult', methods=['GET', 'POST'])
 def setFullTimeScheduleResult():
-    username = "bakwah"
+    username = session['username']
     today = datetime.today()
     datem = datetime(today.year, today.month + 1 % 12, 1).date()
     monthYear = datem.strftime('%B') + ' ' + str(today.year)
@@ -1521,34 +1652,70 @@ def setFullTimeScheduleResult():
         day3 = form.get('day3')
         day4 = form.get('day4')
         day5 = form.get('day5')
-        newMwsidQuery = f"select max(mwsid) from MonthlyWorkSchedule"
-        newFwsidQuery = f"select max(fwsid) from FixedWeeklySchedule"
-        newMwsid = db.session.execute(newMwsidQuery).fetchall()[0][0] + 1
-        newFwsid = db.session.execute(newFwsidQuery).fetchall()[0][0] + 1
-        newScheduleQuery = f"begin; insert into MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed) values ('{newMwsid}', '{username}', '{datem}', '{startDay}', false); insert into FixedWeeklySchedule(fwsid, mwsid, day1, day2, day3, day4, day5) values ('{newFwsid}', '{newMwsid}', '{day1}', '{day2}', '{day3}', '{day4}', '{day5}'); commit;"
+        mwsidQuery = f"select mwsid from MonthlyWorkSchedule where username = '{username}' and mnthStartDay = '{datem}';"
+        mwsid = db.session.execute(mwsidQuery).fetchall()[0][0]
+        newScheduleQuery = f"begin; update MonthlyWorkSchedule set mwsid = '{mwsid}', wkStartDay = '{startDay}', completed = false, day1 = '{day1}', day2 = '{day2}', day3 = '{day3}', day4 = '{day4}', day5 = '{day5}' where mwsid = '{mwsid}'; commit;"
         newScheduleResult = db.session.execute(newScheduleQuery)
 
-    return render_template('setfulltimescheduleresult.html', monthYear = monthYear)
+    return render_template('schedulesetfulltimeresult.html', monthYear = monthYear)
 
 @app.route('/getPartTimeSchedule', methods=['GET'])
 def getPartTimeSchedule():
-    username = "bakwah"
+    username = session['username']
     today = datetime.today()
     monday = today - timedelta(days = today.weekday())
     datem = monday.date()
     sunday = monday + timedelta(days = 6)
     datemEnd = sunday.date()
-    print(datem)
-    print(datemEnd)
-    schedulequery = f"create table dayShift (day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (day, shift, duration) select D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as day, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shift from dayShift"
+
+    daysToNextMonday = 0 - today.weekday()
+    if daysToNextMonday <= 0:
+        daysToNextMonday += 7
+    nextMonday = (today + timedelta(days = daysToNextMonday)).date()
+    nextScheduleQuery = f"select count(*) from WeeklyWorkSchedule where startDate = '{nextMonday}'"
+    nextScheduleResult = db.session.execute(nextScheduleQuery).fetchall()[0][0]
+    if nextScheduleResult == 0:
+        generateNextWeek()
+
+    schedulequery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (day, shift, duration) select D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shiftString from dayShift order by day, shift"
     scheduleresult = db.session.execute(schedulequery)
     schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
     
-    return render_template('parttimeschedule.html', schedule = schedule, datem = datem, datemEnd = datemEnd)
+    return render_template('scheduleparttime.html', schedule = schedule, datem = datem, datemEnd = datemEnd)
+
+def generateNextWeek():
+    username = session['username']
+    #check if current week has schedule to duplicate
+    today = datetime.today()
+    monday = today - timedelta(days = today.weekday())
+    datem = monday.date()
+    daysToNextMonday = 0 - today.weekday()
+    if daysToNextMonday <= 0:
+        daysToNextMonday += 7
+    nextMonday = (today + timedelta(days = daysToNextMonday)).date()
+    newWwsidQuery = f"select max(wwsid) from WeeklyWorkSchedule"
+    newDwsidQuery = f"select max(dwsid) from DailyWorkShift"
+    newWwsid = int(db.session.execute(newWwsidQuery).fetchall()[0][0] or 0) + 1
+    newDwsid = int(db.session.execute(newDwsidQuery).fetchall()[0][0] or 0) + 1
+
+    scheduleQuery = f"select max(wwsid) from WeeklyWorkSchedule where startDate = '{datem}' and username = '{username}'"
+    scheduleResult = int(db.session.execute(scheduleQuery).fetchall()[0][0] or 0)
+    if scheduleResult != 0: #current week has schedule to duplicate
+        insertion = f"insert into WeeklyWorkSchedule(wwsid, username, startDate, wwsHours, completed) select '{newWwsid}', '{username}', '{nextMonday}', 0, false from WeeklyWorkSchedule where wwsid = '{scheduleResult}'; commit;"
+        insertionResult = db.session.execute(insertion)
+        insertion = f"insert into DailyWorkShift(dwsid, wwsid, day, startHour, duration) select (select max(dwsid) from DailyWorkShift) + row_number() over (order by d.day), '{newWwsid}', d.day, d.startHour, d.duration from DailyWorkShift d where d.wwsid = '{scheduleResult}'; commit;" 
+        insertionResult = db.session.execute(insertion)
+
+    else:
+        insertion = f"insert into WeeklyWorkSchedule(wwsid, username, startDate, wwsHours, completed) values ('{newWwsid}', '{username}', '{nextMonday}', 0, false); commit;"
+        insertionResult = db.session.execute(insertion)
+        insertion = f"insert into DailyWorkShift(dwsid, wwsid, day, startHour, duration) values ('{newDwsid}', '{newWwsid}', 4, 18, 4), ('{newDwsid}' + 1, '{newWwsid}', 5, 18, 4), ('{newDwsid}' + 2, '{newWwsid}', 6, 18, 4); commit;"
+        insertionResult = db.session.execute(insertion)
+    return;
 
 @app.route('/getNextPartTimeSchedule', methods=['GET'])
 def getNextPartTimeSchedule():
-    username = 'bakwah'
+    username = session['username']
     today = datetime.today()
     daysToNextMonday = 0 - today.weekday()
     if daysToNextMonday <= 0:
@@ -1558,16 +1725,252 @@ def getNextPartTimeSchedule():
     nextSunday = nextMonday + timedelta(days = 6)
     datemEnd = nextSunday.date()
 
-    schedulequery = f"create table dayShift (day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (day, shift, duration) select D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as day, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shift from dayShift"
+    schedulequery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (day, shift, duration) select D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shiftString from dayShift order by day, shift"
     scheduleresult = db.session.execute(schedulequery)
     schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
     
-    return render_template('nextparttimeschedule.html', schedule = schedule, datem = datem, datemEnd = datemEnd)
+    return render_template('schedulenextparttime.html', schedule = schedule, datem = datem, datemEnd = datemEnd)
 
-@app.route('/newDelivery', methods=['POST'])
-def newDelivery():
-    return redirect('gotodelivery')
+@app.route('/getPrevPartTimeSchedule', methods=['GET'])
+def getPrevPartTimeSchedule():
+    username = session['username']
+    today = datetime.today()
+    monday = (today - timedelta(days = today.weekday())).date()
     
+    return render_template('scheduleprevparttime.html', monday = monday)
+
+@app.route('/getPrevPartTimeScheduleResult', methods=['GET', 'POST'])
+def getPrevPartTimeScheduleResult():
+    username = session['username']
+
+    if request.method == 'POST':
+        form = request.form
+        day = str(form.get('week'))
+        today = datetime.strptime(day, '%Y-%m-%d')
+        monday = today - timedelta(days = today.weekday())
+        datem = monday.date()
+        sunday = monday + timedelta(days = 6)
+        datemEnd = sunday.date()
+        schedulequery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (day, shift, duration) select D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shiftString from dayShift ordery by day, shift"
+        scheduleresult = db.session.execute(schedulequery)
+        schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
+    
+    return render_template('scheduleprevparttimeresult.html', schedule = schedule, datem = datem, datemEnd = datemEnd)
+
+@app.route('/setPartTimeSchedule', methods=['GET'])
+def setPartTimeSchedule():
+    username = session['username']
+    today = datetime.today()
+    daysToNextMonday = 0 - today.weekday()
+    if daysToNextMonday <= 0:
+        daysToNextMonday += 7
+    nextMonday = today + timedelta(days = daysToNextMonday)
+    datem = nextMonday.date()
+    nextSunday = nextMonday + timedelta(days = 6)
+    datemEnd = nextSunday.date()
+
+    schedulequery = f"drop table if exists dayShift; create table dayShift (dwsid integer, day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (dwsid, day, shift, duration) select D.dwsid, D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select dwsid, case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shiftString from dayShift order by day, shift"
+    scheduleresult = db.session.execute(schedulequery)
+    schedule = [dict(dwsid = row[0], day = row[1], shift = row[2]) for row in scheduleresult.fetchall()]
+
+    return render_template('schedulesetparttime.html', schedule = schedule, datem = datem, datemEnd = datemEnd)
+
+@app.route('/setPartTimeScheduleResult', methods=['GET', 'POST'])
+def setPartTimeScheduleResult():
+    username = session['username']
+    today = datetime.today()
+    daysToNextMonday = 0 - today.weekday()
+    if daysToNextMonday <= 0:
+        daysToNextMonday += 7
+    nextMonday = today + timedelta(days = daysToNextMonday)
+    datem = nextMonday.date()
+    nextSunday = nextMonday + timedelta(days = 6)
+    datemEnd = nextSunday.date()
+    message = 'aborted'
+    errorMessage = ''
+    
+    if request.method == 'POST':
+        form = request.form
+        day = form.get('day')
+        startHour = form.get('startHour')
+        duration = form.get('duration')
+        existingWwsQuery = f"select max(wwsid) from WeeklyWorkSchedule where startDate = '{datem}' and username = '{username}'"
+        existingWws = int(db.session.execute(existingWwsQuery).fetchall()[0][0] or 0)
+        if existingWws == 0:
+            newWwsidQuery = f"select max(wwsid) from WeeklyWorkSchedule"
+            existingWws = int(db.session.execute(newWwsidQuery).fetchall()[0][0] or 0) + 1
+            newWwsQuery = f"insert into WeeklyWorkSchedule(wwsid, username, startDate, wwsHours, completed) values ('{existingWws}', '{username}', '{datem}', 0, false); commit;"
+            newWwsResult = db.execute(newWwsQuery)
+        newDwsidQuery = f"select max(dwsid) from DailyWorkShift"
+        newDwsid = int(db.session.execute(newDwsidQuery).fetchall()[0][0] or 0) + 1
+        newDwsQuery = f"insert into DailyWorkShift(dwsid, wwsid, day, startHour, duration) values ('{newDwsid}', '{existingWws}', '{day}', '{startHour}', '{duration}'); commit;"
+        try:
+            newDwsResult = db.session.execute(newDwsQuery)
+            message = 'completed'
+        except InternalError as e:
+            startIndex = str(e).find('FoodSanta: ')
+            endIndex = str(e).find('Ho ho ho!') + 9
+            errorMessage = str(e)[startIndex:endIndex]
+            print(errorMessage)
+
+    return render_template('schedulesetparttimeresult.html', datem = datem, datemEnd = datemEnd, message = message, errorMessage = errorMessage)
+
+@app.route('/deletePartTimeScheduleResult', methods=['GET', 'POST'])
+def deletePartTimeScheduleResult():
+    username = session['username']
+    today = datetime.today()
+    daysToNextMonday = 0 - today.weekday()
+    if daysToNextMonday <= 0:
+        daysToNextMonday += 7
+    nextMonday = today + timedelta(days = daysToNextMonday)
+    datem = nextMonday.date()
+    nextSunday = nextMonday + timedelta(days = 6)
+    datemEnd = nextSunday.date()
+    message = 'aborted'
+    errorMessage = ''
+    
+    if request.method == 'POST':
+        form = request.form
+        dwsid = int(form.get('dwsid'))
+        deletionQuery = f"delete from DailyWorkShift where dwsid = '{dwsid}'; commit;"
+        try:
+            deletionResult = db.session.execute(deletionQuery)
+            db.session.commit()
+            message = 'completed'
+        except InternalError as e:
+            startIndex = str(e).find('FoodSanta: ')
+            endIndex = str(e).find('Ho ho ho!') + 9
+            errorMessage = str(e)[startIndex:endIndex]
+            print(errorMessage)
+
+    return render_template('scheduledeleteparttimeresult.html', datem = datem, datemEnd = datemEnd, message = message, errorMessage = errorMessage)
+    
+@app.route('/getRidersPerHour', methods=['GET', 'POST'])
+def getRidersPerHour():
+    if request.method == "POST":
+        form = request.form
+        day = datetime.strptime(form.get('day'), '%Y-%m-%d')
+    else:
+        today = datetime.today()
+        day = (today - timedelta(days = today.weekday()) + timedelta(days = 7)) #defaults to next monday
+    monday = (day - timedelta(days = day.weekday()))
+    tuesday = (monday + timedelta(days = 1)).date()
+    wednesday = (monday + timedelta(days = 2)).date()
+    thursday = (monday + timedelta(days = 3)).date()
+    friday = (monday + timedelta(days = 4)).date()
+    saturday = (monday + timedelta(days = 5)).date()
+    sunday = (monday + timedelta(days = 6)).date()
+    monday = monday.date()
+
+    if not isRidersPerHourPresent(monday):
+        generateRidersPerHour(day)
+
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{monday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    mondaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{tuesday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    tuesdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{wednesday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    wednesdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{thursday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    thursdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{friday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    fridaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{saturday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    saturdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{sunday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    sundaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+
+    maxDay = (datetime.today() + timedelta(days = 6 - datetime.today().weekday()) + timedelta(days = 7)).date() #defaults to sunday of next week, relative to today
+    print(maxDay)
+    return render_template('ridersperhour.html', mondaysch = mondaysch, tuesdaysch = tuesdaysch, wednesdaysch = wednesdaysch, thursdaysch = thursdaysch, fridaysch = fridaysch, saturdaysch = saturdaysch, sundaysch = sundaysch, monday = monday, sunday = sunday, maxDay = maxDay)
+
+def isRidersPerHourPresent(inputMonday):
+    monday = inputMonday
+    isWeekCalculated = f"select count(*) from RidersPerHour where day >= '{monday}'"
+    isWeekCalculatedResult = int(db.session.execute(isWeekCalculated).fetchall()[0][0] or 0)
+    return isWeekCalculatedResult
+
+def generateRidersPerHour(inputDate):
+    #for currentWeek
+    day = inputDate
+    currMonth = datetime(day.year, day.month, 1).date()
+    monday = (day - timedelta(days = day.weekday())).date()
+
+    dayArray = (0, 1, 2, 3, 4, 5, 6)
+    shift1 = (10, 11, 12, 13, 15, 16, 17, 18)
+    shift2 = (11, 12, 13, 14, 16, 17, 18, 20)
+    shift3 = (12, 13, 14, 15, 17, 18, 20, 21)
+    shift4 = (13, 14, 15, 16, 18, 20, 21, 22)
+
+    for dayIncrement in dayArray:
+        currDay = (monday + timedelta(days = dayIncrement))
+        #for full time riders
+        workingOnDay = f"select username, wkStartDay, day1, day2, day3, day4, day5 from MonthlyWorkSchedule where mnthStartDay = '{currMonth}' and wkStartDay <> ('{dayIncrement}' + 1) % 7 and wkStartDay <> ('{dayIncrement}' + 2) % 7"
+        result = db.session.execute(workingOnDay).fetchall()
+
+        for row in result:
+            username = row[0]
+            if row[1] == 0: #if wkStartDay = 0
+                wkStartDay = 0
+                shiftWorked = row[(dayIncrement - 0 + 9) % 7] #dayIncrement - wkStartDay + 1, then +7, then +1 to match index
+            elif row[1] == 1: #if wkStartDay = 1
+                wkStartDay = 1
+                shiftWorked = row[(dayIncrement - 1 + 9) % 7]
+            elif row[1] == 2: #if wkStartDay = 2
+                wkStartDay = 2
+                shiftWorked = row[(dayIncrement - 2 + 9) % 7]
+            elif row[1] == 3: #if wkStartDay = 3
+                wkStartDay = 3
+                shiftWorked = row[(dayIncrement - 3 + 9) % 7]
+            elif row[1] == 4: #if wkStartDay = 4
+                wkStartDay = 4
+                shiftWorked = row[(dayIncrement - 4 + 9) % 7]
+            elif row[1] == 5: #if wkStartDay = 5
+                wkStartDay = 5
+                shiftWorked = row[(dayIncrement - 5 + 9) % 7]
+            elif row[1] == 6: #if wkStartDay = 6
+                wkStartDay = 6
+                shiftWorked = row[(dayIncrement - 6 + 9) % 7]
+            
+            if shiftWorked == 0:
+                for hour in shift1:
+                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                    insertionResult = db.session.execute(insertion)
+            elif shiftWorked == 1:
+                for hour in shift2:
+                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                    insertionResult = db.session.execute(insertion)
+            elif shiftWorked == 2:
+                for hour in shift3:
+                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                    insertionResult = db.session.execute(insertion)
+            elif shiftWorked == 3:
+                for hour in shift4:
+                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                    insertionResult = db.session.execute(insertion)  
+
+        #for part time riders
+        workingOnDay = f"select username, startHour, duration from WeeklyWorkSchedule natural join DailyWorkShift where startDate = '{monday}' and day = '{dayIncrement}'"
+        result = db.session.execute(workingOnDay).fetchall()
+        for row in result:
+            username = row[0]
+            startHour = row[1]
+            duration = row[2]
+            for i in range(duration):
+                hour = startHour + i
+                print('hour: ', hour)
+                insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                insertionResult = db.session.execute(insertion)  
+
+    return;
+
 #Check if server can be run, must be placed at the back of this file
 if __name__ == '__main__':
     app.run()
