@@ -19,14 +19,16 @@
         </div>
         <div class="container" >
           <form name="chosen" action="restresults" method='GET'>
-            <h1 for="restaurant"> Choose a restaurant </h1>
-            <select name="chosen" onchange="this.form.submit()">
-              {% for r in restlist %}
-                <option value="{{r.restid}}" SELECTED> {{r.restname}} </option>
-              {% endfor %}
-              <option value="" disabled selected> Select your restaurant </option>
-            </select>
+            <h1 for="restaurant"> Search for a Restaurant </h1>
+              <input name="chosen" list="restlist" onchange="this.form.submit()">
           </form>
+
+          <datalist id="restlist">
+            {% for r in restlist %}
+              <option value="{{r.restname}}">
+            {% endfor %}
+        </datalist>
+
         </div>
         <br>
 
@@ -36,13 +38,17 @@
           <h2> Menu </h2>
               <table border='1' align = 'center' style="margin-top: 0px;">
                   <tr>
+                    <th> Category </th>
                     <th> Item </th>
                     <th> Price </th>
+                    <th> Availability </th>
                   </tr>
                   {% for p in foodlist %}
                   <tr>
+                    <td> {{p.cat}} </td>
                     <td>{{ p.food }}</td>
                     <td>{{ p.price }}</td>
+                    <td> {{p.avail}} </td>
                   </tr>
                   {% endfor %}
               {% endblock %}
@@ -81,9 +87,7 @@
             </tr>
         </table>
         {% endfor %}
-
         </div>
-        
       {% endblock %}
     </body>
 </html>
@@ -91,4 +95,5 @@
 <!--
   
 -->
+
 

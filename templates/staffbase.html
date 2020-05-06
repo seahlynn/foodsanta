@@ -15,7 +15,6 @@
         .top {
             height: 7.6%;
             background-color: #01015B;
-            width : 100%;
         }
 
         .links > a {
@@ -29,20 +28,30 @@
 
 
         .links {
+            width: auto;
             height: 40px;
-            padding-top: 15px;
-         
         }
 
         .links > div, .indiv-link > a {
-            float: left;
-            width: 25%;
+            display: inline;
             text-align: center;
+
         }
-        
+
+        #profile {
+            float: left;
+            padding-left: 12px;
+            padding-top: 15px;
+        }
+
+        #order {
+            float: right;
+            padding-right: 12px;
+            padding-top: 15px;
+        }
+
         .indiv-link {
             text-decoration: none;
-            width: 25%;
         }
 
         .links > div > p:hover, .indiv-link:hover {
@@ -55,24 +64,11 @@
             font-size: 12pt;
             font-weight: bold;
         }
+
     </style>
 </head>
 <body>
     <header class="top">
-        <div class="links">
-            <div>
-                <a href="{{'gotocusprofile'}}" class="indiv-link" id="profile"> PROFILE </a>
-            </div>
-            <div>
-                <a href="{{'gotorest'}}" class="indiv-link" id="order"> START ORDERING </a>
-            </div>
-            <div>
-                <a href="{{'orderstatus'}}" class="indiv-link" id="delivery"> VIEW ORDERS </a>
-            </div>
-            <div>
-                <a href="{{'viewpromos'}}" class="indiv-link" id="delivery"> VIEW PROMOTIONS </a>
-            </div>
-        </div>
     </header>
     <div class="content_container">
         {% block overall %}

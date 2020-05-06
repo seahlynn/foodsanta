@@ -5,7 +5,7 @@
         <title>FoodSantaTest</title>
     </head>
     <body align = 'center'>
-    {% extends 'managerbase.html' %}
+    {% extends 'staffbase.html' %}
       {% block overall %}
         <div style="display: inline"> 
           <div class="results" style="width:50%; float: left;">
@@ -27,12 +27,12 @@
           </div>
  
           <div class="editprofile" style="width:50%; display: inline-block;">
-            <h2> Edit Profile </h2>
+            <h2> You have not been registered to any restaurant. Please contact FoodSanta for registration or wait till you are verified. </h2>
             <form method="POST" action="editmanagerprofile" autocomplete="off">
                 <table  align = 'center'>
                     <tr>
                         <td> Contact: </td>
-                        <td> <input type="tel" maxlength ="8" minlength ="8" name="contact" placeholder="Update Contact Number"> </td>
+                        <td> <input type="text" name="contact" placeholder="Update Contact Number"> </td>
                     </tr>
                     <tr>
                         <td colspan="2"> <input type="Submit" value="Update"> </td>

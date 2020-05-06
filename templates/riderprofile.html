@@ -22,8 +22,33 @@
                     <td>{{ p.number }}</td>
                   </tr>
                   {% endfor %}
-              {% endblock %}
               </table>
+          <h2> Delivery Stats </h2>
+          {% for s in riderstats %}
+              <table border="1" align = 'center'>
+                <tr>
+                        <td> Month: </td>
+                        <td>{{ s.month }}</td>
+                    </tr>
+                    <tr>
+                        <td> Year: </td>
+                        <td>{{ s.year }}</td>
+                    </tr>
+                    <tr>
+                        <td> Total Orders Completed: </td>
+                        <td>{{ s.totalOrders }}</td>
+                    </tr>
+                    <tr>
+                        <td> Total Hours Worked: </td>
+                        <td>{{ s.totalHours }}</td>
+                    </tr>
+                    <tr>
+                        <td> Total Salary Earned: </td>
+                        <td>{{ s.totalSalary }}</td>
+                    </tr>
+                {% endfor %}
+              {% endblock %}
+              </table>    
           </div>
  
           <div class="editprofile" style="width:50%; display: inline-block;">
@@ -32,7 +57,7 @@
                 <table  align = 'center'>
                     <tr>
                         <td> Contact: </td>
-                        <td> <input type="text" name="contact" placeholder="Update Contact Number"> </td>
+                        <td> <input type="tel" maxlength ="8" minlength ="8" name="contact" placeholder="Update Contact Number"> </td>
                     </tr>
                     <tr>
                         <td colspan="2"> <input type="Submit" value="Update"> </td>

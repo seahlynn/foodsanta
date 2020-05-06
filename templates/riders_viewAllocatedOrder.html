@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+      {% extends 'riderbase.html' %}
+      {% block overall %}
+        <div class="container" >
+          <h1> You have been allocated an order with the following details! </h1>
+          <table border="1", style='margin-top: 20px;' align='center'> 
+            <tr>
+              <td> orderid: </td>
+              <td>{{ allocatedOrder.orderid }}</td>
+            </tr>
+            <tr>
+              <td> To pick up from restaurant location: </td>
+              <td>{{ allocatedOrder.restLocation }}</td>
+            </tr>
+            <tr>
+              <td> To deliver to from customer location: </td>
+              <td>{{ allocatedOrder.custLocation }}</td>
+            </tr>            
+            {% endfor %}
+          </table>
+        </div>
+
+        <br>
+        <form method="POST" action="collectFromRestaurant">
+          <button type="submit"> Ok! Let's make this delivery </button>         
+        </form>
+      {% endblock %}  
+      </body>  
+</html>      

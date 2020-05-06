@@ -19,30 +19,38 @@
             <div>
                 <div style="float: left; width: 33%;">
                     <h2> FoodSanta Stats </h2>
-                    <table align="center" >
-                        <tr>
-                            <td> 
-                                <form action="viewallstats" method="POST"> 
-                                    <input type="submit" value="view all">
-                                </form> 
-                            </td>
-
-                            <td> 
-                                <form action="viewspecificstats" method="POST"> 
-                                    <select name="month" onchange="this.form.submit()">
+                    <form action="viewspecificstats" method="POST"> 
+                        <table align="center" >
+                            <tr>
+                                <td> 
+                                    <select name="month">
                                         {% for f in monthlist %}
-                                          <option value="{{f.month}}" SELECTED> {{f.month}} </option>
+                                        <option value="{{f.month}}" SELECTED> {{f.month}} </option>
                                         {% endfor %}
                                         <option value="" disabled selected> Choose a month </option>
                                     </select>
-                                </form> 
-                            </td>
-                        </tr>
-                    </table>
+                                </td>
+                                <td> 
+                                    <select name="year">
+                                        {% for f in yearlist %}
+                                        <option value="{{f.year}}" SELECTED> {{f.year}} </option>
+                                        {% endfor %}
+                                        <option value="" disabled SELECTED> Choose a year </option>
+                                    </select>
+                                </td>
+                                <td><input type="submit" value="view"></td>
+                            </tr>
+                        </table>
+                    </form> 
+                    <form action="viewallstats" method="POST"> 
+                        <input type="submit" value="view all">
+                    </form> 
+
                     <br>
                     <table align="center" border=1>
                         <tr>
                             <th> Month </th>
+                            <th> Year </th>
                             <th> New Customers </th>
                             <th> Number of Orders </th>
                             <th> Cost of All Orders </th>
@@ -51,6 +59,7 @@
                           {% for p in overallstatslist %}
                           <tr>
                             <td> {{ p.month }} </td>
+                            <td> {{ p.year }} </td>
                             <td>{{ p.customers }}</td>
                             <td>{{ p.orders }}</td>
                             <td>{{ p.cost }}</td>
@@ -58,32 +67,40 @@
                           {% endfor %}
                     </table>
                 </div>
+
                 <div style="float: left; width: 33%;">
                     <h2> Customer Stats </h2>
-                    <table align="center" >
-                        <tr>
-                            <td> 
-                                <form action="viewallcusstats" method="POST"> 
-                                    <input type="submit" value="view all">
-                                </form> 
-                            </td>
-
-                            <td> 
-                                <form action="viewspecificcusstats" method="POST"> 
-                                    <select name="month" onchange="this.form.submit()">
+                    <form action="viewspecificcusstats" method="POST"> 
+                        <table align="center" >
+                            <tr>
+                                <td> 
+                                    <select name="month">
                                         {% for f in monthlist %}
-                                          <option value="{{f.month}}" SELECTED> {{f.month}} </option>
+                                        <option value="{{f.month}}"> {{f.month}} </option>
                                         {% endfor %}
                                         <option value="" disabled selected> Choose a month </option>
                                     </select>
-                                </form> 
-                            </td>
-                        </tr>
-                    </table>
+                                </td>
+                                <td> 
+                                    <select name="year">
+                                        {% for f in yearlist %}
+                                        <option value="{{f.year}}"> {{f.year}} </option>
+                                        {% endfor %}
+                                        <option value="" disabled SELECTED> Choose a year </option>
+                                    </select>
+                                </td>
+                                <td><input type="submit" value="view"></td>
+                            </tr>
+                        </table>
+                    </form> 
+                    <form action="viewallcusstats" method="POST"> 
+                        <input type="submit" value="view all">
+                    </form> 
                     <br>
                     <table align="center" border=1>
                         <tr>
                             <th> Month </th>
+                            <th> Year </th>
                             <th> Username </th>
                             <th> Number of Orders </th>
                             <th> Cost of Orders </th>
@@ -92,6 +109,7 @@
                           {% for p in cusstatslist %}
                           <tr>
                             <td> {{ p.month }} </td>
+                            <td> {{ p.year }} </td>
                             <td>{{ p.username }}</td>
                             <td>{{ p.orders }}</td>
                             <td>{{ p.cost }}</td>
@@ -102,30 +120,37 @@
 
                 <div style="float: left; width: 33%;">
                     <h2> Riders Stats </h2>
-                    <table align="center" >
-                        <tr>
-                            <td> 
-                                <form action="viewallriderstats" method="POST"> 
-                                    <input type="submit" value="view all">
-                                </form> 
-                            </td>
-
-                            <td> 
-                                <form action="viewspecificriderstats" method="POST"> 
-                                    <select name="month" onchange="this.form.submit()">
+                    <form action="viewspecificriderstats" method="POST"> 
+                        <table align="center" >
+                            <tr>
+                                <td> 
+                                    <select name="month">
                                         {% for f in monthlist %}
-                                          <option value="{{f.month}}" SELECTED> {{f.month}} </option>
+                                        <option value="{{f.month}}" SELECTED> {{f.month}} </option>
                                         {% endfor %}
                                         <option value="" disabled selected> Choose a month </option>
                                     </select>
-                                </form> 
-                            </td>
-                        </tr>
-                    </table>
+                                </td>
+                                <td> 
+                                    <select name="year">
+                                        {% for f in yearlist %}
+                                        <option value="{{f.year}}" SELECTED> {{f.year}} </option>
+                                        {% endfor %}
+                                        <option value="" disabled SELECTED> Choose a year </option>
+                                    </select>
+                                </td>
+                                <td><input type="submit" value="view"></td>
+                            </tr>
+                        </table>
+                    </form> 
+                    <form action="viewallriderstats" method="POST"> 
+                        <input type="submit" value="view all">
+                    </form> 
                     <br>
                     <table align="center" border=1>
                         <tr>
                             <th> Month </th>
+                            <th> Year </th>
                             <th> Username </th>
                             <th> Number of Orders </th>
                             <th> Number of Hours worked </th>
@@ -135,6 +160,7 @@
                           {% for p in riderstatslist %}
                           <tr>
                             <td> {{ p.month }} </td>
+                            <td> {{ p.year }} </td>
                             <td>{{ p.username }}</td>
                             <td>{{ p.orders }}</td>
                             <td>{{ p.hours }}</td>
