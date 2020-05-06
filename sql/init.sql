@@ -1,6 +1,7 @@
 DROP TABLE IF EXISTS Users CASCADE;
 DROP TABLE IF EXISTS Orders CASCADE;
 DROP TABLE IF EXISTS Customers CASCADE;
+DROP TABLE IF EXISTS CustomerStats CASCADE;
 DROP TABLE IF EXISTS FDSManagers CASCADE;
 DROP TABLE IF EXISTS RestaurantStaff CASCADE;
 DROP TABLE IF EXISTS CustomerStats CASCADE;
@@ -120,7 +121,7 @@ CREATE TABLE Food (
     availability    INTEGER NOT NULL CHECK (availability >= 0),
     category        VARCHAR(20),
     restid          INTEGER NOT NULL,
-    timesordered    INTEGER NOT NULL,
+    timesordered    INTEGER NOT NULL DEFAULT 0,
 
     PRIMARY KEY (foodid),
 
@@ -171,12 +172,12 @@ CREATE TABLE UsersDeliveryPromo (
 	PRIMARY KEY (deliverypromoid, username)
 );
 
-
 CREATE TABLE RestaurantPromo (
 	fdspromoid		INTEGER,
 	restid 			INTEGER,
 
-    PRIMARY KEY (fdspromoid, restid)     
+    PRIMARY KEY (fdspromoid, restid),
+    FOREIGN KEY(fdspromoid) REFERENCES FDSPromo ON DELETE CASCADE
 );
 
 CREATE TABLE Orders (
@@ -239,10 +240,6 @@ CREATE TABLE Delivers (
     FOREIGN KEY (username) REFERENCES DeliveryRiders,
 	FOREIGN KEY (paymentmethodid) REFERENCES PaymentMethods
 );
-
-
-
-
 
 CREATE TABLE FullTimeRiders (
     username              VARCHAR(30),

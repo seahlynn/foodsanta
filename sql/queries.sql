@@ -28,7 +28,7 @@ create view seeOwnReviews (reviewDesc, orderCreatedTime) as
 -- see registered payment methods by customer (c1)
 create view custPaymentMethods (cardInfo) as
     select cardInfo
-    from PaymentMethods 
+    from PaymentMethods
     where userid = c1;
 
 -- see points of customer (c2)

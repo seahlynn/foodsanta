@@ -4,8 +4,15 @@ INSERT INTO Users(username, name, password, phoneNumber, dateCreated) VALUES
 ('bakwah', 'Leewah', 'leewahcool', '91718716', '2020-04-04'),
 ('justning', 'Sining', 'siningcool', '91718716', '2020-04-04'),
 ('managertest', 'ManagerTest', 'managercool', '96567556', '2020-04-05'),
+('ridertest', 'RiderTest', 'ridercool', '96567556', '2020-04-12'),
+('stafftest', 'StaffTest', 'staffcool', '96567556', '2020-03-11'),
+('staffresttest', 'StaffRestTest', 'staffrestcool', '96567556', '2020-03-11'),
 ('fullridertest', 'RiderTest', 'fullridercool', '96567556', '2020-04-12'),
 ('partridertest', 'RiderTest', 'partridercool', '96567556', '2020-04-12');
+
+
+INSERT INTO RestaurantStaff(username) VALUES
+('stafftest');
 
 INSERT INTO FDSManagers(username) VALUES
 ('managertest');
@@ -27,13 +34,9 @@ INSERT INTO DeliveryRiders(username) VALUES
 INSERT INTO FullTimeRiders(username) VALUES
 ('kalsyc'),
 ('lynjaaa'),
-('bakwah'),
-('justning'),
 ('fullridertest');
 
 INSERT INTO PartTimeRiders(username) VALUES
-('kalsyc'),
-('lynjaaa'),
 ('bakwah'),
 ('justning'),
 ('partridertest');
@@ -55,6 +58,9 @@ INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES
 (7, 'Marche', 50, '50 Jurong Gateway Rd, #01-03 JEM, Singapore 608549'),
 (8, 'HaiDiLao', 80, '1 Harbourfront Walk #03-09 Vivocity, Singapore 098585'),
 (9, 'Caesar Pizza', 30, '16 Collyer Quay, #01-05 Income At Raffles, Singapore 049318');
+
+INSERT INTO RestaurantStaff(username, restid) VALUES
+('staffresttest', 1);
 
 --times ordered starts at 0 an availability at 100 for all food items currently)
 INSERT INTO Food(foodid, description, restid, price, dailylimit, availability, category, timesordered) VALUES

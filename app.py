@@ -1,7 +1,7 @@
 import settings
 import os
+from flask import Flask, render_template, request, session, flash, redirect, escape
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import Flask, render_template, request, session, flash, redirect
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.schema import MetaData
 #from flask_login import LoginManager
@@ -81,11 +81,8 @@ def signup():
 
     if request.method == 'POST':
         form = request.form
-        username, name, password, repassword, user_type = form["username"].strip(), form["name"].strip(), form["password"], form["repassword"], form["usertype"]
-
-        if is_existing_user(username):
-            flash("Username taken! :(")
-            return render_template('signup.html')
+        username, name, password, repassword, user_type, phoneNumber = form["username"].strip(), form["name"].strip(), form["password"],\
+             form["repassword"], form["usertype"], form["phoneNumber"]
 
         if password != repassword:
             flash("Passwords don't match :(")
@@ -102,8 +99,12 @@ def signup():
         if not len(name):
             flash("Name cannot be blank!")
             return render_template('signup.html')
+
+        if is_existing_user(username):
+            flash("Username taken! :(")
+            return render_template('signup.html')
         
-        register_user(username, name, password, user_type)
+        register_user(username, name, password, user_type, phoneNumber)
         return redirect('registration_success')
 
     return render_template('signup.html')
@@ -113,12 +114,15 @@ def registration_success():
     print("Registration successful")
     return render_template('registration_success.html')
 
-def register_user(username, name, password, user_type):
+def register_user(username, name, password, user_type, phoneNumber):
     global db
     date = datetime.today().strftime("%d/%m/%Y")
-    insert_users = f"insert into Users(username, name, password, phoneNumber, dateCreated) values ('{username}','{name}','{password}', '{98782507}', '{date}');"
-    insert_type = f"insert into {user_type}(username) values ('{username}');"
+    insert_users = f"insert into Users(username, name, password, phoneNumber, dateCreated) values ('{username}','{name}','{password}', '{phoneNumber}' ,'{date}');"
     db.session.execute(insert_users)
+    if user_type in ('FullTimeRiders', 'PartTimeRiders'):
+        insert_rider = f"insert into DeliveryRiders(username) values ('{username}');"
+        db.session.execute(insert_rider)
+    insert_type = f"insert into {user_type}(username) values ('{username}');"
     db.session.execute(insert_type)
     db.session.commit()
 
@@ -144,9 +148,172 @@ def redirect_accordingly(username):
         return redirect('gotomanagerprofile')
     check_user_rider = f"select 1 from DeliveryRiders where username = '{username}'"
     if db.session.execute(check_user_rider).fetchone():
-        return redirect('gotoriderprofile')
+        return redirect('gotodelivery')
+    check_user_staff = f"select 1 from RestaurantStaff where username = '{username}'"
+    if db.session.execute(check_user_staff).fetchone():
+        return redirect('gotostaff')
     return redirect('login')
-        
+
+'''
+Restaurant related
+'''
+@app.route('/gotostaff', methods=['GET', 'POST'])
+def gotostaff():
+    global db
+    username = session['username']
+    rest_id = get_rest_id(username)
+    if not rest_id:
+        return render_template('no_restaurant_registered.html')
+    session['rest_id'] = rest_id
+    menu = get_menu(rest_id)
+    promohist = get_promo_hist(rest_id)
+    details = get_rest_details(rest_id)
+    return render_template('staffprofile.html', menu=menu, details=details, promohist=promohist)
+
+@app.route('/deleteitemsuccess', methods=['GET', 'POST'])
+def deleteitemsuccess():
+    if request.method == 'POST':
+        form = request.form
+        food_id = form['foodid']
+        delete_query = f"delete from Food where foodid = {food_id}"
+        db.session.execute(delete_query)
+        db.session.commit()
+    return redirect('gotostaff')
+
+@app.route('/changeminamtsuccess', methods=['GET', 'POST'])
+def changeminamtsuccess():
+    rest_id = session['rest_id']
+    if request.method == 'POST':
+        form = request.form
+        minamt = form['minamt']
+        update_query = f"update Restaurants set minAmt = {minamt} where restid = {rest_id}"
+        db.session.execute(update_query)
+        db.session.commit()
+    return redirect('gotostaff')
+
+@app.route('/deletepromosuccess', methods=['GET', 'POST'])
+def deletepromosuccess():
+    if request.method == 'POST':
+        form = request.form
+        promo_id = form['fdspromoid']
+        delete_query = f"delete from FDSPromo where fdspromoid = {promo_id}"
+        db.session.execute(delete_query)
+        db.session.commit()
+    return redirect('gotostaff')
+
+@app.route('/addpromosuccess', methods=['GET', 'POST'])
+def addpromosuccess():
+    global db
+
+    promotype = request.form.get('promotype')
+    description = request.form['description']
+    discount = request.form['discount']
+    minamnt = request.form['minamnt']
+    appliedto = request.form.get('appliedto')
+    validfrom = request.form['validfrom']
+    validtill = request.form['validtill']
+    cost = request.form['cost']
+    
+    fdspromoidquery = f"select fdspromoid from FDSPromo order by fdspromoid desc limit 1"
+    fdspromoidresult = db.session.execute(fdspromoidquery).fetchone()
+    if not fdspromoidresult:
+        fdspromoid = 1
+    else:
+        fdspromoid = fdspromoidresult[0] + 1
+
+    if promotype is None or appliedto is None or description == '' or discount == '' or minamnt == '' or cost == '':
+        flash("Please make sure all fields are filled in!")
+        return redirect('gotostaff')
+
+    if validtill < validfrom:
+        flash("Invalid Promotion dates! Please make sure the start date is before the end date!")
+        return redirect('gotostaff')
+
+    discount = int(discount)
+    minamnt = int(minamnt)
+    cost = int(cost)
+
+    if promotype == 'PercentOff':
+        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'percentoff', '{validfrom}', '{validtill}', {cost})"
+        addtospecificpromo = f"insert into PercentOff values ({fdspromoid}, {discount}, {minamnt}, '{appliedto}')"
+    else:
+        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'amountoff', '{validfrom}', '{validtill}', {cost})"
+        addtospecificpromo = f"insert into AmountOff values ({fdspromoid}, {discount}, {minamnt}, '{appliedto}')"
+
+    addtorestpromo = f"insert into RestaurantPromo values({fdspromoid}, {session['rest_id']})"
+    db.session.execute(addtofdspromo)
+    db.session.execute(addtospecificpromo)
+    db.session.execute(addtorestpromo)
+    db.session.commit()
+    return redirect('gotostaff')
+
+
+@app.route('/additemsuccess', methods=['GET', 'POST'])
+def additemsuccess():
+    rest_id = session['rest_id']
+    food_id = get_next_food_id()
+    if request.method == 'POST':
+        form = request.form
+        description, price, stock, category = escape(form["description"].strip()), escape(form["price"]), escape(form["stock"]),\
+             escape(form["category"].strip())
+        print(description, category)
+        insert_query = f"insert into Food(foodid, description, price, availability, category, restid) values({food_id}, '{description}', {price}, {stock}, '{category}', {rest_id})"
+        db.session.execute(insert_query)
+        db.session.commit()
+    return redirect('gotostaff')
+
+@app.route('/edititemsuccess', methods=['GET', 'POST'])
+def edititemsuccess():
+    rest_id = session['rest_id']
+    if request.method == 'POST':
+        form = request.form
+        food_id, description, price, stock, category = form["food_id"], escape(form["description"].strip()), form["price"], form["stock"].strip(),\
+             escape(form["category"].strip())
+        check_rest_id = f"select 1 from Food where foodid = {food_id} and restid = {rest_id}"
+        if db.session.execute(check_rest_id).fetchone():
+            update_food_query = f"update Food set description = '{description}', price = {price}, availability = {stock}, category = '{category}' where foodid = {food_id}"
+            db.session.execute(update_food_query)
+            db.session.commit()
+        else:
+            flash("This food is not in your restaurant's menu.")
+    return redirect('gotostaff')
+
+def get_promo_hist(id):
+    global db
+    check_promo_query = f"select * from FDSPromo natural join RestaurantPromo where restid = {id}"
+    promo_hist = db.session.execute(check_promo_query).fetchall()
+    parsed_hist = [dict(fdspromoid=i[0], description=i[1], starttime=i[3], endtime=i[4], type=i[2], points=i[5]) for i in promo_hist]
+    return parsed_hist
+
+
+def get_rest_details(id):
+    global db
+    check_restaurant_query = f"select * from Restaurants where restid = {id}"
+    details = db.session.execute(check_restaurant_query).fetchone()
+    parsed_details = dict(restid=details[0], restname=details[1], minAmt=details[2], location=details[3])
+    return parsed_details
+
+def get_next_food_id():
+    global db
+    check_max_food_id = f"select max(foodid) from Food"
+    max_food_id = db.session.execute(check_max_food_id).fetchone()
+    if not max_food_id:
+        return 1
+    return max_food_id[0] + 1
+
+def get_rest_id(username):
+    global db
+    check_restaurant_query = f"select restid from RestaurantStaff where username = '{username}' "
+    rest_id = db.session.execute(check_restaurant_query).fetchone()[0]
+    return rest_id
+
+def get_menu(id):
+    global db
+    check_menu_query = f"select foodid, description, price, availability, category, timesordered from Food where restid = '{id}'"
+    menu = db.session.execute(check_menu_query).fetchall()
+    parsed_menu = [{"foodid": i[0], "description": i[1], "price": float(i[2]), "stock": i[3], "category": i[4], "timesordered": i[5]} for i in menu]
+    return parsed_menu
+
 
 '''
 Manager related: Profile
@@ -347,7 +514,6 @@ def addpromo():
     db.session.execute(addtofdspromo)
     db.session.commit()
     return redirect('gotopromos')
-
 
 '''
 Manager related: View statistics
