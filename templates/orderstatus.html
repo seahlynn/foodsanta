@@ -26,7 +26,7 @@
                 <table border="1", style='margin-top: 20px;' align='center'> 
                     <tr>
                         <td> Restaurant: </td>
-                        <td>{{ o.rest }}</td>
+                        <td>{{ o.rest | safe }}</td>
                     </tr>
                     <tr>
                         <td> Time Ordered: </td>
@@ -73,7 +73,7 @@
                         <form method="POST" action="submitreviewandrating">
                             <tr>
                               <td> <select name="orderid"> <option value="{{p.orderid}}" SELECTED> {{p.orderid}} </option>  </select> </td>
-                              <td> {{ p.rest }}</td>
+                              <td> {{ p.rest | safe}}</td>
                               <td>{{ p.total }}</td>
                               <td>{{ p.received }}</td>
                               <td> <textarea wrap="soft" type="text" name="review" placeholder = "Give the restaurant a review!" style="width: 200px;"></textarea> </td>

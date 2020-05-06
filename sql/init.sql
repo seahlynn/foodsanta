@@ -4,7 +4,6 @@ DROP TABLE IF EXISTS Customers CASCADE;
 DROP TABLE IF EXISTS CustomerStats CASCADE;
 DROP TABLE IF EXISTS FDSManagers CASCADE;
 DROP TABLE IF EXISTS RestaurantStaff CASCADE;
-DROP TABLE IF EXISTS CustomerStats CASCADE;
 DROP TABLE IF EXISTS Restaurants CASCADE;
 DROP TABLE IF EXISTS RestaurantStats CASCADE;
 DROP TABLE IF EXISTS RestaurantPromo CASCADE;
@@ -27,15 +26,16 @@ DROP TABLE IF EXISTS WeeklyWorkSchedule CASCADE;
 DROP TABLE IF EXISTS FixedWeeklySchedule CASCADE;
 DROP TABLE IF EXISTS MonthlyWorkSchedule CASCADE;
 DROP TABLE IF EXISTS DailyWorkShift CASCADE;
+DROP TABLE IF EXISTS RidersPerHour CASCADE;
 DROP TABLE IF EXISTS Latest CASCADE;
 
 
 CREATE TABLE Users (
     username            VARCHAR(30),    
-    name                VARCHAR(30),
-    password            VARCHAR(15),
-    phoneNumber         VARCHAR(8),
-    dateCreated			date,
+    name                VARCHAR(30) NOT NULL,
+    password            VARCHAR(15) NOT NULL,
+    phoneNumber         VARCHAR(8) NOT NULL,
+    dateCreated			date NOT NULL,
 
     PRIMARY KEY (username)
 );
@@ -85,8 +85,8 @@ CREATE TABLE Locations (
 -- but payment method can also be cash.. then how? can set paymentmethodid = 1 for cash? 2 onwards is for card
 CREATE TABLE PaymentMethods (
 	paymentmethodid	INTEGER,
-	username  		VARCHAR(30),
-	cardInfo		VARCHAR(60),
+	username  		VARCHAR(30) NOT NULL,
+	cardInfo		VARCHAR(60) NOT NULL,
 
 	PRIMARY KEY (paymentmethodid),
 
@@ -96,7 +96,7 @@ CREATE TABLE PaymentMethods (
 --insertion of food into Contains table has to decrease availability by one (use trigger under contains)
 CREATE TABLE Restaurants (
     restid      INTEGER,
-    restName    VARCHAR(50),
+    restName    VARCHAR(50) NOT NULL,
     minAmt      INTEGER NOT NULL,
     location    VARCHAR(100) NOT NULL,
 
@@ -115,11 +115,11 @@ CREATE TABLE RestaurantStaff (
 
 CREATE TABLE Food ( 
     foodid          INTEGER,
-    description     VARCHAR(50),
+    description     VARCHAR(50) NOT NULL,
     price           decimal NOT NULL,
     dailylimit		INTEGER NOT NULL CHECK (dailylimit >= 0),
     availability    INTEGER NOT NULL CHECK (availability >= 0),
-    category        VARCHAR(20),
+    category        VARCHAR(20) NOT NULL,
     restid          INTEGER NOT NULL,
     timesordered    INTEGER NOT NULL DEFAULT 0,
 
@@ -184,7 +184,7 @@ CREATE TABLE Orders (
 	orderid				INTEGER,
     username			VARCHAR(30) NOT NULL,
     custLocation        VARCHAR(100) NOT NULL,
-	orderCreatedTime	TIMESTAMP, 
+	orderCreatedTime	TIMESTAMP NOT NULL, 
 	totalCost			decimal NOT NULL,
 	fdspromoid			INTEGER,
     paymentmethodid     INTEGER NOT NULL,
@@ -213,14 +213,11 @@ CREATE TABLE Reviews (
 CREATE TABLE Contains (
     orderid     INTEGER NOT NULL,
     foodid      INTEGER NOT NULL,
-    username    VARCHAR(30) NOT NULL,
-    description VARCHAR(50) NOT NULL,
     quantity    INTEGER NOT NULL,
 
     PRIMARY KEY (orderid, foodid),
 
-    FOREIGN KEY (foodid) REFERENCES Food,
-    FOREIGN KEY (username) REFERENCES Users
+    FOREIGN KEY (foodid) REFERENCES Food
 );
 
 CREATE TABLE Delivers (
@@ -232,7 +229,7 @@ CREATE TABLE Delivers (
 	timeDepartToRestaurant	TIMESTAMP,
 	timeArrivedAtRestaurant	TIMESTAMP,
 	timeOrderDelivered		TIMESTAMP,
-	paymentmethodid			INTEGER not null, 			
+	paymentmethodid			INTEGER NOT NULL, 			
 
 	PRIMARY KEY (orderid),
 
@@ -302,8 +299,8 @@ CREATE TABLE MonthlyWorkSchedule (
 CREATE TABLE WeeklyWorkSchedule (
     wwsid               INTEGER,
     username            VARCHAR(30),
-    startDate           DATE,
-    wwsHours            INTEGER,
+    startDate           DATE NOT NULL,
+    wwsHours            INTEGER NOT NULL,
     completed           BOOLEAN NOT NULL,
 
     PRIMARY KEY (wwsid),
@@ -314,11 +311,10 @@ CREATE TABLE WeeklyWorkSchedule (
 CREATE TABLE DailyWorkShift (
     dwsid               INTEGER,
     wwsid               INTEGER,
-    day                 INTEGER
-                        CHECK (day in (0, 1, 2, 3, 4, 5, 6)),
-    startHour           INTEGER
+    day                 INTEGER NOT NULL,
+    startHour           INTEGER NOT NULL
                         CHECK (startHour >= 10 AND startHour <= 22),
-    duration            INTEGER
+    duration            INTEGER NOT NULL
                         CHECK (duration in (1, 2, 3, 4)),
 
     PRIMARY KEY (dwsid, startHour),
@@ -326,13 +322,14 @@ CREATE TABLE DailyWorkShift (
     FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
 );
 
-CREATE TABLE RiderPerHour (
-    rphid               INTEGER,
+CREATE TABLE RidersPerHour (
+    username            VARCHAR(30),
     day                 DATE,
     hour                INTEGER,
-    count               INTEGER,
 
-    PRIMARY KEY (rphid)
+    PRIMARY KEY (username, day, hour),
+
+    FOREIGN KEY (username) REFERENCES DeliveryRiders
 );
 
 -- FDS Manager purposes
@@ -351,10 +348,10 @@ CREATE TABLE CustomerStats (
 
 CREATE TABLE RestaurantStats (
     restid              INTEGER,
-    numCompletedOrders  INTEGER,
-    totalOrdersCost     INTEGER,
     month               INTEGER,
     year                INTEGER,
+    numCompletedOrders  INTEGER,
+    totalOrdersCost     INTEGER,
 
     PRIMARY KEY (restid, month, year),
 
@@ -425,6 +422,37 @@ create trigger updateCustomerStatsTrigger
     before insert on Orders
     for each row
     execute function updateCustomerStatsFunction();
+
+
+/* Updates restaurant's total number of orders and total cost spent on orders */
+create or replace function updateRestaurantStatsFunction()
+returns trigger as $$
+begin
+    /* restid first entry */
+    if (not exists(
+        select 1
+        from RestaurantStats R1
+        where R1.restid = NEW.restid
+        and R1.month = (select extract(month from current_timestamp))
+        and R1.year = (select extract(year from current_timestamp)))) then
+        insert into RestaurantStats values(NEW.restid, (select extract(month from current_timestamp)), (select extract(year from current_timestamp)), 1, NEW.totalCost);
+    /* restid not first entry of monthyear */
+    else
+        update RestaurantStats R2
+        set numCompletedOrders = numCompletedOrders + 1,
+            totalOrdersCost = totalOrdersCost + NEW.totalCost
+        where R2.restid = NEW.restid
+        and R2.month = (select extract(month from current_timestamp))
+        and R2.year = (select extract(year from current_timestamp)); 
+end if;    
+return new;
+end; $$ language plpgsql;
+
+drop trigger if exists updateRestaurantStatsTrigger on RestaurantStats;
+create trigger updateRestaurantStatsTrigger
+    before insert on Orders
+    for each row
+    execute function updateRestaurantStatsFunction();
 
 /* Increments the total number of distinct customers */
 create or replace function addNewCustomerFunction() 
@@ -530,28 +558,6 @@ create trigger updateLocationTrigger
     execute function updateLocationFunction();
 
 /* update availability of food items*/ 
-/*create or replace function updateAvailFoodFunction()
-returns trigger as $$
-DECLARE 
-containrow RECORD;
-begin
-    for containrow in
-        (select foodid, quantity from Contains C where C.orderid = NEW.orderid)
-    loop
-        update Food
-        set availability = availability - containrow.quantity
-        where foodid = containrow.foodid;
-    end loop;
-return new;
-end; $$ language plpgsql;        
-
-drop trigger if exists updateAvailFoodTrigger on Food;
-create trigger updateAvailFoodTrigger
-    before insert on Orders
-    for each row
-    execute function updateAvailFoodFunction();*/
-
-/* update availability of food items*/ 
 create or replace function decreaseAvailFoodFunction()
 returns trigger as $$
 begin
@@ -573,13 +579,13 @@ returns trigger as $$
 begin
     update Food
     set availability = availability + 1
-    where foodid = NEW.foodid;
+    where foodid = OLD.foodid;
 return new;
 end; $$ language plpgsql;        
 
 drop trigger if exists increaseAvailFoodTrigger on Food;
 create trigger increaseAvailFoodTrigger
-    before delete on Contains
+    after delete on Contains
     for each row
     execute function increaseAvailFoodFunction();
 
@@ -712,13 +718,13 @@ DECLARE
 foodrec RECORD;
 begin
     for foodrec in
-		(select foodid from Contains where orderid = NEW.orderid and username = NEW.username)
+		(select foodid from Contains where orderid = NEW.orderid)
 	loop
 		update Food set timesOrdered = timesOrdered + 1 where foodid = foodrec.foodid;
 	end loop;
 
 return new;
-end; $$ language plpgsql;        
+end; $$ language plpgsql;
 
 drop trigger if exists incrementTimesOrderdFoodTrigger on Orders;
 create trigger incrementTimesOrderedFoodTrigger

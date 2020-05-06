@@ -10,7 +10,6 @@ INSERT INTO Users(username, name, password, phoneNumber, dateCreated) VALUES
 ('fullridertest', 'RiderTest', 'fullridercool', '96567556', '2020-04-12'),
 ('partridertest', 'RiderTest', 'partridercool', '96567556', '2020-04-12');
 
-
 INSERT INTO RestaurantStaff(username) VALUES
 ('stafftest');
 
@@ -20,7 +19,6 @@ INSERT INTO FDSManagers(username) VALUES
 INSERT INTO Customers(username, points) VALUES
 ('kalsyc', 0),
 ('lynjaaa', 0),
-('bakwah', 0),
 ('justning', 0);
 
 INSERT INTO DeliveryRiders(username) VALUES
@@ -32,13 +30,10 @@ INSERT INTO DeliveryRiders(username) VALUES
 ('partridertest');
 
 INSERT INTO FullTimeRiders(username) VALUES
-('kalsyc'),
-('lynjaaa'),
+('bakwah'),
 ('fullridertest');
 
 INSERT INTO PartTimeRiders(username) VALUES
-('bakwah'),
-('justning'),
 ('partridertest');
 
 INSERT INTO Locations(username, location, dateAdded) VALUES
@@ -57,7 +52,8 @@ INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES
 (6, 'Ah Bear Mookata', 20, '505 W Coast Dr, #01-208, Singapore 120505'),
 (7, 'Marche', 50, '50 Jurong Gateway Rd, #01-03 JEM, Singapore 608549'),
 (8, 'HaiDiLao', 80, '1 Harbourfront Walk #03-09 Vivocity, Singapore 098585'),
-(9, 'Caesar Pizza', 30, '16 Collyer Quay, #01-05 Income At Raffles, Singapore 049318');
+(9, 'Caesar Pizza', 30, '16 Collyer Quay, #01-05 Income At Raffles, Singapore 049318'),
+(10, 'CoronaSnacks', 69, 'Wuhan Wet Market, China');
 
 INSERT INTO RestaurantStaff(username, restid) VALUES
 ('staffresttest', 1);
@@ -141,13 +137,11 @@ INSERT INTO FDSPromo(fdspromoid, description, type, value, minAmnt, appliedto, s
 (6, '5% off all orders for from RIRIMALA', 'percentoff', 5, 0, 'total', '01/05/2020', '31/05/2020', 12),
 (7, '$5 off all orders for CCB', 'amountoff', 5, 0, 'total', '01/06/2020', '15/06/2020', 0);
 
-
 INSERT INTO DeliveryPromo(deliverypromoid, description, amount, points) values 
 (1, '$1 off delivery', 1, 10),
 (2, '$2 off delivery', 2, 20),
 (3, '$3 off delivery', 3, 30),
 (4, '$4 off delivery', 4, 40);
-
 
 INSERT INTO AllStats(month, year, totalNewCust, totalNumOrders, totalCostOfOrders) values
 (1, 2020, 20, 50, 654),
@@ -157,18 +151,18 @@ INSERT INTO AllStats(month, year, totalNewCust, totalNumOrders, totalCostOfOrder
 
 INSERT INTO CustomerStats(username, month, year, totalNumOrders, totalCostOfOrders) values
 ('justning', 1, 2020, 2, 54),
-('bakwah', 1, 2020, 6, 134),
+('justning', 2, 2020, 6, 134),
 ('lynjaaa', 1, 2020, 1, 25),
 ('kalsyc', 1, 2020, 4, 89),
-('justning', 2, 2020, 7, 154),
-('bakwah', 2, 2020, 6, 204),
+('justning', 3, 2020, 7, 154),
+('justning', 4, 2019, 6, 204),
 ('lynjaaa', 2, 2020, 0, 0),
 ('kalsyc', 2, 2020, 7, 160),
-('justning', 3, 2020, 2, 54),
-('bakwah', 3, 2020, 6, 134),
+('justning', 5, 2019, 8, 54),
+('justning', 6, 2019, 9, 134),
 ('lynjaaa', 3, 2020, 1, 25),
 ('kalsyc', 3, 2020, 4, 89),
-('bakwah', 4, 2020, 6, 134),
+('justning', 6, 2020, 3, 134),
 ('lynjaaa', 4, 2020, 1, 25);
 
 

@@ -9,8 +9,6 @@ from sqlalchemy.exc import InternalError
 from datetime import datetime, date, timedelta
 from decimal import *
 
-
-
 app = Flask(__name__) #Initialize FoodSanta
 
 if settings.debug:
@@ -43,8 +41,8 @@ def index():
     print("Root page accessed")
     if settings.test:
 
-        #return redirect('login')
         return redirect('login')
+        # return redirect('/getRidersPerHour')
 
         
     return render_template('index.html')
@@ -96,10 +94,6 @@ def signup():
         if len(password) < 8:
             flash("Password cannot be shorter than 8 characters!")
             return render_template('signup.html')
-        
-        if not len(name):
-            flash("Name cannot be blank!")
-            return render_template('signup.html')
 
         if is_existing_user(username):
             flash("Username taken! :(")
@@ -114,6 +108,11 @@ def signup():
 def registration_success():
     print("Registration successful")
     return render_template('registration_success.html')
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    session.clear()
+    return redirect('login')
 
 def register_user(username, name, password, user_type, phoneNumber):
     global db
@@ -153,6 +152,7 @@ def redirect_accordingly(username):
     check_user_staff = f"select 1 from RestaurantStaff where username = '{username}'"
     if db.session.execute(check_user_staff).fetchone():
         return redirect('gotostaff')
+    flash("An error has occurred. Please try logging in again.")
     return redirect('login')
 
 '''
@@ -169,7 +169,35 @@ def gotostaff():
     menu = get_menu(rest_id)
     promohist = get_promo_hist(rest_id)
     details = get_rest_details(rest_id)
-    return render_template('staffprofile.html', menu=menu, details=details, promohist=promohist)
+    return render_template('staffmenu.html', menu=menu, details=details, promohist=promohist)
+
+@app.route('/gotostaffstats', methods=['GET', 'POST'])
+def gotostaffstats():
+    rest_id = session['rest_id']
+    all_promos = get_promo_hist(rest_id)
+    return render_template('staffstats.html', monthstats=None, promostats=None, allpromos=all_promos)
+
+@app.route('/checkpromostaffstats', methods=['GET', 'POST'])
+def checkpromostaffstats():
+    rest_id = session['rest_id']
+    all_promos = get_promo_hist(rest_id)
+    if request.method == 'POST':
+        form = request.form
+        id = form['fdspromoid']
+        promo_stats = get_rest_promo_stats(id)
+    return render_template('staffstats.html', monthstats=None, promostats=promo_stats, allpromos=all_promos)
+
+@app.route('/checkmonthstaffstats', methods=['GET', 'POST'])
+def checkmonthstaffstats():
+    rest_id = session['rest_id']
+    all_promos = get_promo_hist(rest_id)
+    if request.method == 'POST':
+        form = request.form
+        month = form['month']
+        year = form['year']
+        month_stats = get_month_stats(month, year)
+        return render_template('staffstats.html', monthstats=month_stats, promostats=None, allpromos=all_promos)
+    return redirect('gotostaffstats')
 
 @app.route('/deleteitemsuccess', methods=['GET', 'POST'])
 def deleteitemsuccess():
@@ -207,7 +235,7 @@ def addpromosuccess():
     global db
 
     promotype = request.form.get('promotype')
-    description = request.form['description']
+    description = escape(request.form['description'])
     discount = request.form['discount']
     minamnt = request.form['minamnt']
     appliedto = request.form.get('appliedto')
@@ -246,6 +274,15 @@ def addpromosuccess():
     return redirect('gotostaff')
 
 
+@app.route('/gotostaffsettings', methods=['GET', 'POST'])
+def gotostaffsettings():
+    username = session['username']
+    rest_id = get_rest_id(username)
+    details = get_rest_details(rest_id)
+    user_details = get_user_details(username)
+    return render_template('staffsettings.html', details=details, user_details=user_details)
+
+
 @app.route('/additemsuccess', methods=['GET', 'POST'])
 def additemsuccess():
     rest_id = session['rest_id']
@@ -254,8 +291,7 @@ def additemsuccess():
         form = request.form
         description, price, stock, category = escape(form["description"].strip()), escape(form["price"]), escape(form["stock"]),\
              escape(form["category"].strip())
-        print(description, category)
-        insert_query = f"insert into Food(foodid, description, price, availability, category, restid) values({food_id}, '{description}', {price}, {stock}, '{category}', {rest_id})"
+        insert_query = f"insert into Food(foodid, description, price, availability, dailylimit, category, restid) values({food_id}, '{description}', {price}, {stock}, {stock}, '{category}', {rest_id})"
         db.session.execute(insert_query)
         db.session.commit()
     return redirect('gotostaff')
@@ -265,22 +301,56 @@ def edititemsuccess():
     rest_id = session['rest_id']
     if request.method == 'POST':
         form = request.form
-        food_id, description, price, stock, category = form["food_id"], escape(form["description"].strip()), form["price"], form["stock"].strip(),\
+        food_id, description, price, stock, limit, category = form["food_id"], escape(form["description"].strip()), form["price"], form["stock"].strip(), form["limit"].strip(), \
              escape(form["category"].strip())
         check_rest_id = f"select 1 from Food where foodid = {food_id} and restid = {rest_id}"
         if db.session.execute(check_rest_id).fetchone():
-            update_food_query = f"update Food set description = '{description}', price = {price}, availability = {stock}, category = '{category}' where foodid = {food_id}"
+            update_food_query = f"update Food set description = '{description}', price = {price}, availability = {stock}, dailylimit = {limit}, category = '{category}' where foodid = {food_id}"
             db.session.execute(update_food_query)
             db.session.commit()
         else:
             flash("This food is not in your restaurant's menu.")
     return redirect('gotostaff')
 
+def get_month_stats(month, year):
+    global db
+    rest_id = session['rest_id']
+    check_total_query = f"select numCompletedOrders, totalOrdersCost from RestaurantStats where month = {month} and year = {year} and restid = {rest_id}"
+    total_details = db.session.execute(check_total_query).fetchone()
+    check_top_five = f"select foodid, description, sum(quantity) as total from Orders natural join Contains natural join Food where\
+         restid = {rest_id} and extract(month from orderCreatedTime) = {month} and extract(year from orderCreatedTime) = {year} group by foodid, description order by total desc limit 5;"
+    top_five = db.session.execute(check_top_five).fetchall()
+    parsed_five = [dict(foodid=i[0], description=i[1], total=i[2]) for i in top_five]
+    if not total_details:
+        parsed_details = dict(numCompletedOrders=None, totalOrdersCost=None, topFive=parsed_five)
+    else:
+        parsed_details = dict(numCompletedOrders=total_details[0], totalOrdersCost=total_details[1], topFive=parsed_five)
+    return parsed_details
+
+def get_rest_promo_stats(id):
+    global db
+    rest_id = session['rest_id']
+    check_duration_query = f"select F.startTime, F.endTime, abs(F.startTime::date - endTime::date) as dateDiff, description from FDSPromo F where fdspromoid = {id}"
+    duration_details = db.session.execute(check_duration_query).fetchone()
+    start_time = duration_details[0]
+    end_time = duration_details[1]
+    check_orders_query = f"select count(*) as total from Orders where restid = {rest_id} and DATE(orderCreatedTime) >= '{start_time}' and DATE(orderCreatedTime) <= '{end_time}'"
+    num_orders = db.session.execute(check_orders_query).fetchone()[0]
+    details = dict(startTime=start_time, endTime=end_time, diff=duration_details[2], total=num_orders, description=duration_details[3])
+    return details
+
+def get_user_details(id):
+    global db
+    check_user_query = f"select * from Users where username = '{id}'"
+    user_details = db.session.execute(check_user_query).fetchone()
+    parsed_details = dict(username=user_details[0], name=user_details[1], phonenumber=user_details[3])
+    return parsed_details
+
 def get_promo_hist(id):
     global db
-    check_promo_query = f"select * from FDSPromo natural join RestaurantPromo where restid = {id}"
+    check_promo_query = f"select distinct * from FDSPromo natural join RestaurantPromo where restid = {id}"
     promo_hist = db.session.execute(check_promo_query).fetchall()
-    parsed_hist = [dict(fdspromoid=i[0], description=i[1], starttime=i[3], endtime=i[4], type=i[2], points=i[5]) for i in promo_hist]
+    parsed_hist = [dict(fdspromoid=i[0], description=i[1], starttime=i[6], endtime=i[7], type=i[2], points=i[8], minamt=i[4], discount=i[3]) for i in promo_hist]
     return parsed_hist
 
 
@@ -307,9 +377,9 @@ def get_rest_id(username):
 
 def get_menu(id):
     global db
-    check_menu_query = f"select foodid, description, price, availability, category, timesordered from Food where restid = '{id}'"
+    check_menu_query = f"select foodid, description, price, availability, category, timesordered, dailylimit from Food where restid = '{id}'"
     menu = db.session.execute(check_menu_query).fetchall()
-    parsed_menu = [{"foodid": i[0], "description": i[1], "price": float(i[2]), "stock": i[3], "category": i[4], "timesordered": i[5]} for i in menu]
+    parsed_menu = [{"foodid": i[0], "description": i[1], "price": float(i[2]), "stock": i[3], "category": i[4], "timesordered": i[5], "dailylimit":i[6]} for i in menu]
     return parsed_menu
 
 
@@ -323,7 +393,6 @@ def gotomanagerprofile():
     profilequery = f"select name, phoneNumber from Users where username = '{username}'"
     profileresult = db.session.execute(profilequery)
     profile = [dict(name = row[0], number = row[1]) for row in profileresult.fetchall()]
-    
     
     return render_template('managerprofile.html', profile = profile)
 
@@ -366,7 +435,7 @@ def gotomanagerests():
 def addrestaurant():
     username = session['username']
 
-    restname = request.form['restname']
+    restname = str(escape(request.form['restname']))
     location = request.form['location']
     minamnt = request.form['minamnt']
     restidquery = f"select max(restid) from Restaurants"
@@ -388,7 +457,7 @@ def editrestaurant():
     username = session['username']
 
     restid = request.form['restid']
-    restname = request.form['restname']
+    restname = escape(request.form['restname'])
     location = request.form['location']
     minamnt = request.form['minamnt']
     
@@ -480,7 +549,7 @@ def addpromo():
     global db
 
     promotype = request.form.get('promotype')
-    description = request.form['description']
+    description = escape(request.form['description'])
     discount = request.form['discount']
     minamnt = request.form['minamnt']
     appliedto = request.form.get('appliedto')
@@ -706,9 +775,14 @@ def gotorest():
 
     query = f"select * from Restaurants"
     result = db.session.execute(query)
-        
     restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
-    return render_template('restaurants.html', restlist = restlist)
+
+    query = f"select distinct category from Food"
+    result = db.session.execute(query)
+    catlist = [dict(cat = row[0]) for row in result.fetchall()]
+        
+    
+    return render_template('restaurants.html', restlist = restlist, catlist = catlist)
 
 
 @app.route('/restresults', methods=['GET', 'POST'])
@@ -720,13 +794,13 @@ def restresults():
     result = db.session.execute(query)
     restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
     
-    restname = request.args['chosen']
+    restname = escape(request.args['chosen'])
     checkrestid = db.session.execute(f"select count(*) from Restaurants where restname = '{restname}'").fetchall()[0][0]
     
     if checkrestid == 0:
         flash("Sorry, there is no such restaurant!")
         return redirect('gotorest')
-        
+
     restid = db.session.execute(f"select restid from Restaurants where restname = '{restname}'").fetchall()[0][0]
     query = f"SELECT * FROM Food WHERE restid = {restid} and availability > 0 order by category, description"
     result = db.session.execute(query)
@@ -738,36 +812,59 @@ def restresults():
     if checklatest != 0:
         latestRestID = db.session.execute(f"select restid from Latest where orderid = {orderid}").fetchall()[0][0]
         restaurantName = db.session.execute(f"select restName from Restaurants where restid = {latestRestID}").fetchall()[0][0]
+        checkcart = db.session.execute(f"select count(*) from Contains where orderid = {orderid}").fetchall()[0][0]
 
-        if restid != latestRestID:
+        if restid != latestRestID and checkcart != 0:
             flash("You have items in your cart under " + restaurantName + "! Each order can only be from one restaurant!")
 
     query = f"select R.reviewdesc, O.username from Reviews R, Orders O where R.orderid = O.orderid and O.restid = {restid}"
     result = db.session.execute(query)
     reviewlist = [dict(username= row[1], review = row[0]) for row in result.fetchall()]
 
+    query = f"select distinct category from Food"
+    result = db.session.execute(query)
+    catlist = [dict(cat = row[0]) for row in result.fetchall()]
+
     query = f"select minAmt from Restaurants where restid = {restid}"
     result = db.session.execute(query).fetchall()
     minAmt = result[0][0]
 
-    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, reviewlist = reviewlist, minAmt = minAmt)
+    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, reviewlist = reviewlist, minAmt = minAmt, catlist = catlist, rest = restname)
+
+@app.route('/catresults', methods=['GET', 'POST'])
+def catresults():
+    global db
+    category = request.args['category']
+    print(category)
+
+    query = f"select * from Restaurants"
+    result = db.session.execute(query)
+    restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
+
+    query = f"select distinct category from Food"
+    result = db.session.execute(query)
+    catlist = [dict(cat = row[0]) for row in result.fetchall()]
+
+    query = f"select distinct restname from Restaurants R natural join Food F where F.category = '{category}'"
+    result = db.session.execute(query)
+    catrestlist = [dict(restname = row[0]) for row in result.fetchall()]
+
+    return render_template('restaurants.html', restlist = restlist, catrestlist = catrestlist, catlist = catlist, category = category)
 
 @app.route('/addtocart', methods=['POST'])
 def addtocart():
     global db
+    username = session['username']
+    orderid = session['orderid']
 
     #add record into Contains table
     foodid = int(request.form['foodid'])
     query = f"select * from Food where foodid = {foodid}"
     result = db.session.execute(query).fetchall()
 
-    username = session['username']
-    orderid = session['orderid']
-    description = result[0][1]
     check = f"select count(*) from Contains where foodid = {foodid} and orderid = {orderid}"
     checkresult = db.session.execute(check).fetchall()
     
-
     if checkresult[0][0]:
         availquery = f"select availability from Food where foodid = {foodid}"
         availresult = db.session.execute(availquery).fetchall()
@@ -779,7 +876,7 @@ def addtocart():
   
         todo = f"update Contains set quantity = quantity + 1 where foodid = {foodid} and orderid = {orderid}"
     else:
-        todo = f"insert into Contains (orderid, foodid, username, description, quantity) values ('{orderid}', {foodid}, '{username}', '{description}', 1)"
+        todo = f"insert into Contains (orderid, foodid, quantity) values ('{orderid}', {foodid}, 1)"
     
     db.session.execute(todo)
     db.session.commit()
@@ -806,7 +903,7 @@ def addtocart():
     result = db.session.execute(query)
     foodlist = [dict(food = row[1], price = row[2], foodid = row[0], avail=row[4], cat = row[5]) for row in result.fetchall()]
     
-    query = f"select distinc category from Food where restid = {restid}"
+    query = f"select distinct category from Food"
     result = db.session.execute(query)
     catlist = [dict(cat = row[0]) for row in result.fetchall()]
 
@@ -843,7 +940,7 @@ def viewcart():
     restid = restidresult[0][0]
     
     #for cart 
-    orderquery = f"select C.description, F.price, C.quantity, F.foodid from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid} and restid = {restid}"
+    orderquery = f"select F.description, F.price, C.quantity, F.foodid from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid} and restid = {restid}"
     orderresult = db.session.execute(orderquery)
     orderlist = [dict(food = row[0], price = row[1], quantity = row[2], foodid = row[3]) for row in orderresult.fetchall()]
 
@@ -878,11 +975,13 @@ def deletefromcart():
 
     if quantity == 1:
         todo = f"delete from Contains where foodid = {foodid} and orderid = {orderid}"
+        print(quantity)
+        db.session.execute(todo)
     else :
         newquantity = quantity - 1
         todo = f"update Contains set quantity = {newquantity} where foodid = {foodid} and orderid = {orderid}"
-
-    db.session.execute(todo)
+        db.session.execute(todo)
+    
     db.session.commit()
     return redirect('viewcart')
 
@@ -907,7 +1006,12 @@ def backto():
     result = db.session.execute(query).fetchall()
     minAmt = result[0][0]
 
-    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, minAmt = minAmt)
+    #category list for search
+    query = f"select distinct category from Food"
+    result = db.session.execute(query)
+    catlist = [dict(cat = row[0]) for row in result.fetchall()]
+
+    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, minAmt = minAmt, catlist = catlist)
 
 
 '''
@@ -1188,7 +1292,7 @@ def orderstatus():
         updateorderselectedbyrider = f"update Orders set selectedByRider = True where orderid = '{orderid}'"
         db.session.execute(updateriderpicked)
         db.session.execute(updateorderselectedbyrider)
-    db.session.commit()
+        db.session.commit()
 
     inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant \
     from Orders O, Delivers D, Restaurants R \
@@ -1213,7 +1317,7 @@ def orderstatus():
 def submitreviewandrating():
 
     username = session['username']
-    review = request.form['review']
+    review = escape(request.form['review'])
     rating = request.form['rating']
     orderid = int(request.form['orderid'])
     checkquery = f"select count(*) from Reviews where orderid = {orderid}"
@@ -1818,6 +1922,132 @@ def deletePartTimeScheduleResult():
             print(errorMessage)
 
     return render_template('scheduledeleteparttimeresult.html', datem = datem, datemEnd = datemEnd, message = message, errorMessage = errorMessage)
+    
+@app.route('/getRidersPerHour', methods=['GET', 'POST'])
+def getRidersPerHour():
+    if request.method == "POST":
+        form = request.form
+        day = datetime.strptime(form.get('day'), '%Y-%m-%d')
+    else:
+        today = datetime.today()
+        day = (today - timedelta(days = today.weekday()) + timedelta(days = 7)) #defaults to next monday
+    monday = (day - timedelta(days = day.weekday()))
+    tuesday = (monday + timedelta(days = 1)).date()
+    wednesday = (monday + timedelta(days = 2)).date()
+    thursday = (monday + timedelta(days = 3)).date()
+    friday = (monday + timedelta(days = 4)).date()
+    saturday = (monday + timedelta(days = 5)).date()
+    sunday = (monday + timedelta(days = 6)).date()
+    monday = monday.date()
+
+    if not isRidersPerHourPresent(monday):
+        generateRidersPerHour(day)
+
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{monday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    mondaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{tuesday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    tuesdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{wednesday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    wednesdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{thursday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    thursdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{friday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    fridaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{saturday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    saturdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{sunday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    sundaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+
+    maxDay = (datetime.today() + timedelta(days = 6 - datetime.today().weekday()) + timedelta(days = 7)).date() #defaults to sunday of next week, relative to today
+    print(maxDay)
+    return render_template('ridersperhour.html', mondaysch = mondaysch, tuesdaysch = tuesdaysch, wednesdaysch = wednesdaysch, thursdaysch = thursdaysch, fridaysch = fridaysch, saturdaysch = saturdaysch, sundaysch = sundaysch, monday = monday, sunday = sunday, maxDay = maxDay)
+
+def isRidersPerHourPresent(inputMonday):
+    monday = inputMonday
+    isWeekCalculated = f"select count(*) from RidersPerHour where day >= '{monday}'"
+    isWeekCalculatedResult = int(db.session.execute(isWeekCalculated).fetchall()[0][0] or 0)
+    return isWeekCalculatedResult
+
+def generateRidersPerHour(inputDate):
+    #for currentWeek
+    day = inputDate
+    currMonth = datetime(day.year, day.month, 1).date()
+    monday = (day - timedelta(days = day.weekday())).date()
+
+    dayArray = (0, 1, 2, 3, 4, 5, 6)
+    shift1 = (10, 11, 12, 13, 15, 16, 17, 18)
+    shift2 = (11, 12, 13, 14, 16, 17, 18, 20)
+    shift3 = (12, 13, 14, 15, 17, 18, 20, 21)
+    shift4 = (13, 14, 15, 16, 18, 20, 21, 22)
+
+    for dayIncrement in dayArray:
+        currDay = (monday + timedelta(days = dayIncrement))
+        #for full time riders
+        workingOnDay = f"select username, wkStartDay, day1, day2, day3, day4, day5 from MonthlyWorkSchedule where mnthStartDay = '{currMonth}' and wkStartDay <> ('{dayIncrement}' + 1) % 7 and wkStartDay <> ('{dayIncrement}' + 2) % 7"
+        result = db.session.execute(workingOnDay).fetchall()
+
+        for row in result:
+            username = row[0]
+            if row[1] == 0: #if wkStartDay = 0
+                wkStartDay = 0
+                shiftWorked = row[(dayIncrement - 0 + 9) % 7] #dayIncrement - wkStartDay + 1, then +7, then +1 to match index
+            elif row[1] == 1: #if wkStartDay = 1
+                wkStartDay = 1
+                shiftWorked = row[(dayIncrement - 1 + 9) % 7]
+            elif row[1] == 2: #if wkStartDay = 2
+                wkStartDay = 2
+                shiftWorked = row[(dayIncrement - 2 + 9) % 7]
+            elif row[1] == 3: #if wkStartDay = 3
+                wkStartDay = 3
+                shiftWorked = row[(dayIncrement - 3 + 9) % 7]
+            elif row[1] == 4: #if wkStartDay = 4
+                wkStartDay = 4
+                shiftWorked = row[(dayIncrement - 4 + 9) % 7]
+            elif row[1] == 5: #if wkStartDay = 5
+                wkStartDay = 5
+                shiftWorked = row[(dayIncrement - 5 + 9) % 7]
+            elif row[1] == 6: #if wkStartDay = 6
+                wkStartDay = 6
+                shiftWorked = row[(dayIncrement - 6 + 9) % 7]
+            
+            if shiftWorked == 0:
+                for hour in shift1:
+                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                    insertionResult = db.session.execute(insertion)
+            elif shiftWorked == 1:
+                for hour in shift2:
+                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                    insertionResult = db.session.execute(insertion)
+            elif shiftWorked == 2:
+                for hour in shift3:
+                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                    insertionResult = db.session.execute(insertion)
+            elif shiftWorked == 3:
+                for hour in shift4:
+                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                    insertionResult = db.session.execute(insertion)  
+
+        #for part time riders
+        workingOnDay = f"select username, startHour, duration from WeeklyWorkSchedule natural join DailyWorkShift where startDate = '{monday}' and day = '{dayIncrement}'"
+        result = db.session.execute(workingOnDay).fetchall()
+        for row in result:
+            username = row[0]
+            startHour = row[1]
+            duration = row[2]
+            for i in range(duration):
+                hour = startHour + i
+                print('hour: ', hour)
+                insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                insertionResult = db.session.execute(insertion)  
+
+    return;
 
 #Check if server can be run, must be placed at the back of this file
 if __name__ == '__main__':

@@ -13,7 +13,7 @@
           <h2> Select a past month to view: </h2>
               <table border='1' align = 'center'>
                 <form action="/getPrevFullTimeScheduleResult" name="getprevfulltimescheduleresult" method='POST'>
-                  <input type="month" id="monthYear" name="monthYear" max="{{ monthYear }}" value="{{ monthYear}}">
+                  <input type="month" id="monthYear" name="monthYear" required max="{{ monthYear }}" value="{{ monthYear}}">
                   <input type="submit">
                 </form>
             </table>

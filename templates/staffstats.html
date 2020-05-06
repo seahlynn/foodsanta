@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'staffbase.html' %}
+      {% block overall %}
+      <div>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+              <h2 class="text--centered text">{{ message }}</h2>
+          {% endfor %}
+        {% endif %}
+        {% endwith %}
+        <h2>Restaurant Stats</h2>
+        <p>Insert month and year</p>
+        <form action="/checkmonthstaffstats" method='POST'>
+          <input type="number" required placeholder="Month" class="input" name="month" min="1" max="12">
+          <input type="number" required placeholder="Year" class="input" name="year" min="1">
+          <input type="submit" value="Check">
+        </form>
+        <p>General Stats</p>
+        <table border="1", style='margin-top: 20px;' align='center'>
+          <tr>
+            <th> No. of Completed Orders </th>
+            <th> Total Amount Received </th>
+            <tr>
+              <td>{{ 0 if not monthstats.numCompletedOrders else monthstats.numCompletedOrders }}</td>
+              <td>{{ 0 if not monthstats.totalOrdersCost else monthstats.totalOrdersCost }}</td>
+            </tr>
+          </tr>
+        </table>
+        <p>Top 5 items</p>
+        <table border="1", style='margin-top: 20px;' align='center'>
+          <tr>
+            <th> Food ID </th>
+            <th> Description </th>
+            <th> Number of orders </th>
+            {% for f in monthstats.topFive %}
+            <tr>
+              <td>{{ f.foodid }}</td>
+              <td>{{ f.description | safe }}</td>
+              <td>{{ f.total }}</td>
+            </tr>
+            {% endfor %}
+          </tr>
+        </table>
+        <h2>Promo Stats</h2>
+        <table align="center" >
+          <tr>
+              <td> 
+                  <select name="fdspromoid" form="promostats" required>
+                      {% for p in allpromos %}
+                      <option value="{{p.fdspromoid}}" SELECTED> {{p.description | safe}} </option>
+                      {% endfor %}
+                  </select>
+              </td>
+              <td>
+                <form action="/checkpromostaffstats" id="promostats" method='POST'> 
+                  <input type="submit">
+                </form>
+              </td>
+            </tr>
+        </table>
+        <table border="1", style='margin-top: 20px;' align='center'>
+          <tr>
+            <th> Description </th>
+            <th> Start Date </th>
+            <th> End Date </th>
+            <th> Duration (days) </th>
+            <th> Number of Orders </th>
+            <tr>
+              <td> {{promostats.description | safe}} </td>
+              <td>{{ promostats.startTime }}</td>
+              <td>{{ promostats.endTime }}</td>
+              <td>{{ promostats.diff }}</td>
+              <td>{{ promostats.total }}</td>
+            </tr>
+          </tr>
+        </table>
+
+      </div>
+      {% endblock %}
+    </body>
+</html>
+
+<!--
+  
+-->
