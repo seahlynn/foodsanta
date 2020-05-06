@@ -719,8 +719,14 @@ def restresults():
     result = db.session.execute(query)
     restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
     
-
-    restid = int(request.args['chosen'])
+    restname = request.args['chosen']
+    checkrestid = db.session.execute(f"select count(*) from Restaurants where restname = '{restname}'").fetchall()[0][0]
+    
+    if checkrestid == 0:
+        flash("Sorry, there is no such restaurant!")
+        return redirect('gotorest')
+        
+    restid = db.session.execute(f"select restid from Restaurants where restname = '{restname}'").fetchall()[0][0]
     query = f"SELECT * FROM Food WHERE restid = {restid} and availability > 0 order by category, description"
     result = db.session.execute(query)
     foodlist = [dict(food= row[1], price = row[2], foodid = row[0], avail=row[4], cat = row[5]) for row in result.fetchall()]
@@ -799,6 +805,10 @@ def addtocart():
     result = db.session.execute(query)
     foodlist = [dict(food = row[1], price = row[2], foodid = row[0], avail=row[4], cat = row[5]) for row in result.fetchall()]
     
+    query = f"select distinc category from Food where restid = {restid}"
+    result = db.session.execute(query)
+    catlist = [dict(cat = row[0]) for row in result.fetchall()]
+
     query = f"select * from Restaurants"
     result = db.session.execute(query)
     restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
@@ -808,7 +818,7 @@ def addtocart():
     result = db.session.execute(query).fetchall()
     minAmt = result[0][0]
 
-    return render_template('restaurants.html', restlist = restlist, minAmt = minAmt, foodlist = foodlist)
+    return render_template('restaurants.html', restlist = restlist, minAmt = minAmt, foodlist = foodlist, catlist = catlist)
 
 
 '''
