@@ -93,10 +93,6 @@ def signup():
         if len(password) < 8:
             flash("Password cannot be shorter than 8 characters!")
             return render_template('signup.html')
-        
-        if not len(name):
-            flash("Name cannot be blank!")
-            return render_template('signup.html')
 
         if is_existing_user(username):
             flash("Username taken! :(")
@@ -155,6 +151,7 @@ def redirect_accordingly(username):
     check_user_staff = f"select 1 from RestaurantStaff where username = '{username}'"
     if db.session.execute(check_user_staff).fetchone():
         return redirect('gotostaff')
+    flash("An error has occurred. Please try logging in again.")
     return redirect('login')
 
 '''
@@ -171,7 +168,7 @@ def gotostaff():
     menu = get_menu(rest_id)
     promohist = get_promo_hist(rest_id)
     details = get_rest_details(rest_id)
-    return render_template('staffprofile.html', menu=menu, details=details, promohist=promohist)
+    return render_template('staffmenu.html', menu=menu, details=details, promohist=promohist)
 
 @app.route('/deleteitemsuccess', methods=['GET', 'POST'])
 def deleteitemsuccess():
@@ -209,7 +206,7 @@ def addpromosuccess():
     global db
 
     promotype = request.form.get('promotype')
-    description = request.form['description']
+    description = escape(request.form['description'])
     discount = request.form['discount']
     minamnt = request.form['minamnt']
     appliedto = request.form.get('appliedto')
@@ -295,9 +292,9 @@ def get_user_details(id):
 
 def get_promo_hist(id):
     global db
-    check_promo_query = f"select * from FDSPromo natural join RestaurantPromo where restid = {id}"
+    check_promo_query = f"select distinct * from FDSPromo natural join RestaurantPromo where restid = {id}"
     promo_hist = db.session.execute(check_promo_query).fetchall()
-    parsed_hist = [dict(fdspromoid=i[0], description=i[1], starttime=i[3], endtime=i[4], type=i[2], points=i[5]) for i in promo_hist]
+    parsed_hist = [dict(fdspromoid=i[0], description=i[1], starttime=i[6], endtime=i[7], type=i[2], points=i[8], minamt=i[4], discount=i[3]) for i in promo_hist]
     return parsed_hist
 
 

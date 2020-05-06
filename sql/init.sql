@@ -184,7 +184,7 @@ CREATE TABLE Orders (
 	orderid				INTEGER,
     username			VARCHAR(30),
     custLocation        VARCHAR(100) NOT NULL,
-	orderCreatedTime	TIMESTAMP, 
+	orderCreatedTime	TIMESTAMP,
 	totalCost			decimal NOT NULL,
 	fdspromoid			INTEGER,
     paymentmethodid     INTEGER NOT NULL,

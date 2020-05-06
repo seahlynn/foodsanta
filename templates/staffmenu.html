@@ -9,6 +9,13 @@
       {% block overall %}
       <div>
 				<div align = 'center'>
+          {% with messages = get_flashed_messages() %}
+            {% if messages %}
+              {% for message in messages %}
+                  <h2 class="text--centered text">{{ message }}</h2>
+              {% endfor %}
+          {% endif %}
+          {% endwith %}
 					<h3>{{"Restaurant name: " + details.restname}}</h3>
 					<h3>{{"Location: " + details.location}}</h3>
 					<div display='inline-block'>
@@ -17,7 +24,7 @@
 						</div>
 						<div float='right'>
 							<form action="/changeminamtsuccess" method="POST">
-								<input type="number" placeholder="Change minimum amount" class="input" name="minamt"/>
+								<input type="number" pattern="[0-9]*" required placeholder="Change minimum amount" class="input" name="minamt"/>
 								<input type="submit" value="Change" class="text--centered input--submit"/>
 							</form>
 						</div>
@@ -25,13 +32,7 @@
 				</div>
         <div>
           <h2 align='center'> Menu </h2>
-          {% with messages = get_flashed_messages() %}
-            {% if messages %}
-              {% for message in messages %}
-                  <h2 class="text--centered text">{{ message }}</h2>
-              {% endfor %}
-            {% endif %}
-          {% endwith %}
+
           <table border="1", style='margin-top: 20px;' align='center'>
             <tr>
               <th> Food ID </th>
@@ -60,23 +61,23 @@
           </table>
         </div>
         <div align='center'>
-          <h2>Add item here</h2>
+          <h2>Add Food item here</h2>
           <form action="/additemsuccess" name="signup-form" method="POST">
-            <input type="text" placeholder="Food description" class="input" name="description" maxlength="30"/>
-            <input type="number" placeholder="Price" class="input" name="price" maxlength="30" />
-            <input type="number" placeholder="Stock" class="input" name="stock" maxlength="15"/>
-            <input type="text" placeholder="Category" class="input" name="category" maxlength="15"/>
-            <input type="submit" value="Add food" class="text--centered input--submit"/>
+            <input type="text" required placeholder="Food description" class="input" name="description" maxlength="50"/>
+            <input type="number" required placeholder="Price" class="input" name="price"/>
+            <input type="number" required placeholder="Stock" class="input" name="stock"/>
+            <input type="text" required placeholder="Category" class="input" name="category" maxlength="20"/>
+            <input type="submit" required value="Add food" class="text--centered input--submit"/>
           </form>
         </div>
         <div align='center'>
-          <h2>Edit item here</h2>
+          <h2>Edit Food item here</h2>
           <form action="/edititemsuccess" name="signup-form" method="POST">
-            <input type="number" placeholder="Food ID" class="input" name="food_id" maxlength="30"/>
-            <input type="text" placeholder="Food description" class="input" name="description" maxlength="30"/>
-            <input type="number" placeholder="Price" class="input" name="price" maxlength="30" />
-            <input type="number" placeholder="Stock" class="input" name="stock" maxlength="15"/>
-            <input type="text" placeholder="Category" class="input" name="category" maxlength="15"/>
+            <input type="number" required placeholder="Food ID" class="input" name="food_id"/>
+            <input type="text" required placeholder="Food description" class="input" name="description" maxlength="50"/>
+            <input type="number" required placeholder="Price" class="input" name="price"/>
+            <input type="number" required placeholder="Stock" class="input" name="stock"/>
+            <input type="text" required placeholder="Category" class="input" name="category" maxlength="20"/>
             <input type="submit" value="Edit food" class="text--centered input--submit"/>
           </form>
 				</div>
@@ -91,18 +92,18 @@
 						<table  align = 'center'>
 							<tr>
 								<td> Description </td>
-								<td> <input name="description" size="35"> </td>
+								<td> <input name="description" size="35" required maxlength="200"> </td>
 							</tr>
 							<tr>
 								<td rowspan="2"> Percent / Amount Off </td>
-								<td> <input type="number" name="discount" size="35" placeholder="Please enter a number between 0 to 100"> </td>
+								<td> <input type="number" required name="discount" size="35" min="1" max="99"> </td>
 							</tr>
 							<tr>
 								<td style="font-size: 10pt;"> Enter '5' for 5% off or $5 off </td>
 							</tr>
 							<tr>
 								<td> Minimum Amount </td>
-								<td> <input name="minamnt" size="35" placeholder="Min. order amount for promo to apply"> </td>
+								<td> <input name="minamnt" required type="number" size="35" min="0" placeholder="Min. order amount"> </td>
 							</tr>
 							<tr>
 								<td> Applied To </td>
@@ -116,15 +117,15 @@
 							</tr>
 							<tr>
 								<td> Valid From </td>
-								<td> <input name="validfrom" size="35" type="date" value="2020-04-30"> </td>
+								<td> <input name="validfrom" required size="35" type="date" value="2020-04-30"> </td>
 							</tr>
 							<tr>
 								<td> Valid Till </td>
-								<td> <input name="validtill" size="35" type="date" value="2020-04-30"> </td>
+								<td> <input name="validtill" required size="35" type="date" value="2020-04-30"> </td>
 							</tr>
 							<tr>
 								<td> Cost </td>
-								<td> <input type="number" name="cost" size="35" placeholder="Number of points to redeem promo"> </td>
+								<td> <input type="number" min="0" required name="cost" size="100" placeholder="Redeem cost"> </td>
 							</tr>
 							<tr style="padding: 10px"> 
 									<td> </td>
@@ -144,6 +145,8 @@
               <th> Start time </th>
               <th> End time </th>
               <th> Type </th>
+              <th> Discount Value </th>
+              <th> Minimum Amount</th>
               <th> Points </th>
               <th> Delete? </th>
               {% for p in promohist %}
@@ -153,6 +156,8 @@
                 <td>{{ p.starttime }}</td>
                 <td>{{ p.endtime }}</td>
                 <td> {{ p.type | safe }} </td>
+                <th> {{ p.discount }} </th>
+                <td> {{ p.minamt }} </td>
                 <td> {{ p.points }}</td>
                 <td>
                   <form action="/deletepromosuccess" method="POST">

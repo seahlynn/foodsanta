@@ -10,7 +10,6 @@ INSERT INTO Users(username, name, password, phoneNumber, dateCreated) VALUES
 ('fullridertest', 'RiderTest', 'fullridercool', '96567556', '2020-04-12'),
 ('partridertest', 'RiderTest', 'partridercool', '96567556', '2020-04-12');
 
-
 INSERT INTO RestaurantStaff(username) VALUES
 ('stafftest');
 
@@ -139,13 +138,11 @@ INSERT INTO FDSPromo(fdspromoid, description, type, value, minAmnt, appliedto, s
 (6, '5% off all orders for from RIRIMALA', 'percentoff', 5, 0, 'total', '01/05/2020', '31/05/2020', 12),
 (7, '$5 off all orders for CCB', 'amountoff', 5, 0, 'total', '01/06/2020', '15/06/2020', 0);
 
-
 INSERT INTO DeliveryPromo(deliverypromoid, description, amount, points) values 
 (1, '$1 off delivery', 1, 10),
 (2, '$2 off delivery', 2, 20),
 (3, '$3 off delivery', 3, 30),
 (4, '$4 off delivery', 4, 40);
-
 
 INSERT INTO AllStats(month, year, totalNewCust, totalNumOrders, totalCostOfOrders) values
 (1, 2020, 20, 50, 654),
