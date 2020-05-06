@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    	{% extends 'riderbase.html' %}
+      	{% block overall %}
+        <h1>There are currently no deliveries available for you now.</h1>
+        <form method="POST" action="returnToProfile">
+        	<button type="submit"> Go to profile </button>         
+    	</form>
+        {% endblock %}
+    </body>
+
+    
+</html>

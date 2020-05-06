@@ -200,14 +200,14 @@ CREATE TABLE RestaurantPromo (
 
 CREATE TABLE Orders (
 	orderid				INTEGER,
-    username			VARCHAR(30),
+    username			VARCHAR(30) NOT NULL,
     custLocation        VARCHAR(100) NOT NULL,
 	orderCreatedTime	TIMESTAMP, 
 	totalCost			decimal NOT NULL,
 	fdspromoid			INTEGER,
     paymentmethodid     INTEGER NOT NULL,
-    preparedByRest      BOOLEAN NOT NULL DEFAULT False, -- should this be null / datetime instead
-    selectedByRider     BOOLEAN NOT NULL DEFAULT False,
+    preparedByRest      BOOLEAN NOT NULL DEFAULT FALSE, -- should this be null / datetime instead
+    selectedByRider     BOOLEAN NOT NULL DEFAULT FALSE,
     restid              INTEGER NOT NULL,
     delivered   		BOOLEAN NOT NULL DEFAULT FALSE,
 
@@ -258,10 +258,6 @@ CREATE TABLE Delivers (
     FOREIGN KEY (username) REFERENCES DeliveryRiders,
 	FOREIGN KEY (paymentmethodid) REFERENCES PaymentMethods
 );
-
-
-
-
 
 CREATE TABLE FullTimeRiders (
     username              VARCHAR(30),
@@ -485,7 +481,10 @@ create or replace function updateRiderDeliveryBonusFunction()
 returns trigger as $$
 begin
     update RiderStats
-    set totalSalary = totalSalary + 5; 
+    set totalSalary = totalSalary + 5
+    where month = (select extract(month from current_timestamp)
+    and year = (select extract(year from current_timestamp)
+    and username = NEW.username; 
 return new;
 end; $$ language plpgsql;
 

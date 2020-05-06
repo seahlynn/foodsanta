@@ -909,6 +909,23 @@ Customer related: View order status, order history, submit review
 def orderstatus():
 
     username = session['username']
+    orderid = session['orderid']
+
+    # allocate an available rider to deliver
+    # rider is currently working (either part time or full time)
+    # rider is not currently taking an order that has not been delivered
+    checkavailableriderquery = f"select distinct username from DeliveryRiders F natural join MonthlyWorkSchedule M where not exists (select 1 from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Delivers.username = F.username and Orders.delivered = False and Orders.selectedByRider = True) union select distinct username from DeliveryRiders F natural join WeeklyWorkSchedule W where not exists (select 1 from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Delivers.username = F.username and Orders.delivered = False and Orders.selectedByRider = True) "
+    availableriders = db.session.execute(checkavailableriderquery).fetchall()
+    numavailableriders = availableriders.len()
+    randridernum = randrange(0, numavailableriders, 0)
+    randrider = availableriders[randridernum]
+    riderusername = randrider[0]
+    updateriderpicked = f"update Delivers set username = '{riderusername}' where orderid = '{orderid}'"
+    updateorderselectedbyrider = f"update Orders set selectedByRider = True where orderid = '{orderid}'"
+    db.session.execute(updateriderpicked)
+    db.session.execute(updateorderselectedbyrider)
+    db.session.commit()
+
     inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant from Orders O, Delivers D, Restaurants R where D.orderid = O.orderid and O.username = '{username}' and O.delivered = False and R.restid = O.restid"
     progressresult = db.session.execute(inprogressquery)
     orderlist = [dict(rest = row[0], timeordered = row[1], orderpicked = row[2], pickedup = row[3]) for row in progressresult.fetchall()]
@@ -996,10 +1013,9 @@ def buypromo():
     else:
         flash("You don't have enough points to purchase this promo! \n You get 1 point for every $1 spent!")
         return redirect('viewpromos')
-
     
 '''
-Riders select existing undelivered orders to pick up and deliver
+Riders accept allocated undelivered orders to pick up and deliver
 
 '''
 @app.route('/gotoriderprofile', methods=['GET'])
@@ -1018,11 +1034,26 @@ def gotoriderprofile():
 
 @app.route('/gotodelivery', methods=['GET'])
 def gotodelivery():
-    undeliveredOrdersQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False"
-    undeliveredOrdersResult = db.session.execute(undeliveredOrdersQuery)
-    ordersToPickUp = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in undeliveredOrdersResult.fetchall()]
+    username = session['username']  
+    hasallocatedOrdersQuery = f"select count(*) from Delivers natural join Orders where Delivers.username = '{username}' and Orders.delivered = False and Orders.selectedByRider = True"
+    hasallocatedOrdersResult = db.session.execute(hasallocatedOrdersQuery).fetchall()
 
-    return render_template('riders_selectUndeliveredOrders.html', ordersToPickUp = ordersToPickUp)
+    if hasallocatedOrdersResult[0][0] != 0:
+        # there exists an allocated order (just pull one)
+        allocatedorderquery = f"select Delivers.orderid, Orders.custLocation, Restaurants.location from Delivers natural join (Orders join Restaurants on (Orders.restid = Restaurants.restid)) where Delivers.username = '{username}' and Orders.delivered = False limit 1"
+        allocatedOrderresult = db.session.execute(allocatedorderquery)
+        allocatedOrder = [dict(orderid = row[0], custLocation = row[1], restLocation = row[2]) for row in allocatedOrderresult.fetchall()]
+        session['deliveringOrderId'] = allocatedOrderresult[0][0]
+        return render_template('riders_viewAllocatedOrder.html', allocatedOrder = allocatedOrder)
+
+    else:
+        # has no allocated order 
+        # go to new html page that will lead back to profile
+        return render_template('riders_nodeliveriesnow.html')
+
+    #undeliveredOrdersQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False"
+    #undeliveredOrdersResult = db.session.execute(undeliveredOrdersQuery)
+    #ordersToPickUp = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in undeliveredOrdersResult.fetchall()]    
 
 @app.route('/getUndeliveredOrders', methods=['POST', 'GET'])
 def getUndeliveredOrders():
@@ -1043,7 +1074,7 @@ def getUndeliveredOrders():
 
     chosenOrderInfo = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in chosenOrderResult.fetchall()]
     
-    return render_template('riders_selectUndeliveredOrders.html', chosenOrderInfo = chosenOrderInfo, ordersToPickUp = ordersToPickUp)
+    return render_template('riders_selectUndeliveredOrders.html', chosenOrderInfo = chosenOrderInfo)
 
 @app.route('/processOrderSelectedForDelivery', methods=['POST', 'GET'])
 def processOrderSelectedForDelivery():
@@ -1067,7 +1098,6 @@ def processOrderSelectedForDelivery():
     deliveryFee = 3 # to be edited later
     # maybe can change to update Delivers instead of insert into
     updateDelivery = f"update Delivers set username = '{username}' where orderid = {deliveringOrderId}"
-    
     db.session.execute(updateDelivery)
     db.session.commit()
 
@@ -1079,6 +1109,12 @@ def collectFromRestaurant():
 
     deliveringOrderId = session['deliveringOrderId']
     username = session['username']
+
+    # timestamp for when he leaves for the restaurant
+    currentTime = datetime.now().strftime("%d/%m/%Y %H%M")
+    updateLeaveTime = f"update Delivers set timeDepartToRestaurant='{currentTime}' where orderid = '{deliveringOrderId}' and username = '{username}'"
+    db.session.execute(updateLeaveTime)
+    db.session.commit()
 
     # retrieve restaurant address to display
     restLocationQuery = f'select location from Restaurants where restid in (select distinct restid from Orders where Orders.orderid = {deliveringOrderId})'
@@ -1152,6 +1188,14 @@ def orderDelivered():
     numOrders = numOrdersResult[0][0]
 
     return render_template('riders_deliveryCompleted.html', numOrders = numOrders)    
+
+@app.route('/newDelivery', methods=['POST'])
+def newDelivery():
+    return redirect('gotodelivery')
+    
+@app.route('/returnToProfile', methods=['POST'])
+def returnToProfile():
+    return redirect('gotoriderprofile')
 
 @app.route('/gotoschedule', methods=['GET'])
 def gotoschedule():
@@ -1262,10 +1306,6 @@ def getNextPartTimeSchedule():
     
     return render_template('nextparttimeschedule.html', schedule = schedule, datem = datem, datemEnd = datemEnd)
 
-@app.route('/newDelivery', methods=['POST'])
-def newDelivery():
-    return redirect('gotodelivery')
-    
 #Check if server can be run, must be placed at the back of this file
 if __name__ == '__main__':
     app.run()
