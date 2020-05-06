@@ -16,6 +16,7 @@
                             <th> Description </th>
                             <th> Start Date </th>
                             <th> End Date </th>
+                            <th> Points </th>
                           </tr>
       
                           {% for p in promolist %}
@@ -24,6 +25,7 @@
                             <td> {{ p.description }} </td>
                             <td> {{ p.start }} </td>
                             <td> {{ p.end }} </td>
+                            <td> {{p.points}} </td>
                           </tr>
                           {% endfor %}
                     </table>
@@ -51,6 +53,7 @@
                             <th> Description </th>
                             <th> Start Date </th>
                             <th> End Date </th>
+                            <th> Points </th>
                           </tr>
       
                           {% for p in pastpromolist %}
@@ -59,6 +62,7 @@
                             <td> {{ p.description }} </td>
                             <td> {{ p.start }} </td>
                             <td> {{ p.end }} </td>
+                            <td> {{p.points}} </td>
                           </tr>
                           {% endfor %}
                     </table>

@@ -4,8 +4,15 @@ INSERT INTO Users(username, name, password, phoneNumber, dateCreated) VALUES
 ('bakwah', 'Leewah', 'leewahcool', '91718716', '2020-04-04'),
 ('justning', 'Sining', 'siningcool', '91718716', '2020-04-04'),
 ('managertest', 'ManagerTest', 'managercool', '96567556', '2020-04-05'),
+('ridertest', 'RiderTest', 'ridercool', '96567556', '2020-04-12'),
+('stafftest', 'StaffTest', 'staffcool', '96567556', '2020-03-11'),
+('staffresttest', 'StaffRestTest', 'staffrestcool', '96567556', '2020-03-11'),
 ('fullridertest', 'RiderTest', 'fullridercool', '96567556', '2020-04-12'),
 ('partridertest', 'RiderTest', 'partridercool', '96567556', '2020-04-12');
+
+
+INSERT INTO RestaurantStaff(username) VALUES
+('stafftest');
 
 INSERT INTO FDSManagers(username) VALUES
 ('managertest');
@@ -27,13 +34,9 @@ INSERT INTO DeliveryRiders(username) VALUES
 INSERT INTO FullTimeRiders(username) VALUES
 ('kalsyc'),
 ('lynjaaa'),
-('bakwah'),
-('justning'),
 ('fullridertest');
 
 INSERT INTO PartTimeRiders(username) VALUES
-('kalsyc'),
-('lynjaaa'),
 ('bakwah'),
 ('justning'),
 ('partridertest');
@@ -56,30 +59,33 @@ INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES
 (8, 'HaiDiLao', 80, '1 Harbourfront Walk #03-09 Vivocity, Singapore 098585'),
 (9, 'Caesar Pizza', 30, '16 Collyer Quay, #01-05 Income At Raffles, Singapore 049318');
 
+INSERT INTO RestaurantStaff(username, restid) VALUES
+('staffresttest', 1);
+
 --times ordered starts at 0 an availability at 100 for all food items currently)
-INSERT INTO Food(foodid, description, restid, price, availability, category, timesordered) VALUES
-(1, 'soy sauce wings', 1, 12, 100, 'Korean', 0),
-(2, 'spicy drumlets', 1, 12, 100, 'Korean', 0),
-(3, 'army stew', 2, 8, 24, 'Korean', 0),
-(4, 'kimchi pancakes', 2, 8, 100, 'Korean', 0),
-(5, 'unagi sushi', 3, 6, 100, 'Japanese', 0),
-(6, 'chawanmushi', 3, 3, 100, 'Japanese', 0),
-(7, 'chicken katsu', 3, 8, 100, 'Japanese', 0),
-(8, 'cheese fries', 4, 4.5, 2, 'FastFood', 0),
-(9, 'popcorn chicken', 4.2, 8, 100, 'FastFood', 0),
-(10, 'lime froyo', 4, 2, 100, 'FastFood', 0),
-(11, 'zhong la mala hotpot', 5, 8, 100, 'Chinese', 0),
-(12, 'da la mala hotpot', 5, 17, 100, 'Chinese', 0),
-(13, 'smoked duck', 6, 2.5, 100, 'Sharing', 0),
-(14, 'luncheon meat', 6, 2, 100, 'Sharing', 0),
-(15, 'black pepper pork belly', 6, 2, 100, 'Sharing', 0),
-(16, 'thai milk tea', 6, 3, 100, 'Beverage', 0),
-(17, 'rosti', 7, 8.90, 100, 'Western', 0),
-(18, 'pork knuckles', 7, 16.50, 100, 'Western', 0),
-(19, 'smoked salmon pizza', 7, 22.90, 100, 'Western', 0),
-(20, 'beef schnitzel', 7, 19.90, 100, 'Western', 0),
-(21, 'prawn paste', 8, 12, 100, 'Chinese', 0),
-(22, 'golden man tou', 8, 8, 100, 'Chinese', 0);
+INSERT INTO Food(foodid, description, restid, price, dailylimit, availability, category, timesordered) VALUES
+(1, 'soy sauce wings', 1, 12, 100, 100, 'Korean', 0),
+(2, 'spicy drumlets', 1, 12, 100, 100, 'Korean', 0),
+(3, 'army stew', 2, 8, 24, 24, 'Korean', 0),
+(4, 'kimchi pancakes', 2, 8, 8, 100, 'Korean', 0),
+(5, 'unagi sushi', 3, 6, 100, 100, 'Japanese', 0),
+(6, 'chawanmushi', 3, 3, 100, 100, 'Japanese', 0),
+(7, 'chicken katsu', 3, 8, 100, 100, 'Japanese', 0),
+(8, 'cheese fries', 4, 4.5, 2, 2, 'FastFood', 0),
+(9, 'popcorn chicken', 4.2, 8, 100, 100, 'FastFood', 0),
+(10, 'lime froyo', 4, 2, 100, 100, 'FastFood', 0),
+(11, 'zhong la mala hotpot', 5, 8, 100, 100, 'Chinese', 0),
+(12, 'da la mala hotpot', 5, 17, 100, 100, 'Chinese', 0),
+(13, 'smoked duck', 6, 2.5, 100, 100, 'Sharing', 0),
+(14, 'luncheon meat', 6, 2, 100, 100, 'Sharing', 0),
+(15, 'black pepper pork belly', 6, 2, 100, 100, 'Sharing', 0),
+(16, 'thai milk tea', 6, 3, 100, 100, 'Beverage', 0),
+(17, 'rosti', 7, 8.90, 100, 100, 'Western', 0),
+(18, 'pork knuckles', 7, 16.50, 100, 100, 'Western', 0),
+(19, 'smoked salmon pizza', 7, 22.90, 100, 100, 'Western', 0),
+(20, 'beef schnitzel', 7, 19.90, 100, 100, 'Western', 0),
+(21, 'prawn paste', 8, 12, 100, 100, 'Chinese', 0),
+(22, 'golden man tou', 8, 8, 100, 100, 'Chinese', 0);
 
 --- INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid) VALUES (1, 1, '21 Lower Kent Ridge Rd, Singapore 119077', '04/07/2020 1230', 13.80, NULL, 1, False, False, 1);
 
@@ -125,14 +131,14 @@ INSERT INTO Delivers(orderid, username, rating, location, deliveryFee, timeDepar
 (11, 'justning', 3,  '13 Computing Drive Singapore 117417', 5, '03/02/2020 1805', '03/02/2020 1815', '03/02/2020 1830', 1),
 (13, 'justning', 3,  '16 #01-220 College Ave West 138527', 5, '02/01/2020 1650', '02/01/2020 1715', '02/01/2020 1730', 1);
 
-INSERT INTO FDSPromo(fdspromoid, description, type, startTime, endTime, points) VALUES
-(1, '10% off all orders this Circuit Breaker', 'percentoff', '18/04/2020', '05/04/2020', 0),
-(2, '25% off all orders this Valentine Day', 'percentoff', '14/02/2020', '28/02/2020', 30),
-(3, '$5 off all orders for the month of May, minimum order of $50', 'amountoff', '01/05/2020', '31/05/2020', 40),
-(4, '5% off all delivery for the month of May', 'percentoff', '01/05/2020', '31/05/2020', 25),
-(5, '5% off all orders for from 4Fingers', 'percentoff', '01/05/2020', '31/05/2020', 12),
-(6, '5% off all orders for from RIRIMALA', 'percentoff', '01/05/2020', '31/05/2020', 12),
-(7, '$5 off all orders for CCB', 'amountoff', '01/06/2020', '15/06/2020', 0);
+INSERT INTO FDSPromo(fdspromoid, description, type, value, minAmnt, appliedto, startTime, endTime, points) VALUES
+(1, '10% off all orders this Circuit Breaker', 'percentoff', 10, 0, 'total', '18/04/2020', '05/04/2020', 0),
+(2, '25% off all orders this Valentine Day', 'percentoff', 25, 0, 'total', '14/02/2020', '28/02/2020', 30),
+(3, '$5 off all orders for the month of May, minimum order of $50', 'amountoff', 5, 50, 'total', '01/05/2020', '31/05/2020', 40),
+(4, '5% off all delivery for the month of May', 'percentoff',  5, 0, 'delivery', '01/05/2020', '31/05/2020', 25),
+(5, '5% off all orders for from 4Fingers', 'percentoff', 5, 0, 'total', '01/05/2020', '31/05/2020', 12),
+(6, '5% off all orders for from RIRIMALA', 'percentoff', 5, 0, 'total', '01/05/2020', '31/05/2020', 12),
+(7, '$5 off all orders for CCB', 'amountoff', 5, 0, 'total', '01/06/2020', '15/06/2020', 0);
 
 
 INSERT INTO DeliveryPromo(deliverypromoid, description, amount, points) values 
@@ -141,37 +147,28 @@ INSERT INTO DeliveryPromo(deliverypromoid, description, amount, points) values
 (3, '$3 off delivery', 3, 30),
 (4, '$4 off delivery', 4, 40);
 
-INSERT INTO PercentOff(fdspromoid, percent, minAmnt, appliedto) values
-(1, 10, 0, 'total'),
-(4, 5, 0, 'delivery'),
-(5, 5, 0, 'total'),
-(6, 5, 0, 'total');
 
-INSERT INTO AmountOff(fdspromoid, amount, minAmnt, appliedto) values
-(3, 5, 0, 'total'),
-(7, 5, 0, 'total');
+INSERT INTO AllStats(month, year, totalNewCust, totalNumOrders, totalCostOfOrders) values
+(1, 2020, 20, 50, 654),
+(2, 2020, 34, 62, 722),
+(3, 2020, 18, 47, 443),
+(4, 2020, 22, 53, 528);
 
-INSERT INTO AllStats(monthid, totalNewCust, totalNumOrders, totalCostOfOrders) values
-(1, 20, 50, 654),
-(2, 34, 62, 722),
-(3, 18, 47, 443),
-(4, 22, 53, 528);
-
-INSERT INTO CustomerStats(username, monthid, totalNumOrders, totalCostOfOrders) values
-('justning', 1, 2, 54),
-('bakwah', 1, 6, 134),
-('lynjaaa', 1, 1, 25),
-('kalsyc', 1, 4, 89),
-('justning', 2, 7, 154),
-('bakwah', 2, 6, 204),
-('lynjaaa', 2, 0, 0),
-('kalsyc', 2, 7, 160),
-('justning', 3, 2, 54),
-('bakwah', 3, 6, 134),
-('lynjaaa', 3, 1, 25),
-('kalsyc', 3, 4, 89),
-('bakwah', 4, 6, 134),
-('lynjaaa', 4, 1, 25);
+INSERT INTO CustomerStats(username, month, year, totalNumOrders, totalCostOfOrders) values
+('justning', 1, 2020, 2, 54),
+('bakwah', 1, 2020, 6, 134),
+('lynjaaa', 1, 2020, 1, 25),
+('kalsyc', 1, 2020, 4, 89),
+('justning', 2, 2020, 7, 154),
+('bakwah', 2, 2020, 6, 204),
+('lynjaaa', 2, 2020, 0, 0),
+('kalsyc', 2, 2020, 7, 160),
+('justning', 3, 2020, 2, 54),
+('bakwah', 3, 2020, 6, 134),
+('lynjaaa', 3, 2020, 1, 25),
+('kalsyc', 3, 2020, 4, 89),
+('bakwah', 4, 2020, 6, 134),
+('lynjaaa', 4, 2020, 1, 25);
 
 
 INSERT INTO RiderStats(month, year, username, totalOrders, totalHours, totalSalary) values

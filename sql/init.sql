@@ -1,6 +1,7 @@
 DROP TABLE IF EXISTS Users CASCADE;
 DROP TABLE IF EXISTS Orders CASCADE;
 DROP TABLE IF EXISTS Customers CASCADE;
+DROP TABLE IF EXISTS CustomerStats CASCADE;
 DROP TABLE IF EXISTS FDSManagers CASCADE;
 DROP TABLE IF EXISTS RestaurantStaff CASCADE;
 DROP TABLE IF EXISTS CustomerStats CASCADE;
@@ -19,8 +20,6 @@ DROP TABLE IF EXISTS FDSPromo CASCADE;
 DROP TABLE IF EXISTS UsersPromo CASCADE;
 DROP TABLE IF EXISTS DeliveryPromo CASCADE;
 DROP TABLE IF EXISTS UsersDeliveryPromo CASCADE;
-DROP TABLE IF EXISTS AmountOff CASCADE;
-DROP TABLE IF EXISTS PercentOff CASCADE;
 DROP TABLE IF EXISTS FullTimeRiders CASCADE;
 DROP TABLE IF EXISTS PartTimeRiders CASCADE;
 DROP TABLE IF EXISTS RiderStats CASCADE;
@@ -118,10 +117,11 @@ CREATE TABLE Food (
     foodid          INTEGER,
     description     VARCHAR(50),
     price           decimal NOT NULL,
+    dailylimit		INTEGER NOT NULL CHECK (dailylimit >= 0),
     availability    INTEGER NOT NULL CHECK (availability >= 0),
     category        VARCHAR(20),
     restid          INTEGER NOT NULL,
-    timesordered    INTEGER NOT NULL,
+    timesordered    INTEGER NOT NULL DEFAULT 0,
 
     PRIMARY KEY (foodid),
 
@@ -134,6 +134,10 @@ CREATE TABLE FDSPromo (
     description     VARCHAR(200) NOT NULL,
     type 			VARCHAR(50) NOT NULL,
     CONSTRAINT chck_type CHECK (type IN ('percentoff', 'amountoff')),
+    value 			INTEGER CHECK (value > 0 AND value <100),
+	minAmnt			INTEGER DEFAULT 0,
+	appliedto		VARCHAR,
+	CONSTRAINT chck_appliedto CHECK (appliedto IN ('total', 'delivery')),
     startTime       DATE NOT NULL,
     endTime         DATE NOT NULL,
     points 			INTEGER default 0,
@@ -148,28 +152,6 @@ CREATE TABLE DeliveryPromo (
     points 			INTEGER default 0,
 
     PRIMARY KEY (deliverypromoid)
-);
-
-CREATE TABLE PercentOff (
-	fdspromoid		INTEGER,
-	percent 		INTEGER CHECK (percent > 0 AND percent <100),
-	minAmnt			INTEGER DEFAULT 0,
-	appliedto		VARCHAR,
-	CONSTRAINT chck_appliedto CHECK (appliedto IN ('total', 'delivery')),
-
-	FOREIGN KEY (fdspromoid) REFERENCES FDSPromo ON DELETE CASCADE ON UPDATE CASCADE,
-	PRIMARY KEY (fdspromoid)
-);
-
-CREATE TABLE AmountOff (
-	fdspromoid		INTEGER,
-	amount 			INTEGER CHECK (amount > 0),
-	minAmnt			INTEGER DEFAULT 0,
-	appliedto		VARCHAR,
-	CONSTRAINT chck_appliedto CHECK (appliedto IN ('total', 'delivery')),
-
-	FOREIGN KEY (fdspromoid) REFERENCES FDSPromo ON DELETE CASCADE ON UPDATE CASCADE,
-	PRIMARY KEY (fdspromoid)
 );
 
 CREATE TABLE UsersPromo (
@@ -190,12 +172,12 @@ CREATE TABLE UsersDeliveryPromo (
 	PRIMARY KEY (deliverypromoid, username)
 );
 
-
 CREATE TABLE RestaurantPromo (
 	fdspromoid		INTEGER,
 	restid 			INTEGER,
 
-    PRIMARY KEY (fdspromoid, restid)     
+    PRIMARY KEY (fdspromoid, restid),
+    FOREIGN KEY(fdspromoid) REFERENCES FDSPromo ON DELETE CASCADE
 );
 
 CREATE TABLE Orders (
@@ -337,11 +319,12 @@ CREATE TABLE DailyWorkShift (
 
 CREATE TABLE CustomerStats (
     username            VARCHAR(30),
-    monthid             INTEGER,
+    month            	INTEGER,
+    year 				INTEGER,
     totalNumOrders      INTEGER,
     totalCostOfOrders   INTEGER,
 
-    PRIMARY KEY (username, monthid),
+    PRIMARY KEY (username, month, year),
 
     FOREIGN KEY (username) REFERENCES Customers
 );
@@ -373,12 +356,13 @@ CREATE TABLE RiderStats (
 );
 
 CREATE TABLE AllStats (
-    monthid             INTEGER,
+    month               INTEGER,
+    year                INTEGER,
     totalNewCust        INTEGER,
     totalNumOrders      INTEGER, --should be total num of restuarants--
     totalCostOfOrders   INTEGER,
 
-    PRIMARY KEY (monthid)
+    PRIMARY KEY (month, year)
 );
 
 CREATE TABLE Latest (
@@ -401,15 +385,17 @@ begin
         select 1
         from CustomerStats C1
         where C1.username = NEW.username
-        and C1.monthid = (select extract(month from current_timestamp)))) then
-        insert into CustomerStats values(NEW.username, (select extract(month from current_timestamp)), 1, NEW.totalCost);
+        and C1.month = (select extract(month from current_timestamp))
+        and C1.year = (select extract(year from current_timestamp)))) then
+        insert into CustomerStats values(NEW.username, (select extract(month from current_timestamp)), (select extract(year from current_timestamp)), 1, NEW.totalCost);
     /* existing customer */
     else 
         update CustomerStats C2
         set totalNumOrders = totalNumOrders + 1,
             totalCostOfOrders = totalCostOfOrders + NEW.totalCost
         where C2.username = NEW.username
-        and C2.monthid = (select extract(month from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
+        and C2.month = (select extract(month from current_timestamp))
+        and C2.year = (select extract(year from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
 end if;    
 return new;
 end; $$ language plpgsql;        
@@ -432,13 +418,15 @@ begin
         if (not exists (
             select 1
             from AllStats
-            where monthid = (select extract(month from current_timestamp)))) 
-        then insert into AllStats values ((select extract(month from current_timestamp)), 0, 0, 0); 
+            where month = (select extract(month from current_timestamp))
+            and year = (select extract(year from current_timestamp)))) 
+        then insert into AllStats values ((select extract(month from current_timestamp)), (select extract(year from current_timestamp)), 0, 0, 0); 
         end if;
 
         update AllStats
         set totalNewCust = totalNewCust + 1
-        where monthid = (select extract(month from current_timestamp));
+        where month = (select extract(month from current_timestamp))
+        and year = (select extract(year from current_timestamp));
 end if;
 return new;
 end; $$ language plpgsql;
@@ -457,14 +445,16 @@ begin
     if (not exists (
             select 1
             from AllStats
-            where monthid = (select extract(month from current_timestamp)))) 
-            then insert into AllStats values ((select extract(month from current_timestamp)), 0, 1, NEW.totalCost);
+            where month = (select extract(month from current_timestamp))
+            and year = (select extract(year from current_timestamp)))) 
+            then insert into AllStats values ((select extract(month from current_timestamp)), (select extract(year from current_timestamp)), 0, 1, NEW.totalCost);
     /* existing customer */
     else 
         update AllStats
         set totalNumOrders = totalNumOrders + 1,
             totalCostOfOrders = totalCostOfOrders + NEW.totalCost
-        where monthid = (select extract(month from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
+        where month = (select extract(month from current_timestamp))
+        and year = (select extract(year from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
     end if; 
 
 return new;
@@ -520,7 +510,7 @@ create trigger updateLocationTrigger
     execute function updateLocationFunction();
 
 /* update availability of food items*/ 
-create or replace function updateAvailFoodFunction()
+/*create or replace function updateAvailFoodFunction()
 returns trigger as $$
 DECLARE 
 containrow RECORD;
@@ -538,6 +528,60 @@ end; $$ language plpgsql;
 drop trigger if exists updateAvailFoodTrigger on Food;
 create trigger updateAvailFoodTrigger
     before insert on Orders
+    for each row
+    execute function updateAvailFoodFunction();*/
+
+/* update availability of food items*/ 
+create or replace function decreaseAvailFoodFunction()
+returns trigger as $$
+begin
+    update Food
+    set availability = availability - 1
+    where foodid = NEW.foodid;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists decreaseAvailFoodTrigger on Food;
+create trigger decreaseAvailFoodTrigger
+    before insert on Contains
+    for each row
+    execute function decreaseAvailFoodFunction();
+
+/* update availability of food items*/ 
+create or replace function increaseAvailFoodFunction()
+returns trigger as $$
+begin
+    update Food
+    set availability = availability + 1
+    where foodid = NEW.foodid;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists increaseAvailFoodTrigger on Food;
+create trigger increaseAvailFoodTrigger
+    before delete on Contains
+    for each row
+    execute function increaseAvailFoodFunction();
+
+/* update availability of food items*/ 
+create or replace function updateAvailFoodFunction()
+returns trigger as $$
+begin
+	if (OLD.quantity > NEW.quantity) then
+	    update Food
+	    set availability = availability + 1
+	    where foodid = NEW.foodid;
+	else 
+		update Food
+	    set availability = availability - 1
+	    where foodid = NEW.foodid;
+	end if;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists updateAvailFoodTrigger on Food;
+create trigger updateAvailFoodTrigger
+    before update on Contains
     for each row
     execute function updateAvailFoodFunction();
 
@@ -640,5 +684,27 @@ create trigger addUsersPromoTrigger
     after insert on FDSPromo
     for each row
     execute function addUsersPromoFunction();
+
+/*add times ordered of food*/
+create or replace function incrementTimesOrderedFoodFunction()
+returns trigger as $$
+DECLARE
+foodrec RECORD;
+begin
+    for foodrec in
+		(select foodid from Contains where orderid = NEW.orderid and username = NEW.username)
+	loop
+		update Food set timesOrdered = timesOrdered + 1 where foodid = foodrec.foodid;
+	end loop;
+
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists incrementTimesOrderdFoodTrigger on Orders;
+create trigger incrementTimesOrderedFoodTrigger
+    after insert on Orders
+    for each row
+    execute function incrementTimesOrderedFoodFunction();
+
 
 
