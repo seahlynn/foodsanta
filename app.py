@@ -321,7 +321,10 @@ def get_month_stats(month, year):
          restid = {rest_id} and extract(month from orderCreatedTime) = {month} and extract(year from orderCreatedTime) = {year} group by foodid, description order by total desc limit 5;"
     top_five = db.session.execute(check_top_five).fetchall()
     parsed_five = [dict(foodid=i[0], description=i[1], total=i[2]) for i in top_five]
-    parsed_details = dict(numCompletedOrders=total_details[0], totalOrdersCost=total_details[1], topFive=parsed_five)
+    if not total_details:
+        parsed_details = dict(numCompletedOrders=None, totalOrdersCost=None, topFive=parsed_five)
+    else:
+        parsed_details = dict(numCompletedOrders=total_details[0], totalOrdersCost=total_details[1], topFive=parsed_five)
     return parsed_details
 
 def get_rest_promo_stats(id):
