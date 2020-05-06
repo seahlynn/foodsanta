@@ -1134,39 +1134,60 @@ Customer related: View order status, order history, submit review
 def orderstatus():
 
     username = session['username']
-    orderid = session['orderid']
 
-    # allocate an available rider to deliver
-    # rider is currently working (either part time or full time)
-    # rider is not currently taking an order that has not been delivered
-    checkavailableriderquery = f"select distinct * \
-from PartTimeRiders P natural join WeeklyWorkSchedule W natural join DailyWorkShift D \
-where D.day = (select extract(isodow from current_timestamp) - 1) \
-and D.starthour < (select extract(hour from current_timestamp)) \
-and D.duration > (D.starthour - (select extract(hour from current_timestamp))) \
-and not exists ( \
-    select 1 \
-    from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
-    where Delivers.username = P.username \
-    and Orders.selectedByRider = True \
-    and Orders.delivered = False)"
-    availableriders = db.session.execute(checkavailableriderquery).fetchall()
-    numavailableriders = availableriders.len()
+    # check if there is an order that has yet to be allocated
+    checkifunallocatedorder = f"select count(*) from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Orders.selectedByRider = False and Orders.delivered = False"
+    checkifunallocatedorderresult = db.session.execute(checkifunallocatedorder).fetchall()
 
-    if numavailableriders != 0:
-        randridernum = random.randint(0, numavailableriders)
-        randrider = availableriders[randridernum]
-        riderusername = randrider[0]
+    if checkifunallocatedorderresult[0][0] != 0:
 
-    else:
-        nextavailriderquery = f"similar query to above except that he is busy and sort by timeriderleftforrest then limit 1"
-        nextavailriderresult = db.session.execute(nextavailriderquery).fetchall()
-        riderusername = nextavailriderresult[0]
+        orderidquery = f"select Delivers.orderid from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Orders.selectedByRider = False and Orders.delivered = False"
+        orderid = db.session.execute(orderidquery).fetchall()[0][0]
+
+        # allocate an available rider to deliver
+        # rider is currently working (either part time or full time)
+        # rider is not currently taking an order that has not been delivered
+        checkavailableriderquery = f"select distinct * \
+        from PartTimeRiders P natural join WeeklyWorkSchedule W natural join DailyWorkShift D \
+        where D.day = (select extract(isodow from current_timestamp) - 1) \
+        and D.starthour < (select extract(hour from current_timestamp)) \
+        and D.duration > (D.starthour - (select extract(hour from current_timestamp))) \
+        and not exists ( \
+            select 1 \
+            from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
+            where Delivers.username = P.username \
+            and Orders.selectedByRider = True \
+            and Orders.delivered = False)"
+        availableriders = db.session.execute(checkavailableriderquery).fetchall()
+        numavailableriders = len(availableriders)
+
+        if numavailableriders != 0:
+            randridernum = random.randint(0, numavailableriders)
+            randrider = availableriders[randridernum]
+            riderusername = randrider[0]
+
+        else:
+            nextavailriderquery = f"select distinct P.username, D1.timeDepartToRestaurant \
+            from (PartTimeRiders P natural join WeeklyWorkSchedule W natural join DailyWorkShift D) \
+            join (Delivers D1 join Orders on (D1.orderid = Orders.orderid)) on (P.username = D1.username) \
+            where D.day = (select extract(isodow from current_timestamp) - 1) \
+            and D.starthour < (select extract(hour from current_timestamp)) \
+            and D.duration > (D.starthour - (select extract(hour from current_timestamp))) \
+            and exists ( \
+                select 1 \
+                from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
+                where Delivers.username = P.username \
+                and Orders.selectedByRider = True \
+                and Orders.delivered = False ) \
+            order by D1.timeDepartToRestaurant    \
+            limit 1"
+            nextavailriderresult = db.session.execute(nextavailriderquery).fetchall()
+            riderusername = nextavailriderresult[0]
     
-    updateriderpicked = f"update Delivers set username = '{riderusername}' where orderid = '{orderid}'"
-    updateorderselectedbyrider = f"update Orders set selectedByRider = True where orderid = '{orderid}'"
-    db.session.execute(updateriderpicked)
-    db.session.execute(updateorderselectedbyrider)
+        updateriderpicked = f"update Delivers set username = '{riderusername}' where orderid = '{orderid}'"
+        updateorderselectedbyrider = f"update Orders set selectedByRider = True where orderid = '{orderid}'"
+        db.session.execute(updateriderpicked)
+        db.session.execute(updateorderselectedbyrider)
     db.session.commit()
 
     inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant \
@@ -1210,7 +1231,9 @@ def submitreviewandrating():
 
         flash('Review submitted!')
 
-    checkRquery = f"select count(*) from Delivers where orderid = {orderid} and rating is not null"
+    checkRquery = f"select count(*) \
+    from Delivers \
+    where orderid = {orderid} and rating is not null"
     checkRresult = db.session.execute(checkRquery).fetchall()
     checkR = checkRresult[0][0]
 
@@ -1219,7 +1242,9 @@ def submitreviewandrating():
         return redirect('orderstatus')
 
     if rating != '':
-        ratingToGive = f"update Delivers set rating = '{rating}' where orderid = '{orderid}'"
+        ratingToGive = f"update Delivers \
+        set rating = '{rating}' \
+        where orderid = '{orderid}'"
         db.session.execute(ratingToGive)
         db.session.commit()
 
@@ -1310,15 +1335,22 @@ def gotodelivery():
     username = session['username']  
 
     # check if rider has been allocated an order that has yet to be delivered
-    hasallocatedOrdersQuery = f"select count(*) from Delivers natural join Orders where Delivers.username = '{username}' and Orders.delivered = False and Orders.selectedByRider = True"
+    hasallocatedOrdersQuery = f"select count(*) \
+    from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
+    where Delivers.username = '{username}' \
+    and Orders.delivered = False \
+    and Orders.selectedByRider = True"
     hasallocatedOrdersResult = db.session.execute(hasallocatedOrdersQuery).fetchall()
 
     if hasallocatedOrdersResult[0][0] != 0:
         # there exists an allocated order (just pull one)
-        allocatedorderquery = f"select Delivers.orderid, Orders.custLocation, Restaurants.location from Delivers natural join (Orders join Restaurants on (Orders.restid = Restaurants.restid)) where Delivers.username = '{username}' and Orders.delivered = False limit 1"
+        allocatedorderquery = f"select Delivers.orderid, Orders.custLocation, Restaurants.location \
+        from Delivers join (Orders join Restaurants on (Orders.restid = Restaurants.restid)) on (Delivers.orderid = Orders.orderid) \
+        where Delivers.username = '{username}' and Orders.delivered = False \
+        limit 1"
         allocatedOrderresult = db.session.execute(allocatedorderquery)
         allocatedOrder = [dict(orderid = row[0], custLocation = row[1], restLocation = row[2]) for row in allocatedOrderresult.fetchall()]
-        session['deliveringOrderId'] = allocatedOrderresult[0][0]
+        session['deliveringOrderId'] = allocatedOrder[0]['orderid']
         return render_template('riders_viewAllocatedOrder.html', allocatedOrder = allocatedOrder)
 
     else:
@@ -1335,7 +1367,11 @@ def getUndeliveredOrders():
     global db
 
     # orders available for pick up are displayed in a table with orderid, restaurant location and customer location
-    undeliveredOrdersQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False"
+    undeliveredOrdersQuery = f"select orderid, \
+    (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation \
+    from Orders \
+    where preparedByRest = False \
+    and selectedByRider = False"
     undeliveredOrdersResult = db.session.execute(undeliveredOrdersQuery)
     ordersToPickUp = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in undeliveredOrdersResult.fetchall()]
 
@@ -1344,7 +1380,11 @@ def getUndeliveredOrders():
     session['deliveringOrderId'] = chosenOrderId
 
     # display order chosen
-    chosenOrderQuery = f"select orderid, (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation from Orders where preparedByRest = False and selectedByRider = False and orderid = {chosenOrderId}"
+    chosenOrderQuery = f"select orderid, \
+    (select location from Restaurants where Restaurants.restid = Orders.restid), custLocation \
+    from Orders where preparedByRest = False \
+    and selectedByRider = False \
+    and orderid = {chosenOrderId}"
     chosenOrderResult = db.session.execute(chosenOrderQuery)
 
     chosenOrderInfo = [dict(orderid = row[0], restLocation = row[1], custLocation = row[2]) for row in chosenOrderResult.fetchall()]
@@ -1387,12 +1427,17 @@ def collectFromRestaurant():
 
     # timestamp for when he leaves for the restaurant
     currentTime = datetime.now().strftime("%d/%m/%Y %H%M")
-    updateLeaveTime = f"update Delivers set timeDepartToRestaurant='{currentTime}' where orderid = '{deliveringOrderId}' and username = '{username}'"
+    updateLeaveTime = f"update Delivers set timeDepartToRestaurant= '{currentTime}' where orderid = '{deliveringOrderId}' and username = '{username}'"
     db.session.execute(updateLeaveTime)
     db.session.commit()
 
     # retrieve restaurant address to display
-    restLocationQuery = f'select location from Restaurants where restid in (select distinct restid from Orders where Orders.orderid = {deliveringOrderId})'
+    restLocationQuery = f'select location \
+    from Restaurants \
+    where restid in \
+    (select distinct restid \
+        from Orders \
+        where Orders.orderid = {deliveringOrderId})'
     restLocationResult = db.session.execute(restLocationQuery).fetchall()
     restLocation = restLocationResult[0][0]
 
@@ -1422,7 +1467,9 @@ def deliverToCustomer():
     deliveringOrderId = session['deliveringOrderId']
     username = session['username']
 
-    custLocationQuery = f'select custLocation from Orders where Orders.orderid = {deliveringOrderId}'
+    custLocationQuery = f'select custLocation \
+    from Orders \
+    where Orders.orderid = {deliveringOrderId}'
     custLocationResult = db.session.execute(custLocationQuery).fetchall()
     custLocation = custLocationResult[0][0]
 
