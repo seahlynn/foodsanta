@@ -19,8 +19,6 @@ DROP TABLE IF EXISTS FDSPromo CASCADE;
 DROP TABLE IF EXISTS UsersPromo CASCADE;
 DROP TABLE IF EXISTS DeliveryPromo CASCADE;
 DROP TABLE IF EXISTS UsersDeliveryPromo CASCADE;
-DROP TABLE IF EXISTS AmountOff CASCADE;
-DROP TABLE IF EXISTS PercentOff CASCADE;
 DROP TABLE IF EXISTS FullTimeRiders CASCADE;
 DROP TABLE IF EXISTS PartTimeRiders CASCADE;
 DROP TABLE IF EXISTS RiderStats CASCADE;
@@ -135,6 +133,10 @@ CREATE TABLE FDSPromo (
     description     VARCHAR(200) NOT NULL,
     type 			VARCHAR(50) NOT NULL,
     CONSTRAINT chck_type CHECK (type IN ('percentoff', 'amountoff')),
+    value 			INTEGER CHECK (value > 0 AND value <100),
+	minAmnt			INTEGER DEFAULT 0,
+	appliedto		VARCHAR,
+	CONSTRAINT chck_appliedto CHECK (appliedto IN ('total', 'delivery')),
     startTime       DATE NOT NULL,
     endTime         DATE NOT NULL,
     points 			INTEGER default 0,
@@ -149,28 +151,6 @@ CREATE TABLE DeliveryPromo (
     points 			INTEGER default 0,
 
     PRIMARY KEY (deliverypromoid)
-);
-
-CREATE TABLE PercentOff (
-	fdspromoid		INTEGER,
-	percent 		INTEGER CHECK (percent > 0 AND percent <100),
-	minAmnt			INTEGER DEFAULT 0,
-	appliedto		VARCHAR,
-	CONSTRAINT chck_appliedto CHECK (appliedto IN ('total', 'delivery')),
-
-	FOREIGN KEY (fdspromoid) REFERENCES FDSPromo ON DELETE CASCADE ON UPDATE CASCADE,
-	PRIMARY KEY (fdspromoid)
-);
-
-CREATE TABLE AmountOff (
-	fdspromoid		INTEGER,
-	amount 			INTEGER CHECK (amount > 0),
-	minAmnt			INTEGER DEFAULT 0,
-	appliedto		VARCHAR,
-	CONSTRAINT chck_appliedto CHECK (appliedto IN ('total', 'delivery')),
-
-	FOREIGN KEY (fdspromoid) REFERENCES FDSPromo ON DELETE CASCADE ON UPDATE CASCADE,
-	PRIMARY KEY (fdspromoid)
 );
 
 CREATE TABLE UsersPromo (
@@ -417,7 +397,7 @@ begin
         set totalNumOrders = totalNumOrders + 1,
             totalCostOfOrders = totalCostOfOrders + NEW.totalCost
         where C2.username = NEW.username
-        and C2.month = (select extract(month from current_timestamp));
+        and C2.month = (select extract(month from current_timestamp))
         and C2.year = (select extract(year from current_timestamp)); /* TO CHECK FOR CURRENT MONTH */
 end if;    
 return new;
@@ -530,7 +510,7 @@ create trigger updateLocationTrigger
     execute function updateLocationFunction();
 
 /* update availability of food items*/ 
-create or replace function updateAvailFoodFunction()
+/*create or replace function updateAvailFoodFunction()
 returns trigger as $$
 DECLARE 
 containrow RECORD;
@@ -548,6 +528,60 @@ end; $$ language plpgsql;
 drop trigger if exists updateAvailFoodTrigger on Food;
 create trigger updateAvailFoodTrigger
     before insert on Orders
+    for each row
+    execute function updateAvailFoodFunction();*/
+
+/* update availability of food items*/ 
+create or replace function decreaseAvailFoodFunction()
+returns trigger as $$
+begin
+    update Food
+    set availability = availability - 1
+    where foodid = NEW.foodid;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists decreaseAvailFoodTrigger on Food;
+create trigger decreaseAvailFoodTrigger
+    before insert on Contains
+    for each row
+    execute function decreaseAvailFoodFunction();
+
+/* update availability of food items*/ 
+create or replace function increaseAvailFoodFunction()
+returns trigger as $$
+begin
+    update Food
+    set availability = availability + 1
+    where foodid = NEW.foodid;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists increaseAvailFoodTrigger on Food;
+create trigger increaseAvailFoodTrigger
+    before delete on Contains
+    for each row
+    execute function increaseAvailFoodFunction();
+
+/* update availability of food items*/ 
+create or replace function updateAvailFoodFunction()
+returns trigger as $$
+begin
+	if (OLD.quantity > NEW.quantity) then
+	    update Food
+	    set availability = availability + 1
+	    where foodid = NEW.foodid;
+	else 
+		update Food
+	    set availability = availability - 1
+	    where foodid = NEW.foodid;
+	end if;
+return new;
+end; $$ language plpgsql;        
+
+drop trigger if exists updateAvailFoodTrigger on Food;
+create trigger updateAvailFoodTrigger
+    before update on Contains
     for each row
     execute function updateAvailFoodFunction();
 
@@ -655,12 +689,12 @@ create trigger addUsersPromoTrigger
 create or replace function incrementTimesOrderedFoodFunction()
 returns trigger as $$
 DECLARE
-food RECORD;
+foodrec RECORD;
 begin
-    for food in
-		(select foodid from Food where restid = NEW.restid)
+    for foodrec in
+		(select foodid from Contains where orderid = NEW.orderid and username = NEW.username)
 	loop
-		update Food set timesOrdered = timesOrdered - 1 where foodid = food.foodid;
+		update Food set timesOrdered = timesOrdered + 1 where foodid = foodrec.foodid;
 	end loop;
 
 return new;

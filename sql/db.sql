@@ -124,14 +124,14 @@ INSERT INTO Delivers(orderid, username, rating, location, deliveryFee, timeDepar
 (11, 'justning', 3,  '13 Computing Drive Singapore 117417', 5, '03/02/2020 1805', '03/02/2020 1815', '03/02/2020 1830', 1),
 (13, 'justning', 3,  '16 #01-220 College Ave West 138527', 5, '02/01/2020 1650', '02/01/2020 1715', '02/01/2020 1730', 1);
 
-INSERT INTO FDSPromo(fdspromoid, description, type, startTime, endTime, points) VALUES
-(1, '10% off all orders this Circuit Breaker', 'percentoff', '18/04/2020', '05/04/2020', 0),
-(2, '25% off all orders this Valentine Day', 'percentoff', '14/02/2020', '28/02/2020', 30),
-(3, '$5 off all orders for the month of May, minimum order of $50', 'amountoff', '01/05/2020', '31/05/2020', 40),
-(4, '5% off all delivery for the month of May', 'percentoff', '01/05/2020', '31/05/2020', 25),
-(5, '5% off all orders for from 4Fingers', 'percentoff', '01/05/2020', '31/05/2020', 12),
-(6, '5% off all orders for from RIRIMALA', 'percentoff', '01/05/2020', '31/05/2020', 12),
-(7, '$5 off all orders for CCB', 'amountoff', '01/06/2020', '15/06/2020', 0);
+INSERT INTO FDSPromo(fdspromoid, description, type, value, minAmnt, appliedto, startTime, endTime, points) VALUES
+(1, '10% off all orders this Circuit Breaker', 'percentoff', 10, 0, 'total', '18/04/2020', '05/04/2020', 0),
+(2, '25% off all orders this Valentine Day', 'percentoff', 25, 0, 'total', '14/02/2020', '28/02/2020', 30),
+(3, '$5 off all orders for the month of May, minimum order of $50', 'amountoff', 5, 50, 'total', '01/05/2020', '31/05/2020', 40),
+(4, '5% off all delivery for the month of May', 'percentoff',  5, 0, 'delivery', '01/05/2020', '31/05/2020', 25),
+(5, '5% off all orders for from 4Fingers', 'percentoff', 5, 0, 'total', '01/05/2020', '31/05/2020', 12),
+(6, '5% off all orders for from RIRIMALA', 'percentoff', 5, 0, 'total', '01/05/2020', '31/05/2020', 12),
+(7, '$5 off all orders for CCB', 'amountoff', 5, 0, 'total', '01/06/2020', '15/06/2020', 0);
 
 
 INSERT INTO DeliveryPromo(deliverypromoid, description, amount, points) values 
@@ -140,15 +140,6 @@ INSERT INTO DeliveryPromo(deliverypromoid, description, amount, points) values
 (3, '$3 off delivery', 3, 30),
 (4, '$4 off delivery', 4, 40);
 
-INSERT INTO PercentOff(fdspromoid, percent, minAmnt, appliedto) values
-(1, 10, 0, 'total'),
-(4, 5, 0, 'delivery'),
-(5, 5, 0, 'total'),
-(6, 5, 0, 'total');
-
-INSERT INTO AmountOff(fdspromoid, amount, minAmnt, appliedto) values
-(3, 5, 0, 'total'),
-(7, 5, 0, 'total');
 
 INSERT INTO AllStats(month, year, totalNewCust, totalNumOrders, totalCostOfOrders) values
 (1, 2020, 20, 50, 654),

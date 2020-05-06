@@ -281,7 +281,7 @@ def gotopromos():
     promoquery = f"select * from FDSPromo where endTime > (select current_date)"
     promoresult = db.session.execute(promoquery).fetchall()
 
-    promolist = [dict(id = row[0], description = row[1], start = row[3], end = row[4]) for row in promoresult]
+    promolist = [dict(id = row[0], description = row[1], start = row[6], end = row[7], points = row[8]) for row in promoresult]
     return render_template('managerpromopage.html', promolist = promolist)
 
 @app.route('/deletepromo', methods=['POST'])
@@ -304,8 +304,8 @@ def showpromohistory():
     pastpromoquery = f"select * from FDSPromo where endTime < (select current_date)"
     pastpromoresult = db.session.execute(pastpromoquery).fetchall()
 
-    promolist = [dict(id = row[0], description = row[1], start = row[3], end = row[4]) for row in promoresult]
-    pastpromolist = [dict(id = row[0], description = row[1], start = row[3], end = row[4]) for row in pastpromoresult]
+    promolist = [dict(id = row[0], description = row[1], start = row[6], end = row[7], points = row[8]) for row in promoresult]
+    pastpromolist = [dict(id = row[0], description = row[1], start = row[6], end = row[7], points = row[8]) for row in pastpromoresult]
 
     return render_template('managerpromopage.html', promolist = promolist, pastpromolist = pastpromolist)
 
@@ -325,7 +325,7 @@ def addpromo():
     
     fdspromoidquery = f"select fdspromoid from FDSPromo order by fdspromoid desc limit 1"
     fdspromoidresult = db.session.execute(fdspromoidquery).fetchall()
-    fdspromoid = fdspromoidresult[0][0] + 1
+    fdspromoid = int(str(fdspromoidresult[0][0]), 0)+ 1
 
     if promotype is None or appliedto is None or description == '' or discount == '' or minamnt == '' or cost == '':
         flash("Please make sure all fields are filled in!")
@@ -340,14 +340,11 @@ def addpromo():
     cost = int(cost)
 
     if promotype == 'PercentOff':
-        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'percentoff', '{validfrom}', '{validtill}', {cost})"
-        addtospecificpromo = f"insert into PercentOff values ({fdspromoid}, {discount}, {minamnt}, '{appliedto}')"
+        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'percentoff', {discount}, {minamnt}, '{appliedto}', '{validfrom}', '{validtill}', {cost})"
     else:
-        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'amountoff', '{validfrom}', '{validtill}', {cost})"
-        addtospecificpromo = f"insert into AmountOff values ({fdspromoid}, {discount}, {minamnt}, '{appliedto}')"
+        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'amountoff', {discount}, {minamnt}, '{appliedto}', '{validfrom}', '{validtill}', {cost})"
 
     db.session.execute(addtofdspromo)
-    db.session.execute(addtospecificpromo)
     db.session.commit()
     return redirect('gotopromos')
 
@@ -357,84 +354,134 @@ Manager related: View statistics
 '''
 @app.route('/gotostats', methods=['GET'])
 def gotostats():
-    monthlistresult = db.session.execute(f"select distinct monthid from Allstats order by monthid")
-    monthlist = [dict(month = row[0]) for row in monthlistresult.fetchall()]
+    months = [1,2,3,4,5,6,7,8,9,10,11,12]
+    monthlist= [dict(month = months[i-1]) for i in months]
+    yearlistresult = db.session.execute(f"select distinct year from Allstats order by year")
+    yearlist = [dict(year = row[0]) for row in yearlistresult.fetchall()]
         
-    return render_template('stats.html', monthlist = monthlist)
+    return render_template('stats.html', monthlist = monthlist, yearlist = yearlist)
 
 
 @app.route('/viewallstats', methods=['GET', 'POST'])
 def viewallstats():
-    '''to have the month dropdown'''
-    monthlistresult = db.session.execute(f"select distinct monthid from Allstats order by monthid")
-    monthlist = [dict(month = row[0]) for row in monthlistresult.fetchall()]
-    
-    statsquery = f"select * from AllStats order by monthid"
-    statsresult = db.session.execute(statsquery)
-    statslist = [dict(month = row[0], customers = row[1], orders = row[2], cost = row[3]) for row in statsresult.fetchall()]
+    '''to have the month and year dropdown'''
+    months = [1,2,3,4,5,6,7,8,9,10,11,12]
+    monthlist= [dict(month = months[i-1]) for i in months]
+    yearlistresult = db.session.execute(f"select distinct year from Allstats order by year")
+    yearlist = [dict(year = row[0]) for row in yearlistresult.fetchall()]
 
-    return render_template('stats.html', monthlist = monthlist, overallstatslist = statslist)
+    statsquery = f"select * from AllStats order by month, year"
+    statsresult = db.session.execute(statsquery)
+    statslist = [dict(month = row[0], year = row[1], customers = row[2], orders = row[3], cost = row[4]) for row in statsresult.fetchall()]
+
+    return render_template('stats.html', yearlist = yearlist, monthlist = monthlist, overallstatslist = statslist)
 
 @app.route('/viewspecificstats', methods=['GET', 'POST'])
 def viewspecificstats():
-    monthlistresult = db.session.execute(f"select distinct monthid from Allstats order by monthid")
-    monthlist = [dict(month = row[0]) for row in monthlistresult.fetchall()]
-    
-    monthid = int(request.form['month'])
-    statsquery = f"select * from AllStats where monthid = {monthid}"
-    statsresult = db.session.execute(statsquery)
-    statslist = [dict(month = row[0], customers = row[1], orders = row[2], cost = row[3]) for row in statsresult.fetchall()]
+    months = [1,2,3,4,5,6,7,8,9,10,11,12]
+    monthlist= [dict(month = months[i-1]) for i in months]
+    yearlistresult = db.session.execute(f"select distinct year from Allstats order by year")
+    yearlist = [dict(year = row[0]) for row in yearlistresult.fetchall()]
 
-    return render_template('stats.html', monthlist = monthlist, overallstatslist = statslist)
+    month = request.form.get('month')
+    year = request.form.get('year')
+
+    if month is None and year is None:
+        statsquery = f"select * from AllStats order by month, year"
+    elif month is None:
+        year = int(year)
+        statsquery = f"select * from AllStats where year = {year} order by month"
+    elif year is None:
+        month = int(month)
+        statsquery = f"select * from AllStats where month = {month} order by year"
+    else:
+        statsquery = f"select * from AllStats where month = {month} and year = {year}"
+    
+    statsresult = db.session.execute(statsquery)
+    statslist = [dict(month = row[0], year = row[1], customers = row[2], orders = row[3], cost = row[4]) for row in statsresult.fetchall()]
+
+    return render_template('stats.html', yearlist = yearlist, monthlist = monthlist, overallstatslist = statslist)
 
 @app.route('/viewallcusstats', methods=['GET', 'POST'])
 def viewallcusstats():
-    '''to have the month dropdown'''
-    monthlistresult = db.session.execute(f"select distinct monthid from Allstats order by monthid")
-    monthlist = [dict(month = row[0]) for row in monthlistresult.fetchall()]
+    '''to have the month and year dropdown'''
+    months = [1,2,3,4,5,6,7,8,9,10,11,12]
+    monthlist= [dict(month = months[i-1]) for i in months]
+    yearlistresult = db.session.execute(f"select distinct year from Allstats order by year")
+    yearlist = [dict(year = row[0]) for row in yearlistresult.fetchall()]
     
-    statsquery = f"select * from CustomerStats order by monthid"
+    statsquery = f"select * from CustomerStats order by month, year"
     statsresult = db.session.execute(statsquery)
-    statslist = [dict(month = row[1], username = row[0], orders = row[2], cost = row[3]) for row in statsresult.fetchall()]
+    cusstatslist = [dict(month = row[1], year=row[2], username = row[0], orders = row[3], cost = row[4]) for row in statsresult.fetchall()]
 
-    return render_template('stats.html', monthlist = monthlist, cusstatslist = statslist)
+    return render_template('stats.html', yearlist = yearlist, monthlist = monthlist, cusstatslist = cusstatslist)
 
 @app.route('/viewspecificcusstats', methods=['GET', 'POST'])
 def viewspecificcusstats():
-    monthlistresult = db.session.execute(f"select distinct monthid from Allstats order by monthid")
-    monthlist = [dict(month = row[0]) for row in monthlistresult.fetchall()]
-    
-    monthid = int(request.form['month'])
-    statsquery = f"select * from CustomerStats where monthid = {monthid}"
-    statsresult = db.session.execute(statsquery)
-    statslist = [dict(month = row[1], username = row[0], orders = row[2], cost = row[3]) for row in statsresult.fetchall()]
+    months = [1,2,3,4,5,6,7,8,9,10,11,12]
+    monthlist= [dict(month = months[i-1]) for i in months]
+    yearlistresult = db.session.execute(f"select distinct year from Allstats order by year")
+    yearlist = [dict(year = row[0]) for row in yearlistresult.fetchall()]
 
-    return render_template('stats.html', monthlist = monthlist, cusstatslist = statslist)
+    month = request.form.get('month')
+    year = request.form.get('year')
+
+    if month is None and year is None:
+        statsquery = f"select * from CustomerStats order by month, year"
+    elif month is None:
+        year = int(year)
+        statsquery = f"select * from CustomerStats where year = {year} order by month"
+    elif year is None:
+        month = int(month)
+        statsquery = f"select * from CustomerStats where month = {month} order by year"
+    else:
+        statsquery = f"select * from CustomerStats where month = {month} and year = {year}"
+
+    statsresult = db.session.execute(statsquery)
+    cusstatslist = [dict(month = row[1], year=row[2], username = row[0], orders = row[3], cost = row[4]) for row in statsresult.fetchall()]
+
+    return render_template('stats.html', yearlist = yearlist, monthlist = monthlist, cusstatslist = cusstatslist)
 
 @app.route('/viewallriderstats', methods=['GET', 'POST'])
 def viewallriderstats():
     '''to have the month dropdown'''
-    monthlistresult = db.session.execute(f"select distinct monthid from Allstats order by monthid")
-    monthlist = [dict(month = row[0]) for row in monthlistresult.fetchall()]
+    months = [1,2,3,4,5,6,7,8,9,10,11,12]
+    monthlist= [dict(month = months[i-1]) for i in months]
+    yearlistresult = db.session.execute(f"select distinct year from Allstats order by year desc")
+    yearlist = [dict(year = row[0]) for row in yearlistresult.fetchall()]
     
-    statsquery = f"select * from RiderStats order by month"
+    statsquery = f"select * from RiderStats order by month, year"
     statsresult = db.session.execute(statsquery)
-    statslist = [dict(month = row[0], username = row[2], orders = row[3], hours = row[4], salary = row[5]) for row in statsresult.fetchall()]
+    riderstatslist = [dict(month = row[0], year = row[1], username = row[2], orders = row[3], hours = row[4], salary = row[5]) for row in statsresult.fetchall()]
 
-    return render_template('stats.html', monthlist = monthlist, riderstatslist = statslist)
+    return render_template('stats.html', yearlist = yearlist, monthlist = monthlist, riderstatslist = riderstatslist)
 
 @app.route('/viewspecificriderstats', methods=['GET', 'POST'])
 def viewspecificriderstats():
     '''to have the month dropdown'''
-    monthlistresult = db.session.execute(f"select distinct monthid from Allstats order by monthid")
-    monthlist = [dict(month = row[0]) for row in monthlistresult.fetchall()]
+    months = [1,2,3,4,5,6,7,8,9,10,11,12]
+    monthlist= [dict(month = months[i-1]) for i in months]
+    yearlistresult = db.session.execute(f"select distinct year from Allstats order by year desc")
+    yearlist = [dict(year = row[0]) for row in yearlistresult.fetchall()]
     
-    monthid = int(request.form['month'])
-    statsquery = f"select * from RiderStats where month = {monthid}"
-    statsresult = db.session.execute(statsquery)
-    statslist = [dict(month = row[0], username = row[2], orders = row[3], hours = row[4], salary = row[5]) for row in statsresult.fetchall()]
+    month = request.form.get('month')
+    year = request.form.get('year')
 
-    return render_template('stats.html', monthlist = monthlist, riderstatslist = statslist)
+    if month is None and year is None:
+        statsquery = f"select * from RiderStats order by month, year"
+    elif month is None:
+        year = int(year)
+        statsquery = f"select * from RideStats where year = {year} order by month"
+    elif year is None:
+        month = int(month)
+        statsquery = f"select * from RiderStats where month = {month} order by year"
+    else:
+        statsquery = f"select * from RiderStats where month = {month} and year = {year}"
+
+    statsresult = db.session.execute(statsquery)
+    riderstatslist = [dict(month = row[0], year = row[1], username = row[2], orders = row[3], hours = row[4], salary = row[5]) for row in statsresult.fetchall()]
+
+    return render_template('stats.html', yearlist = yearlist, monthlist = monthlist, riderstatslist = riderstatslist)
 
 
 '''
@@ -511,9 +558,9 @@ def restresults():
     
 
     restid = int(request.args['chosen'])
-    query = f"SELECT * FROM Food WHERE restid = {restid} and availability > 0"
+    query = f"SELECT * FROM Food WHERE restid = {restid} and availability > 0 order by description"
     result = db.session.execute(query)
-    foodlist = [dict(food= row[1], price = row[2], foodid = row[0]) for row in result.fetchall()]
+    foodlist = [dict(food= row[1], price = row[2], foodid = row[0], avail=row[4]) for row in result.fetchall()]
     
     
     checklatest = db.session.execute(f"select count(*) from Latest where orderid = {orderid}").fetchall()[0][0]
@@ -552,14 +599,11 @@ def addtocart():
     
 
     if checkresult[0][0]:
-        qtyquery = f"select quantity from Contains where foodid = {foodid}"
-        qtyresult = db.session.execute(qtyquery).fetchall()
-        newqty = qtyresult[0][0] + 1
         availquery = f"select availability from Food where foodid = {foodid}"
         availresult = db.session.execute(availquery).fetchall()
         avail = availresult[0][0]
 
-        if avail < newqty:
+        if avail == 0:
             flash('Sorry, this item is out of stock!')
             return redirect('backto')
   
@@ -588,9 +632,9 @@ def addtocart():
     db.session.commit()
 
     #ensures the page stays on the specific restaurant menu
-    query = f"select * from Food where restid = {restid}"
+    query = f"select * from Food where restid = {restid} order by description"
     result = db.session.execute(query)
-    foodlist = [dict(food = row[1], price = row[2], foodid = row[0]) for row in result.fetchall()]
+    foodlist = [dict(food = row[1], price = row[2], foodid = row[0], avail=row[4]) for row in result.fetchall()]
     
     query = f"select * from Restaurants"
     result = db.session.execute(query)
@@ -677,7 +721,7 @@ def backto():
     restid = f"(select restid from Latest where orderid = {orderid})"
     query = f"SELECT * FROM Food WHERE restid = {restid}"
     result = db.session.execute(query)
-    foodlist = [dict(food = row[1], price = row[2], foodid = row[0]) for row in result.fetchall()]
+    foodlist = [dict(food = row[1], price = row[2], foodid = row[0], avail=row[4]) for row in result.fetchall()]
     
     #for the restaurants dropdown
     query = f"select * from Restaurants"
@@ -848,33 +892,25 @@ def confirmcheckout():
         typequery = f"select type from FDSPromo where fdspromoid = {fdspromoid}"
         typeresult = db.session.execute(typequery).fetchall()[0][0]
 
-        if typeresult == 'percentoff':
-            percent = db.session.execute(f"select percent from PercentOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
-            appliedto = db.session.execute(f"select appliedto from PercentOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
-            minamnt = db.session.execute(f"select minAmnt from PercentOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
+        value = db.session.execute(f"select value from FDSPromo where fdspromoid = {fdspromoid}").fetchall()[0][0]
+        appliedto = db.session.execute(f"select appliedto from FDSPromo where fdspromoid = {fdspromoid}").fetchall()[0][0]
+        minamnt = db.session.execute(f"select minAmnt from FDSPromo where fdspromoid = {fdspromoid}").fetchall()[0][0]
 
-            if (minamnt > subtotal):
-                flash("You cannot apply this promo! Minimum spending amount has to be $" + str(minamnt))
-                return redirect ('checkout')
+        if (minamnt > subtotal):
+            flash("You cannot apply this promo! Minimum spending amount has to be $" + str(minamnt))
+            return redirect ('checkout')
+        else: 
+            if typeresult == 'percentoff':
+                if appliedto == 'delivery':
+                    deliveryfee = round(Decimal((deliveryfee / 100) * (100 - value)), 2)
+                else:
+                    subtotal = round(Decimal((subtotal / 100) * (100 - value)), 2)
+            #amount off
             else:
                 if appliedto == 'delivery':
-                    deliveryfee = round(Decimal((deliveryfee / 100) * (100 - percent)), 2)
+                    deliveryfee = deliveryfee - value
                 else:
-                    subtotal = round(Decimal((subtotal / 100) * (100 - percent)), 2)
-        #amount off
-        else:
-            amount = db.session.execute(f"select amount from AmountOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
-            appliedto = db.session.execute(f"select appliedto from AmountOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
-            minamnt = db.session.execute(f"select minAmnt from AmountOff where fdspromoid = {fdspromoid}").fetchall()[0][0]
-
-            if (minamnt > subtotal):
-                flash("You cannot apply this promo! Minimum spending amount has to be " + minamnt)
-                return redirect ('checkout')
-            else:
-                if appliedto == 'delivery':
-                    deliveryfee = deliveryfee - amount
-                else:
-                    subtotal = subtotal - amount
+                    subtotal = subtotal - value
 
         session['removefdspromo'] = f"delete from UsersPromo where fdspromoid = {fdspromoid}"
 
@@ -945,7 +981,7 @@ def submitreviewandrating():
     checkresult = db.session.execute(checkquery).fetchall()
     check = checkresult[0][0]
     
-    if (check != 0):
+    if (check != 0 and review != ''):
         flash("You have already submitted a review for this order!")
         return redirect('orderstatus')
 
@@ -954,13 +990,13 @@ def submitreviewandrating():
         db.session.execute(reviewToPost)
         db.session.commit()
 
-    flash('Review submitted!')
+        flash('Review submitted!')
 
-    checkRquery = f"select count(*) from Delivers where orderid = {orderid} and rating = null"
+    checkRquery = f"select count(*) from Delivers where orderid = {orderid} and rating is not null"
     checkRresult = db.session.execute(checkRquery).fetchall()
     checkR = checkRresult[0][0]
 
-    if (checkR != 0):
+    if (checkR != 0 and rating != ''):
         flash("You have already submitted a rating for this delivery!")
         return redirect('orderstatus')
 
@@ -969,7 +1005,7 @@ def submitreviewandrating():
         db.session.execute(ratingToGive)
         db.session.commit()
 
-    flash('Rating submitted!')
+        flash('Rating submitted!')
 
     return redirect('orderstatus')
 

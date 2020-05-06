@@ -38,11 +38,13 @@
                   <tr>
                     <th> Item </th>
                     <th> Price </th>
+                    <th> Availability </th>
                   </tr>
                   {% for p in foodlist %}
                   <tr>
                     <td>{{ p.food }}</td>
                     <td>{{ p.price }}</td>
+                    <td> {{p.avail}} </td>
                   </tr>
                   {% endfor %}
               {% endblock %}

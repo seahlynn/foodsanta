@@ -188,13 +188,13 @@ create view seeMonthlyStats (totalNewCust, totalNumOrders,
     totalCostOfOrders) as
     select totalNewCust, totalNumOrders, totalCostOfOrders
     from AllStats
-    where monthid = m1;
+    where month = m1;
 
 -- see each customer stats for the month (m2)
 create view seeEachCustomerStats (userid, totalNumOrders, totalCostOfOrders) as
     select userid, totalNumOrders, totalCostOfOrders
     from CustomersStats
-    where monthid = m2;
+    where month = m2;
 
 --orders assigned to a delivery rider (d1)
 create view allDeilveryOrders (orderid) as
@@ -262,7 +262,7 @@ create view monthlyDeliveryHistory (orderid) as
 create view seeEachRidersStats (userid, totalOrders, totalHours, totalSalary) as
     select userid, totalOrders, totalHours, totalSalary
     from RidersStats
-    where monthid = m3;
+    where month = m3;
 
 --monthly number of deliveries for rider d1, month m1, year y1
 create view monthlyDeliveryCount (orderid) as
