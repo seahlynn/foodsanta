@@ -22,7 +22,7 @@
                           {% for p in promolist %}
                           <tr>
                             <td> {{ p.id }} </td>
-                            <td> {{ p.description }} </td>
+                            <td> {{ p.description | safe }} </td>
                             <td> {{ p.start }} </td>
                             <td> {{ p.end }} </td>
                             <td> {{p.points}} </td>
@@ -87,14 +87,14 @@
                                 </tr>
                                 <tr>
                                     <td rowspan="2"> Percent / Amount Off </td>
-                                    <td> <input name="discount" size="35" placeholder="Please enter a number between 0 to 100"> </td>
+                                    <td> <input type="number" min="0" name="discount" size="35" placeholder="Number from 0 to 100"> </td>
                                 </tr>
                                 <tr>
                                     <td style="font-size: 10pt;"> Enter '5' for 5% off or $5 off </td>
                                 </tr>
                                 <tr>
                                     <td> Minimum Amount </td>
-                                    <td> <input name="minamnt" size="35" placeholder="Min. order amount for promo to apply"> </td>
+                                    <td> <input type="number" min="0" name="minamnt" size="35" placeholder="Min. order amount"> </td>
                                 </tr>
                                 <tr>
                                     <td> Applied To </td>
@@ -116,7 +116,7 @@
                                 </tr>
                                 <tr>
                                     <td> Cost </td>
-                                    <td> <input name="cost" size="35" placeholder="Number of points to redeem promo"> </td>
+                                    <td> <input type="number" min="0" name="cost" size="50" placeholder="Points to redeem promo"> </td>
                                 </tr>
                                 <tr style="padding: 10px"> 
                                     <td> </td>
