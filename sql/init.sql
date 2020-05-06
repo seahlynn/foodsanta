@@ -27,6 +27,7 @@ DROP TABLE IF EXISTS WeeklyWorkSchedule CASCADE;
 DROP TABLE IF EXISTS FixedWeeklySchedule CASCADE;
 DROP TABLE IF EXISTS MonthlyWorkSchedule CASCADE;
 DROP TABLE IF EXISTS DailyWorkShift CASCADE;
+DROP TABLE IF EXISTS RidersPerHour CASCADE;
 DROP TABLE IF EXISTS Latest CASCADE;
 
 
@@ -326,13 +327,14 @@ CREATE TABLE DailyWorkShift (
     FOREIGN KEY (wwsid) REFERENCES WeeklyWorkSchedule
 );
 
-CREATE TABLE RiderPerHour (
-    rphid               INTEGER,
+CREATE TABLE RidersPerHour (
+    username            VARCHAR(30),
     day                 DATE,
     hour                INTEGER,
-    count               INTEGER,
 
-    PRIMARY KEY (rphid)
+    PRIMARY KEY (username, day, hour),
+
+    FOREIGN KEY (username) REFERENCES DeliveryRiders
 );
 
 -- FDS Manager purposes

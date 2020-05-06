@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'managerbase.html' %}
+      {% block overall %}
+        <div style="display: inline"> 
+          <div class="results" style="width:100%;">
+            {% block content %}
+          <h2> Riders per Hour</h2>
+              <table border='1' align = 'center'>
+                {% for s in schedule %}
+                <tr>
+                  <th>{{ s.hour }}00 hrs</th>
+                  <td>{{ s.count }} rider(s)</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <br></br>
+            <form action="/gotomanagerprofile">
+              <input type="submit" value="Back"/>
+            </form>
+          </div>
+        </div>
+      {% endblock %}
+    </body>
+    {% endblock %}
+</html>
+
+<!--
+  
+-->

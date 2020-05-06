@@ -43,8 +43,8 @@ def index():
     print("Root page accessed")
     if settings.test:
 
-        #return redirect('login')
         return redirect('login')
+        # return redirect('/getRidersPerHour')
 
         
     return render_template('index.html')
@@ -1743,6 +1743,98 @@ def deletePartTimeScheduleResult():
             print(errorMessage)
 
     return render_template('scheduledeleteparttimeresult.html', datem = datem, datemEnd = datemEnd, message = message, errorMessage = errorMessage)
+    
+@app.route('/getRidersPerHour', methods=['GET'])
+def getRidersPerHour():
+    today = datetime.today()
+    currMonth = datetime(today.year, today.month, 1).date()
+    monday = (today - timedelta(days = today.weekday())).date()
+
+    isWeekCalculated = f"select count(*) from RidersPerHour where day >= '{monday}'"
+    isWeekCalculatedResult = int(db.session.execute(isWeekCalculated).fetchall()[0][0] or 0)
+    if not isWeekCalculatedResult:
+        print('generating for this week') 
+        generateRidersPerHour()
+
+    currDay = today.date()
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{currDay}' group by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    schedule = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    
+    return render_template('ridersperhour.html', schedule = schedule)
+
+def generateRidersPerHour():
+    #for currentWeek
+    today = datetime.today()
+    currMonth = datetime(today.year, today.month, 1).date()
+    monday = (today - timedelta(days = today.weekday())).date()
+
+    dayArray = (0, 1, 2, 3, 4, 5, 6)
+    shift1 = (10, 11, 12, 13, 15, 16, 17, 18)
+    shift2 = (11, 12, 13, 14, 16, 17, 18, 20)
+    shift3 = (12, 13, 14, 15, 17, 18, 20, 21)
+    shift4 = (13, 14, 15, 16, 18, 20, 21, 22)
+
+    for dayIncrement in dayArray:
+        currDay = (monday + timedelta(days = dayIncrement))
+        #for full time riders
+        workingOnDay = f"select username, wkStartDay, day1, day2, day3, day4, day5 from MonthlyWorkSchedule where mnthStartDay = '{currMonth}' and wkStartDay <> ('{dayIncrement}' + 1) % 7 and wkStartDay <> ('{dayIncrement}' + 2) % 7"
+        result = db.session.execute(workingOnDay).fetchall()
+
+        for row in result:
+            username = row[0]
+            if row[1] == 0: #if wkStartDay = 0
+                wkStartDay = 0
+                shiftWorked = row[(dayIncrement - 0 + 9) % 7] #dayIncrement - wkStartDay + 1, then +7, then +1 to match index
+            elif row[1] == 1: #if wkStartDay = 1
+                wkStartDay = 1
+                shiftWorked = row[(dayIncrement - 1 + 9) % 7]
+            elif row[1] == 2: #if wkStartDay = 2
+                wkStartDay = 2
+                shiftWorked = row[(dayIncrement - 2 + 9) % 7]
+            elif row[1] == 3: #if wkStartDay = 3
+                wkStartDay = 3
+                shiftWorked = row[(dayIncrement - 3 + 9) % 7]
+            elif row[1] == 4: #if wkStartDay = 4
+                wkStartDay = 4
+                shiftWorked = row[(dayIncrement - 4 + 9) % 7]
+            elif row[1] == 5: #if wkStartDay = 5
+                wkStartDay = 5
+                shiftWorked = row[(dayIncrement - 5 + 9) % 7]
+            elif row[1] == 6: #if wkStartDay = 6
+                wkStartDay = 6
+                shiftWorked = row[(dayIncrement - 6 + 9) % 7]
+            
+            if shiftWorked == 0:
+                for hour in shift1:
+                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                    insertionResult = db.session.execute(insertion)
+            elif shiftWorked == 1:
+                for hour in shift2:
+                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                    insertionResult = db.session.execute(insertion)
+            elif shiftWorked == 2:
+                for hour in shift3:
+                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                    insertionResult = db.session.execute(insertion)
+            elif shiftWorked == 3:
+                for hour in shift4:
+                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                    insertionResult = db.session.execute(insertion)  
+
+        #for part time riders
+        workingOnDay = f"select username, startHour, duration from WeeklyWorkSchedule natural join DailyWorkShift where startDate = '{monday}' and day = '{dayIncrement}'"
+        result = db.session.execute(workingOnDay).fetchall()
+        for row in result:
+            username = row[0]
+            startHour = row[1]
+            duration = row[2]
+            for i in range(duration):
+                hour = startHour + i
+                insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
+                insertionResult = db.session.execute(insertion)  
+
+    return;
 
 #Check if server can be run, must be placed at the back of this file
 if __name__ == '__main__':
