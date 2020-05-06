@@ -86,18 +86,18 @@ INSERT INTO Food(foodid, description, restid, price, dailylimit, availability, c
 --- INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid) VALUES (1, 1, '21 Lower Kent Ridge Rd, Singapore 119077', '04/07/2020 1230', 13.80, NULL, 1, False, False, 1);
 
 INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid, delivered) VALUES 
-(2, 'justning', '469 Bukit Timah Rd Singapore 259756', '04/07/2020 1230', 10.80, NULL, 1, False, False, 1, False),
+(2, 'justning', '469 Bukit Timah Rd Singapore 259756', '04/07/2020 1230', 10.80, NULL, 1, True, True, 1, True),
 (3, 'kalsyc', '20 Heng Mui Keng Terrace Singapore 119618', '04/07/2020 1320', 23.80, NULL, 1, False, False, 1, False),
 (4, 'kalsyc', '12 Kent Ridge Dr Singapore 119243', '04/07/2020 1330', 18.80, NULL, 1, False, False, 1, False),
 (5, 'kalsyc', '2 College Ave West Stephen Riady Centre Singapore 138607', '04/07/2020 1350', 13.80, NULL, 1, False, False, 1, False),
 (6, 'kalsyc', '6 College Avenue East #01-01 University Town National University of Singapore 138614', '04/07/2020 1530', 14.00, NULL, 1, False, False, 1, False),
-(7, 'justning', '16 #01-220 College Ave West 138527', '04/07/2020 1630', 13.00, NULL, 1, False, True, 1, False),
+(7, 'justning', '16 #01-220 College Ave West 138527', '04/07/2020 1630', 13.00, NULL, 1, False, False, 1, False),
 (8, 'kalsyc', '16 Science Drive 4 Singapore 117558', '04/07/2020 1700', 16.30, NULL, 1, False, False, 1, False), 
 (9, 'kalsyc', '2 Engineering Drive 3 Singapore 117581', '04/07/2020 1730', 14.90, NULL, 1, False, False, 1, False),
 (10, 'kalsyc', '9 Engineering Drive 1 #03-09 EA Singapore 117575', '04/07/2020 1750', 15.60, NULL, 1, False, False, 1, False),
 (11, 'justning', '13 Computing Drive Singapore 117417', '03/02/2020 1800', 12.00, NULL, 1, False, False, 1, True),
 (12, 'kalsyc', '5 Arts Link 5 The Block AS7 Level Shaw Foundation Building Singapore 117570', '04/07/2020 1830', 13.10, NULL, 1, False, False, 1, False),
-(13, 'justning', '12 Kent Ridge Cresent Central Library Building CLB01 02 Singapore 119275', '02/01/2020 1930', 19.80, NULL, 1, False, False, 1, True),
+(13, 'justning', '12 Kent Ridge Cresent Central Library Building CLB01 02 Singapore 119275', '02/01/2020 1930', 19.80, NULL, 1, False, False, 1, False),
 (14, 'kalsyc', '3 Science Drive 2 Singapore 117543', '04/07/2020 1945', 23.80, NULL, 1, False, False, 1, False);
 
 INSERT INTO PaymentMethods(paymentmethodid, username, cardInfo) VALUES
@@ -113,12 +113,14 @@ INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, compl
 -- (1, 1, 0, 1, 2, 3, 0);
 
 INSERT INTO WeeklyWorkSchedule(wwsid, username, startDate, wwsHours, completed) VALUES
-(1, 'partridertest', '2020-05-04', 0, false);
+(1, 'partridertest', '2020-05-04', 0, false),
+(2, 'partridertest', '2020-06-01', 1, false),
+(3, 'justning', '2020-06-01', 1, false);
 
 INSERT INTO DailyWorkShift(dwsid, wwsid, day, startHour, duration) VALUES
 (1, 1, 0, 10, 4),
-(2, 1, 0, 18, 4),
-(3, 1, 2, 10, 4);
+(2, 1, 2, 18, 4),
+(3, 3, 2, 18, 4);
 
 INSERT INTO Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered, paymentmethodid) VALUES
 (2, 'partridertest', 4, '469 Bukit Timah Rd Singapore 259756', 5, NULL, NULL, NULL, 1),
