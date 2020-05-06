@@ -8,9 +8,9 @@
     {% extends 'riderbase.html' %}
       {% block overall %}
         <div style="display: inline"> 
-          <div class="results" style="width:50%; float: left;">
+          <div class="results" style="width:100%;">
             {% block content %}
-          <h2> Full Time Schedule for {{ monthYear }}</h2>
+          <h2> Part Time Schedule from {{ datem }} to {{ datemEnd }}</h2>
               <table border='1' align = 'center'>
                 {% for s in schedule %}
                 <tr>
@@ -20,11 +20,12 @@
                 {% endfor %}
             </table>
             <br></br>
-            <form action="/setFullTimeSchedule" name="setfulltimeschedule">
-                <input type="submit" value="Update next month's schedule"/>
+            <form action="/getNextPartTimeSchedule" name="getnextparttimeschedule">
+              <input type="submit" value="View next week's schedule"/>
             </form>
-            <form action="/getFullTimeSchedule" name="getfulltimeschedule">
-              <input type="submit" value="Back"/>
+            <br></br>
+            <form action="/getPrevPartTimeSchedule" name="getprevparttimeschedule">
+              <input type="submit" value="View past weeks' schedule"/>
             </form>
           </div>
         </div>

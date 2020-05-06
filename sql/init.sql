@@ -606,10 +606,24 @@ create trigger deductPointsDeliveryTrigger
 /* update weekly work schedule hours*/ 
 create or replace function updateWwsHoursFunction()
 returns trigger as $$
+DECLARE
+hours INTEGER;
+existingDay TEXT;
 begin
     update WeeklyWorkSchedule
     set wwsHours = wwsHours + NEW.duration
     where wwsid = NEW.wwsid;
+
+    select wwsHours into hours
+        from WeeklyWorkSchedule
+        where wwsid = NEW.wwsid;
+
+    select case when NEW.day = 0 then 'Monday' when NEW.day = 1 then 'Tuesday' when NEW.day = 2 then 'Wednesday' when NEW.day = 3 then 'Thursday' when NEW.day = 4 then 'Friday' when NEW.day = 5 then 'Saturday' when NEW.day = 6 then 'Sunday' end into existingDay
+        from DailyWorkShift
+        where wwsid = NEW.wwsid;
+    if hours > 44 then
+        raise exception 'FoodSanta: A shift you are trying to add (%hrs to %hrs on %) results in you working more than 48 hours this week! Ho ho ho!', NEW.startHour * 100, (NEW.startHour + NEW.duration) * 100, existingDay;
+    end if;
 return new;
 end; $$ language plpgsql;        
 
@@ -623,17 +637,17 @@ create trigger updateWwsHoursTrigger
 create or replace function validPartTimeShiftFunction()
 returns trigger as $$
 DECLARE
-existingDay INTEGER;
+existingDay TEXT;
 existingStartHour INTEGER;
 existingDuration INTEGER;
 begin
-    select d1.day, d1.startHour, d1.duration into existingDay, existingStartHour, existingDuration
+    select case when d1.day = 0 then 'Monday' when d1.day = 1 then 'Tuesday' when d1.day = 2 then 'Wednesday' when d1.day = 3 then 'Thursday' when d1.day = 4 then 'Friday' when d1.day = 5 then 'Saturday' when d1.day = 6 then 'Sunday' end, d1.startHour, d1.duration into existingDay, existingStartHour, existingDuration
         from DailyWorkShift d1, DailyWorkShift d2
         where d1.wwsid = NEW.wwsid and d1.day = NEW.day and d2.dwsid = new.dwsid and d1.dwsid <> d2.dwsid
         and   ((d1.startHour <= NEW.startHour and NEW.startHour <= d1.startHour + d1.duration)
         or    (d1.startHour <= NEW.startHour + NEW.duration and NEW.startHour + NEW.duration <= d1.startHour + d1.duration));
     if existingStartHour is not null then
-        raise exception 'Shift on % of % hour(s) on % clashes with shift % of % hour(s)!', NEW.startHour, NEW.duration, existingDay, existingStartHour, existingDuration;
+        raise exception 'FoodSanta: A shift you are trying to add (%hrs to %hrs on %) clashes with an existing shift (%hrs to %hrs)! Ho ho ho!', NEW.startHour * 100, (NEW.startHour + NEW.duration) * 100, existingDay, existingStartHour * 100, (existingStartHour + existingDuration) * 100;
     end if;
     return null;
 end; $$ language plpgsql;        

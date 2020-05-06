@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'riderbase.html' %}
+      {% block overall %}
+        <div style="display: inline"> 
+          <div class="results" style="width:100%;">
+            {% block content %}
+          <h2> Select a past week to view: </h2>
+              <table border='1' align = 'center'>
+                <form action="/getPrevPartTimeScheduleResult" name="getprevparttimescheduleresult" method='POST'>
+                  <input type="date" id="week" name="week" max="{{ monday }}" value="{{ monday }}">
+                  <input type="submit">
+                </form>
+            </table>
+            <br></br>
+            <form action="/getPartTimeSchedule" name="getparttimeschedule">
+              <input type="submit" value="Back"/>
+            </form>
+          </div>
+        </div>
+      {% endblock %}
+    </body>
+    {% endblock %}
+</html>
+
+<!--
+  
+-->
