@@ -184,7 +184,6 @@ def checkpromostaffstats():
         form = request.form
         id = form['fdspromoid']
         promo_stats = get_rest_promo_stats(id)
-    print(promo_stats)
     return render_template('staffstats.html', monthstats=None, promostats=promo_stats, allpromos=all_promos)
 
 @app.route('/checkmonthstaffstats', methods=['GET', 'POST'])
@@ -328,13 +327,13 @@ def get_month_stats(month, year):
 def get_rest_promo_stats(id):
     global db
     rest_id = session['rest_id']
-    check_duration_query = f"select F.startTime, F.endTime, abs(F.startTime::date - endTime::date) as dateDiff from FDSPromo F where fdspromoid = {id}"
+    check_duration_query = f"select F.startTime, F.endTime, abs(F.startTime::date - endTime::date) as dateDiff, description from FDSPromo F where fdspromoid = {id}"
     duration_details = db.session.execute(check_duration_query).fetchone()
     start_time = duration_details[0]
     end_time = duration_details[1]
     check_orders_query = f"select count(*) as total from Orders where restid = {rest_id} and DATE(orderCreatedTime) >= '{start_time}' and DATE(orderCreatedTime) <= '{end_time}'"
     num_orders = db.session.execute(check_orders_query).fetchone()[0]
-    details = dict(startTime=start_time, endTime=end_time, diff=duration_details[2], total=num_orders)
+    details = dict(startTime=start_time, endTime=end_time, diff=duration_details[2], total=num_orders, description=duration_details[3])
     return details
 
 def get_user_details(id):

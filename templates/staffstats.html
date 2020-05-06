@@ -54,9 +54,8 @@
               <td> 
                   <select name="fdspromoid" form="promostats" required>
                       {% for p in allpromos %}
-                      <option value="{{p.fdspromoid}}" SELECTED> {{p.description}} </option>
+                      <option value="{{p.fdspromoid}}" SELECTED> {{p.description | safe}} </option>
                       {% endfor %}
-                      <option value="" disabled selected> Choose a promotion </option>
                   </select>
               </td>
               <td>
@@ -68,11 +67,13 @@
         </table>
         <table border="1", style='margin-top: 20px;' align='center'>
           <tr>
+            <th> Description </th>
             <th> Start Date </th>
             <th> End Date </th>
             <th> Duration (days) </th>
             <th> Number of Orders </th>
             <tr>
+              <td> {{promostats.description | safe}} </td>
               <td>{{ promostats.startTime }}</td>
               <td>{{ promostats.endTime }}</td>
               <td>{{ promostats.diff }}</td>
