@@ -1136,7 +1136,7 @@ def confirmcheckout():
     selectedByRider = False
 
     session['insertorder'] = f"insert into Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid, delivered) values ('{orderid}', '{username}', '{location}', '{ordercreatedtime}', {total}, {fdspromoid}, {paymentmethodid}, {preparedbyrest}, {selectedByRider}, {restid}, False)"
-    session['insertdelivery'] = f"insert into Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered, paymentmethodid) values ('{orderid}', null, null, '{location}', '{deliveryfee}', null, null, null, {paymentmethodid})"
+    session['insertdelivery'] = f"insert into Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered) values ('{orderid}', null, null, '{location}', '{deliveryfee}', null, null, null)"
     
     
     return render_template('confirmcheckout.html', custdetails = custdetails, location = location, cardInfo = cardInfo, subtotal = subtotal, total = total, deliverypromo = deliverydescription, deliveryfee = deliveryfee)

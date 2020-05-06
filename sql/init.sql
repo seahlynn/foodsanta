@@ -229,14 +229,12 @@ CREATE TABLE Delivers (
     deliveryFee             DECIMAL NOT NULL,
 	timeDepartToRestaurant	TIMESTAMP,
 	timeArrivedAtRestaurant	TIMESTAMP,
-	timeOrderDelivered		TIMESTAMP,
-	paymentmethodid			INTEGER NOT NULL, 			
+	timeOrderDelivered		TIMESTAMP, 			
 
 	PRIMARY KEY (orderid),
 
 	FOREIGN KEY (orderid) REFERENCES Orders,
-    FOREIGN KEY (username) REFERENCES DeliveryRiders,
-	FOREIGN KEY (paymentmethodid) REFERENCES PaymentMethods
+    FOREIGN KEY (username) REFERENCES DeliveryRiders
 );
 
 CREATE TABLE FullTimeRiders (
