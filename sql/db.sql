@@ -10,7 +10,6 @@ INSERT INTO Users(username, name, password, phoneNumber, dateCreated) VALUES
 ('fullridertest', 'RiderTest', 'fullridercool', '96567556', '2020-04-12'),
 ('partridertest', 'RiderTest', 'partridercool', '96567556', '2020-04-12');
 
-
 INSERT INTO RestaurantStaff(username) VALUES
 ('stafftest');
 
@@ -20,7 +19,6 @@ INSERT INTO FDSManagers(username) VALUES
 INSERT INTO Customers(username, points) VALUES
 ('kalsyc', 0),
 ('lynjaaa', 0),
-('bakwah', 0),
 ('justning', 0);
 
 INSERT INTO DeliveryRiders(username) VALUES
@@ -32,13 +30,10 @@ INSERT INTO DeliveryRiders(username) VALUES
 ('partridertest');
 
 INSERT INTO FullTimeRiders(username) VALUES
-('kalsyc'),
 ('bakwah'),
 ('fullridertest');
 
 INSERT INTO PartTimeRiders(username) VALUES
-('bakwah'),
-('justning'),
 ('partridertest');
 
 INSERT INTO Locations(username, location, dateAdded) VALUES
@@ -57,7 +52,8 @@ INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES
 (6, 'Ah Bear Mookata', 20, '505 W Coast Dr, #01-208, Singapore 120505'),
 (7, 'Marche', 50, '50 Jurong Gateway Rd, #01-03 JEM, Singapore 608549'),
 (8, 'HaiDiLao', 80, '1 Harbourfront Walk #03-09 Vivocity, Singapore 098585'),
-(9, 'Caesar Pizza', 30, '16 Collyer Quay, #01-05 Income At Raffles, Singapore 049318');
+(9, 'Caesar Pizza', 30, '16 Collyer Quay, #01-05 Income At Raffles, Singapore 049318'),
+(10, 'CoronaSnacks', 69, 'Wuhan Wet Market, China');
 
 INSERT INTO RestaurantStaff(username, restid) VALUES
 ('staffresttest', 1);
@@ -90,18 +86,18 @@ INSERT INTO Food(foodid, description, restid, price, dailylimit, availability, c
 --- INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid) VALUES (1, 1, '21 Lower Kent Ridge Rd, Singapore 119077', '04/07/2020 1230', 13.80, NULL, 1, False, False, 1);
 
 INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid, delivered) VALUES 
-(2, 'justning', '469 Bukit Timah Rd Singapore 259756', '04/07/2020 1230', 10.80, NULL, 1, False, False, 1, False),
+(2, 'justning', '469 Bukit Timah Rd Singapore 259756', '04/07/2020 1230', 10.80, NULL, 1, True, True, 1, True),
 (3, 'kalsyc', '20 Heng Mui Keng Terrace Singapore 119618', '04/07/2020 1320', 23.80, NULL, 1, False, False, 1, False),
 (4, 'kalsyc', '12 Kent Ridge Dr Singapore 119243', '04/07/2020 1330', 18.80, NULL, 1, False, False, 1, False),
 (5, 'kalsyc', '2 College Ave West Stephen Riady Centre Singapore 138607', '04/07/2020 1350', 13.80, NULL, 1, False, False, 1, False),
 (6, 'kalsyc', '6 College Avenue East #01-01 University Town National University of Singapore 138614', '04/07/2020 1530', 14.00, NULL, 1, False, False, 1, False),
-(7, 'justning', '16 #01-220 College Ave West 138527', '04/07/2020 1630', 13.00, NULL, 1, False, True, 1, False),
+(7, 'justning', '16 #01-220 College Ave West 138527', '04/07/2020 1630', 13.00, NULL, 1, False, False, 1, False),
 (8, 'kalsyc', '16 Science Drive 4 Singapore 117558', '04/07/2020 1700', 16.30, NULL, 1, False, False, 1, False), 
 (9, 'kalsyc', '2 Engineering Drive 3 Singapore 117581', '04/07/2020 1730', 14.90, NULL, 1, False, False, 1, False),
 (10, 'kalsyc', '9 Engineering Drive 1 #03-09 EA Singapore 117575', '04/07/2020 1750', 15.60, NULL, 1, False, False, 1, False),
 (11, 'justning', '13 Computing Drive Singapore 117417', '03/02/2020 1800', 12.00, NULL, 1, False, False, 1, True),
 (12, 'kalsyc', '5 Arts Link 5 The Block AS7 Level Shaw Foundation Building Singapore 117570', '04/07/2020 1830', 13.10, NULL, 1, False, False, 1, False),
-(13, 'justning', '12 Kent Ridge Cresent Central Library Building CLB01 02 Singapore 119275', '02/01/2020 1930', 19.80, NULL, 1, False, False, 1, True),
+(13, 'justning', '12 Kent Ridge Cresent Central Library Building CLB01 02 Singapore 119275', '02/01/2020 1930', 19.80, NULL, 1, False, False, 1, False),
 (14, 'kalsyc', '3 Science Drive 2 Singapore 117543', '04/07/2020 1945', 23.80, NULL, 1, False, False, 1, False);
 
 INSERT INTO PaymentMethods(paymentmethodid, username, cardInfo) VALUES
@@ -114,18 +110,20 @@ INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, compl
 (1, 'fullridertest', '2020-05-01', 1, false, 0, 1, 2, 3, 0);
 
 INSERT INTO WeeklyWorkSchedule(wwsid, username, startDate, wwsHours, completed) VALUES
-(1, 'partridertest', '2020-05-04', 0, false);
+(1, 'partridertest', '2020-05-04', 0, false),
+(2, 'partridertest', '2020-06-01', 1, false),
+(3, 'justning', '2020-06-01', 1, false);
 
 INSERT INTO DailyWorkShift(dwsid, wwsid, day, startHour, duration) VALUES
 (1, 1, 0, 10, 4),
-(2, 1, 0, 18, 4),
-(3, 1, 2, 10, 4);
+(2, 1, 2, 18, 4),
+(3, 3, 2, 18, 4);
 
-INSERT INTO Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered, paymentmethodid) VALUES
-(2, 'partridertest', 4, '469 Bukit Timah Rd Singapore 259756', 5, NULL, NULL, NULL, 1),
-(7, 'justning', 3,  '16 #01-220 College Ave West 138527', 5, '04/07/2020 1640', '04/07/2020 1650', '04/07/2020 1715', 1),
-(11, 'justning', 3,  '13 Computing Drive Singapore 117417', 5, '03/02/2020 1805', '03/02/2020 1815', '03/02/2020 1830', 1),
-(13, 'justning', 3,  '16 #01-220 College Ave West 138527', 5, '02/01/2020 1650', '02/01/2020 1715', '02/01/2020 1730', 1);
+INSERT INTO Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered) VALUES
+(2, 'partridertest', 4, '469 Bukit Timah Rd Singapore 259756', 5, NULL, NULL, NULL),
+(7, 'justning', 3,  '16 #01-220 College Ave West 138527', 5, '04/07/2020 1640', '04/07/2020 1650', '04/07/2020 1715'),
+(11, 'justning', 3,  '13 Computing Drive Singapore 117417', 5, '03/02/2020 1805', '03/02/2020 1815', '03/02/2020 1830'),
+(13, 'justning', 3,  '16 #01-220 College Ave West 138527', 5, '02/01/2020 1650', '02/01/2020 1715', '02/01/2020 1730');
 
 INSERT INTO FDSPromo(fdspromoid, description, type, value, minAmnt, appliedto, startTime, endTime, points) VALUES
 (1, '10% off all orders this Circuit Breaker', 'percentoff', 10, 0, 'total', '18/04/2020', '05/04/2020', 0),
@@ -136,13 +134,11 @@ INSERT INTO FDSPromo(fdspromoid, description, type, value, minAmnt, appliedto, s
 (6, '5% off all orders for from RIRIMALA', 'percentoff', 5, 0, 'total', '01/05/2020', '31/05/2020', 12),
 (7, '$5 off all orders for CCB', 'amountoff', 5, 0, 'total', '01/06/2020', '15/06/2020', 0);
 
-
 INSERT INTO DeliveryPromo(deliverypromoid, description, amount, points) values 
 (1, '$1 off delivery', 1, 10),
 (2, '$2 off delivery', 2, 20),
 (3, '$3 off delivery', 3, 30),
 (4, '$4 off delivery', 4, 40);
-
 
 INSERT INTO AllStats(month, year, totalNewCust, totalNumOrders, totalCostOfOrders) values
 (1, 2020, 20, 50, 654),
@@ -152,18 +148,18 @@ INSERT INTO AllStats(month, year, totalNewCust, totalNumOrders, totalCostOfOrder
 
 INSERT INTO CustomerStats(username, month, year, totalNumOrders, totalCostOfOrders) values
 ('justning', 1, 2020, 2, 54),
-('bakwah', 1, 2020, 6, 134),
+('justning', 2, 2020, 6, 134),
 ('lynjaaa', 1, 2020, 1, 25),
 ('kalsyc', 1, 2020, 4, 89),
-('justning', 2, 2020, 7, 154),
-('bakwah', 2, 2020, 6, 204),
+('justning', 3, 2020, 7, 154),
+('justning', 4, 2019, 6, 204),
 ('lynjaaa', 2, 2020, 0, 0),
 ('kalsyc', 2, 2020, 7, 160),
-('justning', 3, 2020, 2, 54),
-('bakwah', 3, 2020, 6, 134),
+('justning', 5, 2019, 8, 54),
+('justning', 6, 2019, 9, 134),
 ('lynjaaa', 3, 2020, 1, 25),
 ('kalsyc', 3, 2020, 4, 89),
-('bakwah', 4, 2020, 6, 134),
+('justning', 6, 2020, 3, 134),
 ('lynjaaa', 4, 2020, 1, 25);
 
 
