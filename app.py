@@ -234,15 +234,12 @@ def addpromosuccess():
     cost = int(cost)
 
     if promotype == 'PercentOff':
-        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'percentoff', '{validfrom}', '{validtill}', {cost})"
-        addtospecificpromo = f"insert into PercentOff values ({fdspromoid}, {discount}, {minamnt}, '{appliedto}')"
+        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'percentoff', {discount}, {minamnt}, '{appliedto}', '{validfrom}', '{validtill}', {cost})"
     else:
-        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'amountoff', '{validfrom}', '{validtill}', {cost})"
-        addtospecificpromo = f"insert into AmountOff values ({fdspromoid}, {discount}, {minamnt}, '{appliedto}')"
+        addtofdspromo = f"insert into FDSPromo values ({fdspromoid}, '{description}', 'amountoff', {discount}, {minamnt}, '{appliedto}', '{validfrom}', '{validtill}', {cost})"
 
     addtorestpromo = f"insert into RestaurantPromo values({fdspromoid}, {session['rest_id']})"
     db.session.execute(addtofdspromo)
-    db.session.execute(addtospecificpromo)
     db.session.execute(addtorestpromo)
     db.session.commit()
     return redirect('gotostaff')
@@ -724,9 +721,9 @@ def restresults():
     
 
     restid = int(request.args['chosen'])
-    query = f"SELECT * FROM Food WHERE restid = {restid} and availability > 0 order by description"
+    query = f"SELECT * FROM Food WHERE restid = {restid} and availability > 0 order by category, description"
     result = db.session.execute(query)
-    foodlist = [dict(food= row[1], price = row[2], foodid = row[0], avail=row[4]) for row in result.fetchall()]
+    foodlist = [dict(food= row[1], price = row[2], foodid = row[0], avail=row[4], cat = row[5]) for row in result.fetchall()]
     
     
     checklatest = db.session.execute(f"select count(*) from Latest where orderid = {orderid}").fetchall()[0][0]
@@ -798,9 +795,9 @@ def addtocart():
     db.session.commit()
 
     #ensures the page stays on the specific restaurant menu
-    query = f"select * from Food where restid = {restid} order by description"
+    query = f"select * from Food where restid = {restid} order by category, description"
     result = db.session.execute(query)
-    foodlist = [dict(food = row[1], price = row[2], foodid = row[0], avail=row[4]) for row in result.fetchall()]
+    foodlist = [dict(food = row[1], price = row[2], foodid = row[0], avail=row[4], cat = row[5]) for row in result.fetchall()]
     
     query = f"select * from Restaurants"
     result = db.session.execute(query)
@@ -885,9 +882,9 @@ def backto():
 
     #ensures the page displays the specific restaurant menu
     restid = f"(select restid from Latest where orderid = {orderid})"
-    query = f"SELECT * FROM Food WHERE restid = {restid}"
+    query = f"SELECT * FROM Food WHERE restid = {restid} order by category, description"
     result = db.session.execute(query)
-    foodlist = [dict(food = row[1], price = row[2], foodid = row[0], avail=row[4]) for row in result.fetchall()]
+    foodlist = [dict(food = row[1], price = row[2], foodid = row[0], avail=row[4], cat=row[5]) for row in result.fetchall()]
     
     #for the restaurants dropdown
     query = f"select * from Restaurants"

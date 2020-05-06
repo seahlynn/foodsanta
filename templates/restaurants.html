@@ -36,12 +36,14 @@
           <h2> Menu </h2>
               <table border='1' align = 'center' style="margin-top: 0px;">
                   <tr>
+                    <th> Category </th>
                     <th> Item </th>
                     <th> Price </th>
                     <th> Availability </th>
                   </tr>
-                  {% for p in foodlist %}
+                  {% for p in foodlist, p.cat = 'Beverage' %}
                   <tr>
+                    <td> {{p.cat}} </td>
                     <td>{{ p.food }}</td>
                     <td>{{ p.price }}</td>
                     <td> {{p.avail}} </td>
