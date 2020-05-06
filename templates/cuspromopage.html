@@ -32,7 +32,7 @@
                         <form method="POST" action="buypromo">
                             <tr>
                             <td> <select name="fdspromoid"> <option value="{{p.fdspromoid}}" SELECTED> {{p.fdspromoid}} </option> </select></td>
-                            <td> {{ p.description }}</td>
+                            <td> {{ p.description | safe }}</td>
                             <td>{{ p.validfrom }}</td>
                             <td>{{ p.validtill }}</td>
                             <td>{{ p.points }}</td>
@@ -59,7 +59,7 @@
                             <tr>
                             <td> <select name="fdspromoid"> <option value="{{p.fdspromoid}}" SELECTED> {{p.fdspromoid}} </option> </select></td>
                             <td> {{ p.restname }}</td>
-                            <td> {{ p.description }}</td>
+                            <td> {{ p.description | safe }}</td>
                             <td>{{ p.validfrom }}</td>
                             <td>{{ p.validtill }}</td>
                             <td>{{ p.points }}</td>
@@ -84,7 +84,7 @@
                     {% for p in boughtpromolist %}
                         <tr>
                           <td> <select name="fdspromoid"> <option value="{{p.fdspromoid}}" SELECTED> {{p.fdspromoid}} </option> </select></td>
-                          <td> {{ p.description }}</td>
+                          <td> {{ p.description | safe }}</td>
                           <td>{{ p.validfrom }}</td>
                           <td>{{ p.validtill }}</td>
                         </tr>

@@ -20,7 +20,7 @@
                 {% for p in restlist %}
                 <tr>
                     <td> {{ p.restid }}</td>
-                    <td>{{ p.restname }}</td>
+                    <td>{{ p.restname | safe }}</td>
                     <td>{{ p.location }}</td>
                     <td> ${{ p.minamnt }}</td>
                 </tr>
@@ -43,11 +43,11 @@
                     <table align='center'>
                         <tr>
                             <td> Restaurant Name: </td>
-                            <td> <input type="text" pattern="[a-zA-Z][a-zA-Z0-9\s]*" name="restname" placeholder="Restaurant Name"> </td>
+                            <td> <input type="text" name="restname" placeholder="Restaurant Name"> </td>
                         </tr>
                         <tr>
                             <td> Location: </td>
-                            <td> <input type="text" pattern="[a-zA-Z][a-zA-Z0-9\s]*" name="location" placeholder= "Location"> </td>
+                            <td> <input type="text" pattern="[a-zA-Z0-9-#\s]*" name="location" placeholder= "Location"> </td>
                         </tr>
                         <tr>
                             <td> Min. Amount: </td>
@@ -74,7 +74,7 @@
                         </tr>
                         <tr>
                             <td> Location: </td>
-                            <td> <input type="text" name="location" placeholder= "Location"> </td>
+                            <td> <input type="text" pattern="[a-zA-Z0-9-#\s]*" name="location" placeholder= "Location"> </td>
                         </tr>
                         <tr>
                             <td> Min. Amount: </td>

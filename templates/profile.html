@@ -44,12 +44,13 @@
                 <table  align = 'center'>
                     <tr>
                         <td> Contact: </td>
-                        <td> <type="tel" maxlength ="8" minlength ="8" name="contact" placeholder="Update Contact Number"> </td>
+                        <td> <input type="tel" pattern="[89]{1}[0-9]{7}" name="contact" placeholder="Update Contact Number"> </td>
                     </tr>
                     <tr>
                         <td> New Card: </td>
-                        <td> <input type="text" name="card" placeholder="Add card"> </td>
+                        <td> <input type="tel" name="card" pattern="[0-9]{16}" placeholder="Enter your 16 digit card number"> </td>
                     </tr>
+    
                     <tr>
                         <td> Remove Card: </td>
                         <td> <input name="delete" list="cards"> </td>

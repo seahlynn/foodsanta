@@ -207,7 +207,7 @@ def addpromosuccess():
     global db
 
     promotype = request.form.get('promotype')
-    description = request.form['description']
+    description = escape(request.form['description'])
     discount = request.form['discount']
     minamnt = request.form['minamnt']
     appliedto = request.form.get('appliedto')
@@ -366,7 +366,7 @@ def gotomanagerests():
 def addrestaurant():
     username = session['username']
 
-    restname = request.form['restname']
+    restname = str(escape(request.form['restname']))
     location = request.form['location']
     minamnt = request.form['minamnt']
     restidquery = f"select max(restid) from Restaurants"
@@ -388,7 +388,7 @@ def editrestaurant():
     username = session['username']
 
     restid = request.form['restid']
-    restname = request.form['restname']
+    restname = escape(request.form['restname'])
     location = request.form['location']
     minamnt = request.form['minamnt']
     
@@ -480,7 +480,7 @@ def addpromo():
     global db
 
     promotype = request.form.get('promotype')
-    description = request.form['description']
+    description = escape(request.form['description'])
     discount = request.form['discount']
     minamnt = request.form['minamnt']
     appliedto = request.form.get('appliedto')
@@ -725,7 +725,7 @@ def restresults():
     result = db.session.execute(query)
     restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
     
-    restname = request.args['chosen']
+    restname = escape(request.args['chosen'])
     checkrestid = db.session.execute(f"select count(*) from Restaurants where restname = '{restname}'").fetchall()[0][0]
     
     if checkrestid == 0:
@@ -1169,14 +1169,14 @@ Customer related: View order status, order history, submit review
 def orderstatus():
 
     username = session['username']
-    orderid = session['orderid']
+    '''orderid = session['orderid']
 
     # allocate an available rider to deliver
     # rider is currently working (either part time or full time)
     # rider is not currently taking an order that has not been delivered
     checkavailableriderquery = f"select distinct username from DeliveryRiders F natural join MonthlyWorkSchedule M where not exists (select 1 from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Delivers.username = F.username and Orders.delivered = False and Orders.selectedByRider = True) union select distinct username from DeliveryRiders F natural join WeeklyWorkSchedule W where not exists (select 1 from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Delivers.username = F.username and Orders.delivered = False and Orders.selectedByRider = True) "
     availableriders = db.session.execute(checkavailableriderquery).fetchall()
-    numavailableriders = availableriders.len()
+    numavailableriders = len(availableriders)
     randridernum = randrange(0, numavailableriders, 0)
     randrider = availableriders[randridernum]
     riderusername = randrider[0]
@@ -1184,7 +1184,7 @@ def orderstatus():
     updateorderselectedbyrider = f"update Orders set selectedByRider = True where orderid = '{orderid}'"
     db.session.execute(updateriderpicked)
     db.session.execute(updateorderselectedbyrider)
-    db.session.commit()
+    db.session.commit()'''
 
     inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant from Orders O, Delivers D, Restaurants R where D.orderid = O.orderid and O.username = '{username}' and O.delivered = False and R.restid = O.restid"
     progressresult = db.session.execute(inprogressquery)
@@ -1200,7 +1200,7 @@ def orderstatus():
 def submitreviewandrating():
 
     username = session['username']
-    review = request.form['review']
+    review = escape(request.form['review'])
     rating = request.form['rating']
     orderid = int(request.form['orderid'])
     checkquery = f"select count(*) from Reviews where orderid = {orderid}"
