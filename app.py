@@ -705,9 +705,14 @@ def gotorest():
 
     query = f"select * from Restaurants"
     result = db.session.execute(query)
-        
     restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
-    return render_template('restaurants.html', restlist = restlist)
+
+    query = f"select distinct category from Food"
+    result = db.session.execute(query)
+    catlist = [dict(cat = row[0]) for row in result.fetchall()]
+        
+    
+    return render_template('restaurants.html', restlist = restlist, catlist = catlist)
 
 
 @app.route('/restresults', methods=['GET', 'POST'])
@@ -725,7 +730,7 @@ def restresults():
     if checkrestid == 0:
         flash("Sorry, there is no such restaurant!")
         return redirect('gotorest')
-        
+
     restid = db.session.execute(f"select restid from Restaurants where restname = '{restname}'").fetchall()[0][0]
     query = f"SELECT * FROM Food WHERE restid = {restid} and availability > 0 order by category, description"
     result = db.session.execute(query)
@@ -737,36 +742,59 @@ def restresults():
     if checklatest != 0:
         latestRestID = db.session.execute(f"select restid from Latest where orderid = {orderid}").fetchall()[0][0]
         restaurantName = db.session.execute(f"select restName from Restaurants where restid = {latestRestID}").fetchall()[0][0]
+        checkcart = db.session.execute(f"select count(*) from Contains where orderid = {orderid}").fetchall()[0][0]
 
-        if restid != latestRestID:
+        if restid != latestRestID and checkcart != 0:
             flash("You have items in your cart under " + restaurantName + "! Each order can only be from one restaurant!")
 
     query = f"select R.reviewdesc, O.username from Reviews R, Orders O where R.orderid = O.orderid and O.restid = {restid}"
     result = db.session.execute(query)
     reviewlist = [dict(username= row[1], review = row[0]) for row in result.fetchall()]
 
+    query = f"select distinct category from Food"
+    result = db.session.execute(query)
+    catlist = [dict(cat = row[0]) for row in result.fetchall()]
+
     query = f"select minAmt from Restaurants where restid = {restid}"
     result = db.session.execute(query).fetchall()
     minAmt = result[0][0]
 
-    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, reviewlist = reviewlist, minAmt = minAmt)
+    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, reviewlist = reviewlist, minAmt = minAmt, catlist = catlist, rest = restname)
+
+@app.route('/catresults', methods=['GET', 'POST'])
+def catresults():
+    global db
+    category = request.args['category']
+    print(category)
+
+    query = f"select * from Restaurants"
+    result = db.session.execute(query)
+    restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
+
+    query = f"select distinct category from Food"
+    result = db.session.execute(query)
+    catlist = [dict(cat = row[0]) for row in result.fetchall()]
+
+    query = f"select distinct restname from Restaurants R natural join Food F where F.category = '{category}'"
+    result = db.session.execute(query)
+    catrestlist = [dict(restname = row[0]) for row in result.fetchall()]
+
+    return render_template('restaurants.html', restlist = restlist, catrestlist = catrestlist, catlist = catlist, category = category)
 
 @app.route('/addtocart', methods=['POST'])
 def addtocart():
     global db
+    username = session['username']
+    orderid = session['orderid']
 
     #add record into Contains table
     foodid = int(request.form['foodid'])
     query = f"select * from Food where foodid = {foodid}"
     result = db.session.execute(query).fetchall()
 
-    username = session['username']
-    orderid = session['orderid']
-    description = result[0][1]
     check = f"select count(*) from Contains where foodid = {foodid} and orderid = {orderid}"
     checkresult = db.session.execute(check).fetchall()
     
-
     if checkresult[0][0]:
         availquery = f"select availability from Food where foodid = {foodid}"
         availresult = db.session.execute(availquery).fetchall()
@@ -778,7 +806,7 @@ def addtocart():
   
         todo = f"update Contains set quantity = quantity + 1 where foodid = {foodid} and orderid = {orderid}"
     else:
-        todo = f"insert into Contains (orderid, foodid, username, description, quantity) values ('{orderid}', {foodid}, '{username}', '{description}', 1)"
+        todo = f"insert into Contains (orderid, foodid, quantity) values ('{orderid}', {foodid}, 1)"
     
     db.session.execute(todo)
     db.session.commit()
@@ -805,7 +833,7 @@ def addtocart():
     result = db.session.execute(query)
     foodlist = [dict(food = row[1], price = row[2], foodid = row[0], avail=row[4], cat = row[5]) for row in result.fetchall()]
     
-    query = f"select distinc category from Food where restid = {restid}"
+    query = f"select distinct category from Food"
     result = db.session.execute(query)
     catlist = [dict(cat = row[0]) for row in result.fetchall()]
 
@@ -842,7 +870,7 @@ def viewcart():
     restid = restidresult[0][0]
     
     #for cart 
-    orderquery = f"select C.description, F.price, C.quantity, F.foodid from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid} and restid = {restid}"
+    orderquery = f"select F.description, F.price, C.quantity, F.foodid from Contains C, Food F where C.foodid = F.foodid and orderid = {orderid} and restid = {restid}"
     orderresult = db.session.execute(orderquery)
     orderlist = [dict(food = row[0], price = row[1], quantity = row[2], foodid = row[3]) for row in orderresult.fetchall()]
 
@@ -877,11 +905,13 @@ def deletefromcart():
 
     if quantity == 1:
         todo = f"delete from Contains where foodid = {foodid} and orderid = {orderid}"
+        print(quantity)
+        db.session.execute(todo)
     else :
         newquantity = quantity - 1
         todo = f"update Contains set quantity = {newquantity} where foodid = {foodid} and orderid = {orderid}"
-
-    db.session.execute(todo)
+        db.session.execute(todo)
+    
     db.session.commit()
     return redirect('viewcart')
 
@@ -906,7 +936,12 @@ def backto():
     result = db.session.execute(query).fetchall()
     minAmt = result[0][0]
 
-    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, minAmt = minAmt)
+    #category list for search
+    query = f"select distinct category from Food"
+    result = db.session.execute(query)
+    catlist = [dict(cat = row[0]) for row in result.fetchall()]
+
+    return render_template('restaurants.html', foodlist = foodlist, restlist = restlist, minAmt = minAmt, catlist = catlist)
 
 
 '''
