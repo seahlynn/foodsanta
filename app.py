@@ -1779,30 +1779,63 @@ def deletePartTimeScheduleResult():
 
     return render_template('scheduledeleteparttimeresult.html', datem = datem, datemEnd = datemEnd, message = message, errorMessage = errorMessage)
     
-@app.route('/getRidersPerHour', methods=['GET'])
+@app.route('/getRidersPerHour', methods=['GET', 'POST'])
 def getRidersPerHour():
-    today = datetime.today()
-    currMonth = datetime(today.year, today.month, 1).date()
-    monday = (today - timedelta(days = today.weekday())).date()
+    if request.method == "POST":
+        form = request.form
+        day = datetime.strptime(form.get('day'), '%Y-%m-%d')
+    else:
+        today = datetime.today()
+        day = (today - timedelta(days = today.weekday()) + timedelta(days = 7)) #defaults to next monday
+    monday = (day - timedelta(days = day.weekday()))
+    tuesday = (monday + timedelta(days = 1)).date()
+    wednesday = (monday + timedelta(days = 2)).date()
+    thursday = (monday + timedelta(days = 3)).date()
+    friday = (monday + timedelta(days = 4)).date()
+    saturday = (monday + timedelta(days = 5)).date()
+    sunday = (monday + timedelta(days = 6)).date()
+    monday = monday.date()
 
+    if not isRidersPerHourPresent(monday):
+        generateRidersPerHour(day)
+
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{monday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    mondaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{tuesday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    tuesdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{wednesday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    wednesdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{thursday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    thursdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{friday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    fridaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{saturday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    saturdaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{sunday}' group by hour order by hour"
+    scheduleResult = db.session.execute(scheduleQuery)
+    sundaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
+
+    maxDay = (datetime.today() + timedelta(days = 6 - datetime.today().weekday()) + timedelta(days = 7)).date() #defaults to sunday of next week, relative to today
+    print(maxDay)
+    return render_template('ridersperhour.html', mondaysch = mondaysch, tuesdaysch = tuesdaysch, wednesdaysch = wednesdaysch, thursdaysch = thursdaysch, fridaysch = fridaysch, saturdaysch = saturdaysch, sundaysch = sundaysch, monday = monday, sunday = sunday, maxDay = maxDay)
+
+def isRidersPerHourPresent(inputMonday):
+    monday = inputMonday
     isWeekCalculated = f"select count(*) from RidersPerHour where day >= '{monday}'"
     isWeekCalculatedResult = int(db.session.execute(isWeekCalculated).fetchall()[0][0] or 0)
-    if not isWeekCalculatedResult:
-        print('generating for this week') 
-        generateRidersPerHour()
+    return isWeekCalculatedResult
 
-    currDay = today.date()
-    scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{currDay}' group by hour"
-    scheduleResult = db.session.execute(scheduleQuery)
-    schedule = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
-    
-    return render_template('ridersperhour.html', schedule = schedule)
-
-def generateRidersPerHour():
+def generateRidersPerHour(inputDate):
     #for currentWeek
-    today = datetime.today()
-    currMonth = datetime(today.year, today.month, 1).date()
-    monday = (today - timedelta(days = today.weekday())).date()
+    day = inputDate
+    currMonth = datetime(day.year, day.month, 1).date()
+    monday = (day - timedelta(days = day.weekday())).date()
 
     dayArray = (0, 1, 2, 3, 4, 5, 6)
     shift1 = (10, 11, 12, 13, 15, 16, 17, 18)
@@ -1866,6 +1899,7 @@ def generateRidersPerHour():
             duration = row[2]
             for i in range(duration):
                 hour = startHour + i
+                print('hour: ', hour)
                 insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
                 insertionResult = db.session.execute(insertion)  
 

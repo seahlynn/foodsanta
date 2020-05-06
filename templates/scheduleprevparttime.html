@@ -13,7 +13,7 @@
           <h2> Select a past week to view: </h2>
               <table border='1' align = 'center'>
                 <form action="/getPrevPartTimeScheduleResult" name="getprevparttimescheduleresult" method='POST'>
-                  <input type="date" id="week" name="week" max="{{ monday }}" value="{{ monday }}">
+                  <input type="date" id="week" name="week" required max="{{ monday }}" value="{{ monday }}">
                   <input type="submit">
                 </form>
             </table>
