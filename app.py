@@ -1139,23 +1139,50 @@ def orderstatus():
     # allocate an available rider to deliver
     # rider is currently working (either part time or full time)
     # rider is not currently taking an order that has not been delivered
-    checkavailableriderquery = f"select distinct username from DeliveryRiders F natural join MonthlyWorkSchedule M where not exists (select 1 from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Delivers.username = F.username and Orders.delivered = False and Orders.selectedByRider = True) union select distinct username from DeliveryRiders F natural join WeeklyWorkSchedule W where not exists (select 1 from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Delivers.username = F.username and Orders.delivered = False and Orders.selectedByRider = True) "
+    checkavailableriderquery = f"select distinct * \
+from PartTimeRiders P natural join WeeklyWorkSchedule W natural join DailyWorkShift D \
+where D.day = (select extract(isodow from current_timestamp) - 1) \
+and D.starthour < (select extract(hour from current_timestamp)) \
+and D.duration > (D.starthour - (select extract(hour from current_timestamp))) \
+and not exists ( \
+    select 1 \
+    from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
+    where Delivers.username = P.username \
+    and Orders.selectedByRider = True \
+    and Orders.delivered = False)"
     availableriders = db.session.execute(checkavailableriderquery).fetchall()
     numavailableriders = availableriders.len()
-    randridernum = randrange(0, numavailableriders, 0)
-    randrider = availableriders[randridernum]
-    riderusername = randrider[0]
+
+    if numavailableriders != 0:
+        randridernum = random.randint(0, numavailableriders)
+        randrider = availableriders[randridernum]
+        riderusername = randrider[0]
+
+    else:
+        nextavailriderquery = f"similar query to above except that he is busy and sort by timeriderleftforrest then limit 1"
+        nextavailriderresult = db.session.execute(nextavailriderquery).fetchall()
+        riderusername = nextavailriderresult[0]
+    
     updateriderpicked = f"update Delivers set username = '{riderusername}' where orderid = '{orderid}'"
     updateorderselectedbyrider = f"update Orders set selectedByRider = True where orderid = '{orderid}'"
     db.session.execute(updateriderpicked)
     db.session.execute(updateorderselectedbyrider)
     db.session.commit()
 
-    inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant from Orders O, Delivers D, Restaurants R where D.orderid = O.orderid and O.username = '{username}' and O.delivered = False and R.restid = O.restid"
+    inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant \
+    from Orders O, Delivers D, Restaurants R \
+    where D.orderid = O.orderid \
+    and O.username = '{username}' \
+    and O.delivered = False \
+    and R.restid = O.restid"
     progressresult = db.session.execute(inprogressquery)
     orderlist = [dict(rest = row[0], timeordered = row[1], orderpicked = row[2], pickedup = row[3]) for row in progressresult.fetchall()]
 
-    finishedquery = f"select R.restName, O.totalCost, D.timeOrderDelivered, O.orderid from Orders O, Delivers D, Restaurants R where D.orderid = O.orderid and O.username = '{username}' and R.restid = O.restid and O.delivered = True"
+    finishedquery = f"select R.restName, O.totalCost, D.timeOrderDelivered, O.orderid \
+    from Orders O, Delivers D, Restaurants R \
+    where D.orderid = O.orderid \
+    and O.username = '{username}' \
+    and R.restid = O.restid and O.delivered = True"
     finishedresult = db.session.execute(finishedquery)
     finishedlist = [dict(rest = row[0], total = row[1], received = row[2], orderid = row[3]) for row in finishedresult.fetchall()]
     
@@ -1208,7 +1235,6 @@ def submitrating():
 @app.route('/neworder', methods=['POST'])
 def neworder():
     return redirect('gotorest')
-
 
 '''
 Customer related: View and purchase promos
@@ -1282,6 +1308,8 @@ def gotoriderprofile():
 @app.route('/gotodelivery', methods=['GET'])
 def gotodelivery():
     username = session['username']  
+
+    # check if rider has been allocated an order that has yet to be delivered
     hasallocatedOrdersQuery = f"select count(*) from Delivers natural join Orders where Delivers.username = '{username}' and Orders.delivered = False and Orders.selectedByRider = True"
     hasallocatedOrdersResult = db.session.execute(hasallocatedOrdersQuery).fetchall()
 
