@@ -170,6 +170,35 @@ def gotostaff():
     details = get_rest_details(rest_id)
     return render_template('staffmenu.html', menu=menu, details=details, promohist=promohist)
 
+@app.route('/gotostaffstats', methods=['GET', 'POST'])
+def gotostaffstats():
+    rest_id = session['rest_id']
+    all_promos = get_promo_hist(rest_id)
+    return render_template('staffstats.html', monthstats=None, promostats=None, allpromos=all_promos)
+
+@app.route('/checkpromostaffstats', methods=['GET', 'POST'])
+def checkpromostaffstats():
+    rest_id = session['rest_id']
+    all_promos = get_promo_hist(rest_id)
+    if request.method == 'POST':
+        form = request.form
+        id = form['fdspromoid']
+        promo_stats = get_rest_promo_stats(id)
+    print(promo_stats)
+    return render_template('staffstats.html', monthstats=None, promostats=promo_stats, allpromos=all_promos)
+
+@app.route('/checkmonthstaffstats', methods=['GET', 'POST'])
+def checkmonthstaffstats():
+    rest_id = session['rest_id']
+    all_promos = get_promo_hist(rest_id)
+    if request.method == 'POST':
+        form = request.form
+        month = form['month']
+        year = form['year']
+        month_stats = get_month_stats(month, year)
+        return render_template('staffstats.html', monthstats=month_stats, promostats=None, allpromos=all_promos)
+    return redirect('gotostaffstats')
+
 @app.route('/deleteitemsuccess', methods=['GET', 'POST'])
 def deleteitemsuccess():
     if request.method == 'POST':
@@ -244,6 +273,7 @@ def addpromosuccess():
     db.session.commit()
     return redirect('gotostaff')
 
+
 @app.route('/gotostaffsettings', methods=['GET', 'POST'])
 def gotostaffsettings():
     username = session['username']
@@ -282,6 +312,30 @@ def edititemsuccess():
         else:
             flash("This food is not in your restaurant's menu.")
     return redirect('gotostaff')
+
+def get_month_stats(month, year):
+    global db
+    rest_id = session['rest_id']
+    check_total_query = f"select numCompletedOrders, totalOrdersCost from RestaurantStats where month = {month} and year = {year} and restid = {rest_id}"
+    total_details = db.session.execute(check_total_query).fetchone()
+    check_top_five = f"select foodid, description, sum(quantity) as total from Orders natural join Contains natural join Food where\
+         restid = {rest_id} and extract(month from orderCreatedTime) = {month} and extract(year from orderCreatedTime) = {year} group by foodid, description order by total desc limit 5;"
+    top_five = db.session.execute(check_top_five).fetchall()
+    parsed_five = [dict(foodid=i[0], description=i[1], total=i[2]) for i in top_five]
+    parsed_details = dict(numCompletedOrders=total_details[0], totalOrdersCost=total_details[1], topFive=parsed_five)
+    return parsed_details
+
+def get_rest_promo_stats(id):
+    global db
+    rest_id = session['rest_id']
+    check_duration_query = f"select F.startTime, F.endTime, abs(F.startTime::date - endTime::date) as dateDiff from FDSPromo F where fdspromoid = {id}"
+    duration_details = db.session.execute(check_duration_query).fetchone()
+    start_time = duration_details[0]
+    end_time = duration_details[1]
+    check_orders_query = f"select count(*) as total from Orders where restid = {rest_id} and DATE(orderCreatedTime) >= '{start_time}' and DATE(orderCreatedTime) <= '{end_time}'"
+    num_orders = db.session.execute(check_orders_query).fetchone()[0]
+    details = dict(startTime=start_time, endTime=end_time, diff=duration_details[2], total=num_orders)
+    return details
 
 def get_user_details(id):
     global db
