@@ -20,7 +20,7 @@
     
                         {% for p in orderlist %}
                         <tr>
-                          <td>{{ p.food }}</td>
+                          <td>{{ p.food | safe}}</td>
                           <td>{{ p.price * p.quantity }}</td>
                           <td>{{ p.quantity }}</td>
                         </tr>
@@ -36,7 +36,7 @@
                         <form name="restaurant" action="deletefromcart" method='POST'>
                           <select name="foodid" onchange="this.form.submit()">
                             {% for f in orderlist %}
-                              <option value="{{f.foodid}}" SELECTED> {{f.food}} </option>
+                              <option value="{{f.foodid}}" SELECTED> {{f.food | safe}} </option>
                             {% endfor %}
                             <option value="" disabled selected> Choose an item to delete </option>
                           </select>
