@@ -59,10 +59,42 @@ INSERT INTO Users(username, name, password, phoneNumber, dateCreated) VALUES
 ('user47','xiaomeimei','password47','93555106','2020-02-22'),
 ('user48','Winston','password48','82350546','2020-01-06'),
 ('user49','Jill','password49','92145432','2020-03-25'),
-('user50','Lynette','password50','87650123','2020-05-07');
+('user50','Lynette','password50','87650123','2020-05-07'),
+('kfcstaff', 'KFC Staff', 'kfccool', '96567556', '2019-05-06'),
+('yooganestaff', 'Yoogane Staff', 'yooganecool', '96567556', '2019-05-06'), 
+('sushiteistaff', 'SushiTei Staff', 'sushiteicool', '96567556', '2019-05-06'), 
+('mookatastaff', 'Ah Bear Mookata Staff', 'mookatacool', '96567556', '2019-05-06'), 
+('marchestaff', 'Marche Staff', 'marchecool', '96567556', '2019-05-06'), 
+('haidilaostaff', 'HaiDiLao Staff', 'haidilaocool', '96567556', '2019-05-06'), 
+('4fingersstaff', '4Fingers Staff', '4fingerscool', '96567556', '2019-05-06'), 
+('riristaff', 'RiRi Mala Staff', 'riricool', '96567556', '2019-05-06'), 
+('caesarstaff', 'Caesar Pizza Staff', 'caesarcool', '96567556', '2019-05-06'),
+('soupshackstaff', 'Bat Corona Soup Shack Staff', 'soupshackcool', '96567556', '2019-05-06'); 
 
-INSERT INTO RestaurantStaff(username) VALUES
-('stafftest');
+INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES 
+(1, '4Fingers', 15, '68 Orchard Rd #B1-07, Plaza, Singapore 238839'),
+(2, 'Yoogane', 25, '3, #03-08 Gateway Dr, Westgate, Singapore 608532'),
+(3, 'SushiTei', 40, '154 West Coast Rd, #01-87 West Coast Plaza, Singapore 127371'),
+(4, 'KFC', 10, '500 Dover Rd, 5 Singapore Polytechnic Food Court, Singapore 139651'),
+(5, 'RiRi Mala', 15, '32 New Market Road #01 42 52, Singapore 050032'),
+(6, 'Ah Bear Mookata', 20, '505 W Coast Dr, #01-208, Singapore 120505'),
+(7, 'Marche', 50, '50 Jurong Gateway Rd, #01-03 JEM, Singapore 608549'),
+(8, 'HaiDiLao', 80, '1 Harbourfront Walk #03-09 Vivocity, Singapore 098585'),
+(9, 'Caesar Pizza', 30, '16 Collyer Quay, #01-05 Income At Raffles, Singapore 049318'),
+(10, 'BatCoronaSoupShack', 69, 'Wuhan Wet Market, China');
+
+INSERT INTO RestaurantStaff(username, restid) VALUES
+('stafftest', NULL),
+('kfcstaff', 4),
+('yooganestaff', 2), 
+('sushiteistaff', 3), 
+('mookatastaff', 6), 
+('marchestaff', 7), 
+('haidilaostaff', 8), 
+('4fingersstaff', 1), 
+('riristaff', 5), 
+('caesarstaff', 9),
+('soupshackstaff', 10);
 
 INSERT INTO FDSManagers(username) VALUES
 ('managertest');
@@ -145,17 +177,7 @@ INSERT INTO PartTimeRiders(username) VALUES
 ('user48'),
 ('user49');
 
-INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES 
-(1, '4Fingers', 15, '68 Orchard Rd #B1-07, Plaza, Singapore 238839'),
-(2, 'Yoogane', 25, '3, #03-08 Gateway Dr, Westgate, Singapore 608532'),
-(3, 'SushiTei', 40, '154 West Coast Rd, #01-87 West Coast Plaza, Singapore 127371'),
-(4, 'KFC', 10, '500 Dover Rd, 5 Singapore Polytechnic Food Court, Singapore 139651'),
-(5, 'RiRi Mala', 15, '32 New Market Road #01 42 52, Singapore 050032'),
-(6, 'Ah Bear Mookata', 20, '505 W Coast Dr, #01-208, Singapore 120505'),
-(7, 'Marche', 50, '50 Jurong Gateway Rd, #01-03 JEM, Singapore 608549'),
-(8, 'HaiDiLao', 80, '1 Harbourfront Walk #03-09 Vivocity, Singapore 098585'),
-(9, 'Caesar Pizza', 30, '16 Collyer Quay, #01-05 Income At Raffles, Singapore 049318'),
-(10, 'BatCoronaSoupShack', 69, 'Wuhan Wet Market, China');
+
 
 INSERT INTO RestaurantStaff(username, restid) VALUES
 ('staffresttest', 1),
@@ -249,7 +271,7 @@ INSERT INTO Food(foodid, description, restid, price, dailylimit, availability, c
 
 INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid, delivered) VALUES 
 (2, 'justning', '469 Bukit Timah Rd Singapore 259756', '04/05/2020 1230', 10.80, NULL, 4, True, True, 1, True),
-(3, 'kalsyc', '20 Heng Mui Keng Terrace Singapore 119618', '04/05/2020 1320', 23.80, NULL, 1, True, True, 1, False),
+(3, 'kalsyc', '20 Heng Mui Keng Terrace Singapore 119618', '04/05/2020 1320', 23.80, NULL, 1, True, True, 1, True),
 (4, 'kalsyc', '12 Kent Ridge Dr Singapore 119243', '04/05/2020 1330', 18.80, NULL, 1, True, True, 1, True),
 (5, 'kalsyc', '2 College Ave West Stephen Riady Centre Singapore 138607', '04/05/2020 1350', 13.80, NULL, 1, True, True, 1, True),
 (7, 'justning', '16 #01-220 College Ave West 138527', '04/05/2020 1630', 13.00, NULL, 100, True, True, 1, True),
@@ -259,8 +281,8 @@ INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost,
 (11, 'justning', '13 Computing Drive Singapore 117417', '05/05/2020 2100', 133.00, NULL, 101, True, True, 1, True),
 (12, 'kalsyc', '5 Arts Link 5 The Block AS7 Level Shaw Foundation Building Singapore 117570', '04/01/2020 1830', 13.10, NULL, 1, True, True, 1, True),
 (13, 'justning', '12 Kent Ridge Cresent Central Library Building CLB01 02 Singapore 119275', '02/05/2020 1930', 19.80, NULL, 102, True, True, 1, True),
-(14, 'user0', '3 Science Drive 2 Singapore 117543', '05/05/2020 1945', 20, NULL, 6, True, False, 3, False),
-(15, 'user1', '3 Science Drive 2 Singapore 117543', '06/05/2020 2145', 20, NULL, 7, True, False, 3, False),
+(14, 'user0', '3 Science Drive 2 Singapore 117543', '05/05/2020 1945', 20, NULL, 6, True, True, 3, True),
+(15, 'user1', '3 Science Drive 2 Singapore 117543', '06/05/2020 2145', 20, NULL, 7, True, True, 3, True),
 (16, 'user2', '3 Science Drive 2 Singapore 117543', '05/05/2020 1445', 20, NULL, 8, True, True, 3, True),
 (17, 'user3', '3 Science Drive 2 Singapore 117543', '07/05/2020 1345', 20, NULL, 9, True, True, 3, True),
 (18, 'user0', '3 Science Drive 2 Singapore 117543', '08/04/2020 1245', 20, NULL, 6, True, True, 3, True),
@@ -280,7 +302,10 @@ INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost,
 (32, 'kalsyc', '3 Science Drive 2 Singapore 117543', '06/03/2020 2005', 23.80, NULL, 1, True, True, 3, True),
 (33, 'kalsyc', '3 Science Drive 2 Singapore 117543', '07/01/2020 1225', 22.80, NULL, 1, True, True, 3, True),
 (34, 'kalsyc', '3 Science Drive 2 Singapore 117543', '03/04/2020 1325', 22.80, NULL, 1, True, True, 3, True),
-(35, 'kalsyc', '3 Science Drive 2 Singapore 117543', '01/04/2020 1355', 21.80, NULL, 1, True, True, 3, True);
+(35, 'kalsyc', '3 Science Drive 2 Singapore 117543', '01/04/2020 1355', 21.80, NULL, 1, True, True, 3, True),
+(36, 'kalsyc', '3 Science Drive 2 Singapore 117543', '01/04/2020 1355', 21.80, NULL, 1, True, True, 3, True),
+(37, 'kalsyc', '3 Science Drive 2 Singapore 117543', '07/05/2020 1815', 13.80, NULL, 1, False, True, 4, False),
+(38, 'lynjaaa', '3 Science Drive 2 Singapore 117543', '07/05/2020 1855', 25.80, NULL, 1, False, True, 4, False);
 
 INSERT INTO Contains(orderid, foodid, quantity) VALUES
 (2, 2, 1),
@@ -326,7 +351,13 @@ INSERT INTO Contains(orderid, foodid, quantity) VALUES
 (32, 5, 1),
 (33, 5, 1),
 (34, 5, 1),
-(35, 5, 1);
+(35, 5, 1),
+(37, 8, 1),
+(37, 9, 1),
+(37, 10, 2),
+(38, 8, 5),
+(38, 9, 3),
+(38, 10, 2);
 
 INSERT INTO PaymentMethods(paymentmethodid, username, cardInfo) VALUES
 (100, 'justning', 'dbs card'),

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>FoodSantaTest</title>
+    </head>
+    <body align = 'center'>
+    {% extends 'staffbase.html' %}
+      {% block overall %}
+      <div>
+        {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                  {% for message in messages %}
+                      <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 18px;"><b>{{ message }}</b></h2>
+                  {% endfor %}
+              {% endif %}
+          {% endwith %}
+				<div>
+          <h2> Ongoing Orders </h2>
+          
+              <table id="historytable" border="1", style='margin-top: 20px;' align='center'> 
+                  <tr>
+                      <th> Order number </th>
+                      <th> Customer </th>
+                      <th> Phone Number </th>
+                      <th> Order Placed </th>
+                      <th> View Order </th>
+                  </tr>
+                  {% for p in orderlist %}
+                  <form method="POST" action="vieworderdetails">
+                      <tr>
+                        <td> <select name="orderid"> <option value="{{p.orderid}}" SELECTED> {{p.orderid}} </option>  </select> </td>
+                        <td> {{ p.username}}</td>
+                        <td>{{ p.phone }}</td>
+                        <td>{{ p.time }}</td>
+                        <td> <input type="Submit" value="Details">  </td>
+                      </tr>
+                  </form>
+                  {% endfor %}
+              </table>
+        </div>
+
+        <div>
+          <h3> Details for Order #{{ orderid }}</h3>
+              <table id="historytable" border="1", style='margin-top: 20px;' align='center'> 
+                  <tr>
+                      <th> Items </th>
+                      <th> Quantity </th>
+                  </tr>
+                  {% for p in detaillist %}
+                  <tr>
+                    <td> {{ p.item}}</td>
+                    <td>{{ p.quantity }}</td>
+                  </tr>
+                  {% endfor %}
+              </table>
+              <br>
+              <form method="POST" action="restcompleteorder">
+                <select name="orderid"> <option value="{{orderid}}" SELECTED> {{orderid}} </option>
+                <input type="Submit" value="Order Complete"> 
+              </form>
+        </div>
+
+      </div>
+      {% endblock %}
+    </body>
+</html>
+
+<!--
+  
+-->
