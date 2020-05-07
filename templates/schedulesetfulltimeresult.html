@@ -10,7 +10,8 @@
         <div style="display: inline"> 
           <div class="results" style="width:100%;">
             {% block content %}
-          <h2> New Full-Time Schedule for {{ monthYear }} was successfully submitted</h2>
+          <h2> Update Full-Time Schedule for {{ monthYear }} was {{ message }}</h2>
+            <p>{{ errorMessage }}</p>
             </table>
             <br></br>
             <form action="/getFullTimeSchedule" name="getfulltimeschedule">

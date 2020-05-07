@@ -34,7 +34,8 @@ INSERT INTO FullTimeRiders(username) VALUES
 ('fullridertest');
 
 INSERT INTO PartTimeRiders(username) VALUES
-('partridertest');
+('partridertest'),
+('justning');
 
 INSERT INTO Locations(username, location, dateAdded) VALUES
 ('justning', '21 Lower Kent Ridge Rd, Singapore 119077', '2020-04-03'),
@@ -106,21 +107,16 @@ INSERT INTO PaymentMethods(paymentmethodid, username, cardInfo) VALUES
 (7, 'justning', 'uob card'),
 (8, 'justning', 'stanchart card');
 
-INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed, day1, day2, day3, day4, day5) VALUES
-(1, 'fullridertest', '2020-05-01', 1, false, 0, 1, 2, 3, 0);
+INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, day1, day2, day3, day4, day5) VALUES
+(1, 'fullridertest', '2020-05-01', 2, 3, 2, 3, 2, 3);
 
--- INSERT INTO FixedWeeklySchedule(fwsid, mwsid, day1, day2, day3, day4, day5) VALUES
--- (1, 1, 0, 1, 2, 3, 0);
-
-INSERT INTO WeeklyWorkSchedule(wwsid, username, startDate, wwsHours, completed) VALUES
-(1, 'partridertest', '2020-05-04', 0, false),
-(2, 'partridertest', '2020-06-01', 1, false),
-(3, 'justning', '2020-06-01', 1, false);
+INSERT INTO WeeklyWorkSchedule(wwsid, username, startDate, wwsHours) VALUES
+(1, 'partridertest', '2020-05-04', 0);
 
 INSERT INTO DailyWorkShift(dwsid, wwsid, day, startHour, duration) VALUES
 (1, 1, 0, 10, 4),
-(2, 1, 2, 18, 4),
-(3, 3, 2, 18, 4);
+(2, 1, 2, 10, 4),
+(3, 1, 2, 18, 4);
 
 INSERT INTO Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered) VALUES
 (2, 'partridertest', 4, '469 Bukit Timah Rd Singapore 259756', 5, NULL, NULL, NULL),
