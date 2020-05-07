@@ -744,13 +744,8 @@ hourIterator INTEGER;
 hourEnd INTEGER;
 begin
     -- transforming date into string for error message
-    select case when NEW.day = 0 then 'Monday' 
-                when NEW.day = 1 then 'Tuesday' 
-                when NEW.day = 2 then 'Wednesday' 
-                when NEW.day = 3 then 'Thursday' 
-                when NEW.day = 4 then 'Friday' 
-                when NEW.day = 5 then 'Saturday'
-                when NEW.day = 6 then 'Sunday' end into existingDay
+    select case when NEW.day = 0 then 'Monday' when NEW.day = 1 then 'Tuesday' when NEW.day = 2 then 'Wednesday' when NEW.day = 3 then 'Thursday' 
+                when NEW.day = 4 then 'Friday' when NEW.day = 5 then 'Saturday'when NEW.day = 6 then 'Sunday' end into existingDay
     from DailyWorkShift
     where wwsid = NEW.wwsid;
 
@@ -835,6 +830,12 @@ hourIterator INTEGER;
 hourEnd INTEGER;
 count INTEGER;
 begin
+    -- transforming date into string for error catching
+    select case when OLD.day = 0 then 'Monday' when OLD.day = 1 then 'Tuesday' when OLD.day = 2 then 'Wednesday' when OLD.day = 3 then 'Thursday'
+                when OLD.day = 4 then 'Friday' when OLD.day = 5 then 'Saturday' when OLD.day = 6 then 'Sunday' end into existingDay
+    from DailyWorkShift
+    where wwsid = OLD.wwsid;
+
     -- update wwshours
     update WeeklyWorkSchedule
     set wwsHours = wwsHours - OLD.duration
@@ -847,16 +848,6 @@ begin
 
     -- total hours validity
     if totalHours < 10 then
-    -- transforming date into string for error catching
-        select case when OLD.day = 0 then 'Monday' 
-                    when OLD.day = 1 then 'Tuesday' 
-                    when OLD.day = 2 then 'Wednesday' 
-                    when OLD.day = 3 then 'Thursday'
-                    when OLD.day = 4 then 'Friday' 
-                    when OLD.day = 5 then 'Saturday' 
-                    when OLD.day = 6 then 'Sunday' end into existingDay
-        from DailyWorkShift
-        where wwsid = OLD.wwsid;
         raise exception 'FoodSanta: A shift you are trying to delete (%00hrs to %00hrs on %) results in you working less than 10 hours this week! Ho ho ho!',
         OLD.startHour, (OLD.startHour + OLD.duration), existingDay;
     end if;
@@ -876,6 +867,7 @@ begin
     LOOP
         EXIT WHEN hourIterator >= hourEnd;
         delete from RidersPerHour where username = oldUsername and day = shiftDate and hour = hourIterator;
+        -- checking for < 5 riders per hour after deletion
         select count(*) into count from RidersPerHour where day = shiftDate and hour = hourIterator;
         if count < 5 then
             raise exception 'FoodSanta: The shift you are trying to delete (%00hrs to %00hrs on %) results in less than 5 people working at %00hrs! Ho ho ho!',
@@ -979,21 +971,17 @@ begin
         mnthIterator = mnthIterator + 1;
     END LOOP;
 
-    -- finally checking for < 5
+    -- checking for < 5
     with tempCheck as (
         select day, hour, count(hour) as count
         from RidersPerHour
         where extract(MONTH from day) = extract(MONTH from NEW.mnthStartDay)
         group by day, hour
     )
-    select case when extract(isodow from tempCheck.day) = 0 then 'Monday'
-                when extract(isodow from tempCheck.day) = 1 then 'Tuesday'
-                when extract(isodow from tempCheck.day) = 2 then 'Wednesday'
-                when extract(isodow from tempCheck.day) = 3 then 'Thursday'
-                when extract(isodow from tempCheck.day) = 4 then 'Friday'
-                when extract(isodow from tempCheck.day) = 5 then 'Saturday'
-                when extract(isodow from tempCheck.day) = 6 then 'Sunday' end,
-                tempCheck.hour, tempCheck.count into failedDay, failedHour, count
+    select case when extract(isodow from tempCheck.day) = 0 then 'Monday' when extract(isodow from tempCheck.day) = 1 then 'Tuesday'
+                when extract(isodow from tempCheck.day) = 2 then 'Wednesday' when extract(isodow from tempCheck.day) = 3 then 'Thursday'
+                when extract(isodow from tempCheck.day) = 4 then 'Friday' when extract(isodow from tempCheck.day) = 5 then 'Saturday'
+                when extract(isodow from tempCheck.day) = 6 then 'Sunday' end, tempCheck.hour, tempCheck.count into failedDay, failedHour, count
     from tempCheck, temp
     where tempCheck.day = temp.day
     and tempCheck.hour = temp.hour
