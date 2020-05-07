@@ -907,7 +907,7 @@ dayShifts INTEGER[];
 shift INTEGER;
 sql TEXT;
 count INTEGER;
-failedDay DATE;
+failedDay TEXT;
 failedHour INTEGER;
 begin
     -- preparing variables
@@ -988,7 +988,14 @@ begin
         where extract(MONTH from day) = extract(MONTH from NEW.mnthStartDay)
         group by day, hour
     )
-    select tempCheck.count, tempCheck.day, tempCheck.hour into count, failedDay, failedHour
+    select case when extract(isodow from tempCheck.day) = 0 then 'Monday'
+                when extract(isodow from tempCheck.day) = 1 then 'Tuesday'
+                when extract(isodow from tempCheck.day) = 2 then 'Wednesday'
+                when extract(isodow from tempCheck.day) = 3 then 'Thursday'
+                when extract(isodow from tempCheck.day) = 4 then 'Friday'
+                when extract(isodow from tempCheck.day) = 5 then 'Saturday'
+                when extract(isodow from tempCheck.day) = 6 then 'Sunday' end,
+                tempCheck.hour, tempCheck.count into failedDay, failedHour, count
     from tempCheck, temp
     where tempCheck.day = temp.day
     and tempCheck.hour = temp.hour
@@ -997,10 +1004,10 @@ begin
     order by tempCheck.day, tempCheck.hour
     limit 1;
 
-    -- if count < 5 then
-    --     raise exception 'FoodSanta: Your new shift results in less than 5 people working at %00hrs on %! Ho ho ho!',
-    --     failedHour, failedDay;
-    -- end if;
+    if count < 5 then
+        raise exception 'FoodSanta: Your new shift results in less than 5 people working at %00hrs on %s! Ho ho ho!',
+        failedHour, failedDay;
+    end if;
 
     -- updating value of insertion/update
     NEW.mwsHours = totalHours;

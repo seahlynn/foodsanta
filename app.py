@@ -1738,6 +1738,8 @@ def setFullTimeScheduleResult():
     today = datetime.today()
     datem = datetime(today.year, today.month + 1 % 12, 1).date()
     monthYear = datem.strftime('%B') + ' ' + str(today.year)
+    message = 'aborted'
+    errorMessage = ''
     
     if request.method == 'POST':
         form = request.form
@@ -1750,9 +1752,16 @@ def setFullTimeScheduleResult():
         mwsidQuery = f"select mwsid from MonthlyWorkSchedule where username = '{username}' and mnthStartDay = '{datem}';"
         mwsid = db.session.execute(mwsidQuery).fetchall()[0][0]
         newScheduleQuery = f"begin; update MonthlyWorkSchedule set mwsid = '{mwsid}', wkStartDay = '{startDay}', day1 = '{day1}', day2 = '{day2}', day3 = '{day3}', day4 = '{day4}', day5 = '{day5}' where mwsid = '{mwsid}'; commit;"
-        newScheduleResult = db.session.execute(newScheduleQuery)
+        try:
+            newScheduleResult = db.session.execute(newScheduleQuery)
+            message = 'completed'
+        except InternalError as e:
+            startIndex = str(e).find('FoodSanta: ')
+            endIndex = str(e).find('Ho ho ho!') + 9
+            errorMessage = str(e)[startIndex:endIndex]
+            print(errorMessage)
 
-    return render_template('schedulesetfulltimeresult.html', monthYear = monthYear)
+    return render_template('schedulesetfulltimeresult.html', monthYear = monthYear, message = message, errorMessage = errorMessage)
 
 @app.route('/getPartTimeSchedule', methods=['GET'])
 def getPartTimeSchedule():
