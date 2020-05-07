@@ -1357,6 +1357,8 @@ def orderstatus():
     and Orders.delivered = False"
     checkifunallocatedorderresult = db.session.execute(checkifunallocatedorder).fetchall()
 
+    riderusername = "Your order hasn't been allocated to a rider"
+    
     if checkifunallocatedorderresult[0][0] != 0:
 
         orderidquery = f"select Delivers.orderid \
@@ -1415,7 +1417,7 @@ def orderstatus():
         db.session.execute(updateriderpicked)
         db.session.execute(updateorderselectedbyrider)
         db.session.commit()
-
+        
     inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant \
     from Orders O, Delivers D, Restaurants R \
     where D.orderid = O.orderid \
@@ -1433,7 +1435,7 @@ def orderstatus():
     finishedresult = db.session.execute(finishedquery)
     finishedlist = [dict(rest = row[0], total = row[1], received = row[2], orderid = row[3]) for row in finishedresult.fetchall()]
     
-    return render_template('orderstatus.html', orderlist = orderlist, finishedlist = finishedlist)
+    return render_template('orderstatus.html', orderlist = orderlist, finishedlist = finishedlist, rider = riderusername)
 
 @app.route('/submitreviewandrating', methods=['POST'])
 def submitreviewandrating():
