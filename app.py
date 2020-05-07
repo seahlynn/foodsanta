@@ -217,6 +217,51 @@ def gotostaff():
     details = get_rest_details(rest_id)
     return render_template('staffmenu.html', menu=menu, details=details, promohist=promohist)
 
+@app.route('/gotorestorders', methods=['GET', 'POST'])
+def gotorestorders():
+    username = session['username']
+    restid = db.session.execute(f"select restid from RestaurantStaff where username = '{username}'").fetchall()[0][0]
+    
+    orderquery = f"select * from Orders natural join Users where restid = {restid} and preparedByRest = false"
+    orderresult = db.session.execute(orderquery)
+    orderlist = [dict(orderid = row[1], username = row[0], phone = row[13], time = row[3]) for row in orderresult.fetchall()]
+    
+    return render_template('stafforders.html', orderlist = orderlist)
+
+@app.route('/vieworderdetails', methods=['GET', 'POST'])
+def vieworderdetails():
+    username = session['username']
+    orderid = request.form['orderid']
+    
+    detailquery = db.session.execute(f"select * from Contains natural join Food where orderid = {orderid}")
+    detaillist = [dict(item = row[3], quantity = row[2]) for row in detailquery.fetchall()]
+
+    # to have orderlist remaining
+    restid = db.session.execute(f"select restid from RestaurantStaff where username = '{username}'").fetchall()[0][0]
+    orderquery = f"select * from Orders natural join Users where restid = {restid} and preparedByRest = false"
+    orderresult = db.session.execute(orderquery)
+    orderlist = [dict(orderid = row[1], username = row[0], phone = row[13], time = row[3]) for row in orderresult.fetchall()]
+    
+    return render_template('stafforders.html', orderlist = orderlist, detaillist = detaillist, orderid = orderid)
+
+@app.route('/restcompleteorder', methods=['GET', 'POST'])
+def restcompleteorder():
+    username = session['username']
+    orderid = request.form['orderid']
+    
+    todo = f"update Orders set preparedByRest = True where orderid = {orderid}"
+    db.session.execute(todo)
+    db.session.commit()
+
+    # to have orderlist remaining
+    restid = db.session.execute(f"select restid from RestaurantStaff where username = '{username}'").fetchall()[0][0]
+    orderquery = f"select * from Orders natural join Users where restid = {restid} and preparedByRest = false"
+    orderresult = db.session.execute(orderquery)
+    orderlist = [dict(orderid = row[1], username = row[0], phone = row[13], time = row[3]) for row in orderresult.fetchall()]
+    
+    return render_template('stafforders.html', orderlist = orderlist)
+
+
 @app.route('/gotostaffstats', methods=['GET', 'POST'])
 def gotostaffstats():
     rest_id = session['rest_id']
