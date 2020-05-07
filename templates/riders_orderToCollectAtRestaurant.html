@@ -15,6 +15,13 @@
           <h2> {{ restLocation }} </h2>
         </div>
 
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <h2 class="text--centered text--omega--login text input--normal" style="color: red; font-size: 18px;"><b>{{ message }}</b></h2>
+              {% endfor %}
+            {% endif %}
+        {% endwith %}
         <br>
         <form method="POST" action="collectedFromRestaurant">
           <button type="submit"> I have collected this order! </button>         
