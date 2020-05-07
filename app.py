@@ -28,7 +28,16 @@ def updateDailyLimit():
     todo = f"update Food F1 set availability = (select dailylimit from Food F2 where F1.foodid = F2.foodid)"
     db.session.execute(todo)
     db.session.commit()
-    print("Scheduler is alive!")
+
+def insertRiderStats():
+    usernameresult = db.session.execute(f"select distinct username from DeliveryRiders")
+    usernamelist = [dict(username = row[0]) for row in usernameresult.fetchall()]
+
+    for i in usernamelist:
+        username = i['username']
+        todo = f"insert into RiderStats values ((select extract(month from current_timestamp)), (select extract(year from current_timestamp)), '{username}', 0, 0);" 
+        db.session.execute(todo)
+        db.session.commit()
 
 def checkAndGenerateRiderSchedule():
     partridersquery = f"select username from PartTimeRiders"
@@ -45,6 +54,7 @@ def checkAndGenerateRiderSchedule():
 sched = BackgroundScheduler(daemon=True)
 sched.add_job(updateDailyLimit,'cron', hour=0)
 sched.add_job(checkAndGenerateRiderSchedule,'cron', hour=0)
+sched.add_job(insertRiderStats, 'cron', day = 1)
 sched.start()
 
 
@@ -696,9 +706,9 @@ def viewallriderstats():
     yearlistresult = db.session.execute(f"select distinct year from Allstats order by year desc")
     yearlist = [dict(year = row[0]) for row in yearlistresult.fetchall()]
     
-    statsquery = f"select * from RiderStats order by month, year"
+    statsquery = f"select R.month, R.year, R.username, R.totalOrders, R.totalSalary, H.hours from RiderStats R, HoursPerMonth H where R.username = H.username and R.month = (extract(month from H.month)) order by month, year"
     statsresult = db.session.execute(statsquery)
-    riderstatslist = [dict(month = row[0], year = row[1], username = row[2], orders = row[3], hours = row[4], salary = row[5]) for row in statsresult.fetchall()]
+    riderstatslist = [dict(month = row[0], year = row[1], username = row[2], orders = row[3], hours = row[5], salary = row[4]) for row in statsresult.fetchall()]
 
     return render_template('stats.html', yearlist = yearlist, monthlist = monthlist, riderstatslist = riderstatslist)
 
@@ -714,18 +724,18 @@ def viewspecificriderstats():
     year = request.form.get('year')
 
     if month is None and year is None:
-        statsquery = f"select * from RiderStats order by month, year"
+        statsquery = f"select R.month, R.year, R.username, R.totalOrders, R.totalSalary, H.hours from RiderStats R, HoursPerMonth H where R.username = H.username and R.month = (extract(month from H.month)) and R.year = (extract(year from H.month)) order by month, year"
     elif month is None:
         year = int(year)
-        statsquery = f"select * from RiderStats where year = {year} order by month"
+        statsquery = f"select R.month, R.year, R.username, R.totalOrders, R.totalSalary, H.hours from RiderStats R, HoursPerMonth H where R.username = H.username and R.month = (extract(month from H.month)) and R.year = (extract(year from H.month)) and R.year = {year} order by year"
     elif year is None:
         month = int(month)
-        statsquery = f"select * from RiderStats where month = {month} order by year"
+        statsquery = f"select R.month, R.year, R.username, R.totalOrders, R.totalSalary, H.hours from RiderStats R, HoursPerMonth H where R.username = H.username and R.month = (extract(month from H.month)) and R.year = (extract(year from H.month)) and R.month = {month} order by month"
     else:
-        statsquery = f"select * from RiderStats where month = {month} and year = {year}"
+        statsquery = f"select R.month, R.year, R.username, R.totalOrders, R.totalSalary, H.hours from RiderStats R, HoursPerMonth H where R.username = H.username and R.month = (extract(month from H.month)) and R.year = (extract(year from H.month)) and R.year = {year} and R.month = {month} order by month, year"
 
     statsresult = db.session.execute(statsquery)
-    riderstatslist = [dict(month = row[0], year = row[1], username = row[2], orders = row[3], hours = row[4], salary = row[5]) for row in statsresult.fetchall()]
+    riderstatslist = [dict(month = row[0], year = row[1], username = row[2], orders = row[3], hours = row[5], salary = row[4]) for row in statsresult.fetchall()]
 
     return render_template('stats.html', yearlist = yearlist, monthlist = monthlist, riderstatslist = riderstatslist)
 
@@ -1441,7 +1451,7 @@ def gotoriderprofile():
     profileresult = db.session.execute(profilequery)
     profile = [dict(name = row[0], number = row[1]) for row in profileresult.fetchall()]
 
-    riderstatsquery = f"select * from RiderStats where username = '{username}'"    
+    riderstatsquery = f"select R.month, R.year, R.username, R.totalOrders, R.totalSalary, H.hours from RiderStats R, HoursPerMonth H where R.username = H.username and R.month = (extract(month from H.month)) and R.year = (extract(year from H.month)) and R.username = '{username}' order by month, year" 
     riderstatsresult = db.session.execute(riderstatsquery)
     riderstats = [dict(month = row[0], year = row[1], totalOrders = row[3], totalHours = row[4], totalSalary = row[5]) for row in riderstatsresult.fetchall()]
     
@@ -1611,20 +1621,12 @@ def orderDelivered():
     db.session.commit()
 
     # update rider stats
-    # check if rider has stats or not
-    checkRiderStatsExistQuery = f"select count(*) from RiderStats where username = '{username}' and month = 4"
-    checkResult = db.session.execute(checkRiderStatsExistQuery).fetchall()
-
-    if (checkResult[0][0]):
-        updateRiderStats = f"update RiderStats set totalOrders = totalOrders + 1 where username = '{username}'"
-    else: # by right, rider's stats should be added when the rider takes up his shift
-        updateRiderStats = f"insert into RiderStats (username, totalOrders, totalHours, totalSalary, month, year) values ('{username}', 1, null, null, 4, 2020)"    
-
+    updateRiderStats = f"update RiderStats set totalOrders = totalOrders + 1 where username = '{username}' and month = (select extract(month from current_timestamp)) and year = (select extract(year from current_timestamp))"
     db.session.execute(updateRiderStats)
     db.session.commit()
 
     # check current rider stats
-    numOrdersQuery = f"select distinct totalOrders from RiderStats where username = '{username}' and month = 4"
+    numOrdersQuery = f"select distinct totalOrders from RiderStats where username = '{username}' and month = (select extract(month from current_timestamp))"
     numOrdersResult = db.session.execute(numOrdersQuery).fetchall()
     numOrders = numOrdersResult[0][0]
 
