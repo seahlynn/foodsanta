@@ -32,7 +32,7 @@
           </div>
           <div style="width: 50%; margin:0 auto;">
             <div style="width:50%; float:left;"> 
-              <h3> Category </h3>
+              <h3> Search by Category </h3>
               <form action="catresults" method='GET' autocomplete="off">
                   <input name="category" list="catlist" onchange="this.form.submit()">
               </form>
@@ -62,7 +62,8 @@
         <div> 
           <div class="results" style="width:50%; float: left;">
             {% block content %}
-          <h2> Menu for {{rest}} </h2>
+              {% if foodlist %}
+              <h2> Menu for {{rest}} </h2>
               <table border='1' align = 'center' style="margin-top: 0px;">
                   <tr>
                     <th> Category </th>
@@ -78,9 +79,22 @@
                     <td> {{p.avail}} </td>
                   </tr>
                   {% endfor %}
-              {% endblock %}
               </table>
               <h4> Min. order : ${{minAmt}} </h4>
+              {% elif catrestlist %}
+              <h2> Restaurants offering {{category}} </h2>
+              <table border='1' align = 'center' style="margin-top: 0px;">
+                <tr>
+                  <th> Restaurant </th>
+                </tr>
+                {% for r in catrestlist %}
+                <tr>
+                  <td> {{r.restname}} </td>
+                </tr>
+                {% endfor %}
+              </table>
+              {% endif %}
+            {% endblock %}
           </div>
           
           <div class="choosefood" style="width:50%; display: inline-block;">
@@ -98,23 +112,26 @@
             <form method="POST" action="viewcart" style="width: auto;">
               <button type="submit"> View Cart </button>         
             </form>
+
+            <div class="reviews">
+              <br> 
+              <h1> Reviews </h1>
+    
+            {% for p in reviewlist %}
+              <table align = 'center'>
+                <tr>
+                  <td style="font-weight:bold" >{{ p.username }}: </td>
+                  <td> <q> {{ p.review | safe}} </q></td>
+                </tr>
+            </table>
+            {% endfor %}
+            </div>
+
           </div>
         </div>
 
-        
-        <div class="reviews">
-          <br> <br> <br> <br> <br> <br>
-          <h1> Reviews </h1>
-
-        {% for p in reviewlist %}
-          <table align = 'center'>
-            <tr>
-              <td style="font-weight:bold" >{{ p.username }}: </td>
-              <td> <q> {{ p.review | safe}} </q></td>
-            </tr>
-        </table>
-        {% endfor %}
-        </div>
+        <br> <br> <br>
+       
       {% endblock %}
     </body>
 </html>

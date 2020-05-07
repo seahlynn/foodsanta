@@ -182,6 +182,7 @@ INSERT INTO PartTimeRiders(username) VALUES
 ('user48'),
 ('user49');
 
+
 INSERT INTO Locations(username, location, dateAdded) VALUES
 ('justning', '21 Lower Kent Ridge Rd, Singapore 119077', '2020-04-03'),
 ('justning', '469 Bukit Timah Rd, Singapore 259756', '2020-04-01'),
@@ -307,17 +308,18 @@ INSERT INTO Food(foodid, description, restid, price, dailylimit, availability, c
 (91, 'vegetable sub', 10, 4.8, 60, 60, 'Western', 0);
 
 INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid, delivered) VALUES 
-(2, 'justning', '469 Bukit Timah Rd Singapore 259756', '04/05/2020 1230', 10.80, NULL, 4, True, True, 1, True),
-(3, 'kalsyc', '20 Heng Mui Keng Terrace Singapore 119618', '04/05/2020 1320', 23.80, NULL, 1, True, True, 1, True),
+(2, 'justning', '469 Bukit Timah Rd Singapore 259756', '04/05/2020 1230', 10.80, NULL, 4, True, True, 4, True),
+(3, 'kalsyc', '20 Heng Mui Keng Terrace Singapore 119618', '04/05/2020 1320', 23.80, NULL, 1, True, True, 4, True),
 (4, 'kalsyc', '12 Kent Ridge Dr Singapore 119243', '04/05/2020 1330', 18.80, NULL, 1, True, True, 1, True),
 (5, 'kalsyc', '2 College Ave West Stephen Riady Centre Singapore 138607', '04/05/2020 1350', 13.80, NULL, 1, True, True, 1, True),
-(7, 'justning', '16 #01-220 College Ave West 138527', '04/05/2020 1630', 13.00, NULL, 100, True, True, 1, True),
+(7, 'justning', '16 #01-220 College Ave West 138527', '04/05/2020 1630', 13.00, NULL, 100, True, True, 10, True),
 (8, 'kalsyc', '16 Science Drive 4 Singapore 117558', '04/05/2020 1700', 16.30, NULL, 1, True, True, 1, True), 
 (9, 'kalsyc', '2 Engineering Drive 3 Singapore 117581', '04/05/2020 1730', 14.90, NULL, 1, True, True, 1, True),
 (10, 'kalsyc', '9 Engineering Drive 1 #03-09 EA Singapore 117575', '04/05/2020 1750', 15.60, NULL, 1, True, True, 1, True),
-(11, 'justning', '13 Computing Drive Singapore 117417', '05/05/2020 2100', 133.00, NULL, 101, True, True, 1, True),
+(11, 'justning', '13 Computing Drive Singapore 117417', '05/05/2020 2100', 133.00, NULL, 101, True, True, 9, True),
 (12, 'kalsyc', '5 Arts Link 5 The Block AS7 Level Shaw Foundation Building Singapore 117570', '04/01/2020 1830', 13.10, NULL, 1, True, True, 1, True),
 (13, 'justning', '12 Kent Ridge Cresent Central Library Building CLB01 02 Singapore 119275', '02/05/2020 1930', 19.80, NULL, 102, True, True, 1, True),
+
 (14, 'user0', '3 Science Drive 2 Singapore 117543', '05/05/2020 1945', 20, NULL, 6, True, True, 3, True),
 (15, 'user1', '3 Science Drive 2 Singapore 117543', '06/05/2020 2145', 20, NULL, 7, True, True, 3, True),
 (16, 'user2', '3 Science Drive 2 Singapore 117543', '05/05/2020 1445', 20, NULL, 8, True, True, 3, True),
@@ -325,81 +327,98 @@ INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost,
 (18, 'user0', '3 Science Drive 2 Singapore 117543', '08/04/2020 1245', 20, NULL, 6, True, True, 3, True),
 (19, 'user0', '3 Science Drive 2 Singapore 117543', '09/03/2020 1145', 20, NULL, 6, True, True, 3, True),
 (20, 'user1', '3 Science Drive 2 Singapore 117543', '11/03/2020 1045', 20, NULL, 7, True, True, 3, True),
-(21, 'user2', '3 Science Drive 2 Singapore 117543', '01/05/2020 1945', 20, NULL, 8, True, True, 3, True),
-(22, 'user3', '3 Science Drive 2 Singapore 117543', '02/05/2020 1845', 20, NULL, 9, True, True, 3, True),
-(23, 'user4', '3 Science Drive 2 Singapore 117543', '03/05/2020 1745', 20, NULL, 10, True, True, 3, True),
-(24, 'user5', '3 Science Drive 2 Singapore 117543', '05/05/2020 1645', 20, NULL, 11, True, True, 3, True),
-(25, 'user6', '3 Science Drive 2 Singapore 117543', '06/05/2020 1545', 40, NULL, 12, True, True, 3, True),
-(26, 'user7', '3 Science Drive 2 Singapore 117543', '08/02/2020 1445', 40, NULL, 13, True, True, 3, True),
-(27, 'user8', '3 Science Drive 2 Singapore 117543', '09/02/2020 1345', 55.80, NULL, 14, True, True, 3, True),
-(28, 'user9', '3 Science Drive 2 Singapore 117543', '14/03/2020 1245', 26.80, NULL, 15, True, True, 3, True),
-(29, 'kalsyc', '3 Science Drive 2 Singapore 117543', '14/04/2020 1145', 27.80, NULL, 1, True, True, 3, True),
-(30, 'kalsyc', '3 Science Drive 2 Singapore 117543', '24/01/2020 1045', 25.80, NULL, 1, True, True, 3, True),
-(31, 'kalsyc', '3 Science Drive 2 Singapore 117543', '25/02/2020 1905', 24.80, NULL, 1, True, True, 3, True),
-(32, 'kalsyc', '3 Science Drive 2 Singapore 117543', '06/03/2020 2005', 23.80, NULL, 1, True, True, 3, True),
-(33, 'kalsyc', '3 Science Drive 2 Singapore 117543', '07/01/2020 1225', 22.80, NULL, 1, True, True, 3, True),
-(34, 'kalsyc', '3 Science Drive 2 Singapore 117543', '03/04/2020 1325', 22.80, NULL, 1, True, True, 3, True),
-(35, 'kalsyc', '3 Science Drive 2 Singapore 117543', '01/04/2020 1355', 21.80, NULL, 1, True, True, 3, True),
-(36, 'kalsyc', '3 Science Drive 2 Singapore 117543', '01/04/2020 1355', 21.80, NULL, 1, True, True, 3, True),
+
+(21, 'user2', '3 Science Drive 2 Singapore 117543', '01/05/2020 1945', 20, NULL, 8, True, True, 7, True),
+(22, 'user3', '3 Science Drive 2 Singapore 117543', '02/05/2020 1845', 20, NULL, 9, True, True, 7, True),
+(23, 'user4', '3 Science Drive 2 Singapore 117543', '03/05/2020 1745', 20, NULL, 10, True, True, 7, True),
+(24, 'user5', '3 Science Drive 2 Singapore 117543', '05/05/2020 1645', 20, NULL, 11, True, True, 7, True),
+(25, 'user6', '3 Science Drive 2 Singapore 117543', '06/05/2020 1545', 40, NULL, 12, True, True, 7, True),
+
+(26, 'user7', '3 Science Drive 2 Singapore 117543', '08/02/2020 1445', 40, NULL, 13, True, True, 6, True),
+(27, 'user8', '3 Science Drive 2 Singapore 117543', '09/02/2020 1345', 55.80, NULL, 14, True, True, 6, True),
+(28, 'user9', '3 Science Drive 2 Singapore 117543', '14/03/2020 1245', 26.80, NULL, 15, True, True, 6, True),
+(29, 'kalsyc', '3 Science Drive 2 Singapore 117543', '14/04/2020 1145', 27.80, NULL, 1, True, True, 6, True),
+(30, 'kalsyc', '3 Science Drive 2 Singapore 117543', '24/01/2020 1045', 25.80, NULL, 1, True, True, 6, True),
+
+(31, 'kalsyc', '3 Science Drive 2 Singapore 117543', '25/02/2020 1905', 24.80, NULL, 1, True, True, 2, True),
+(32, 'kalsyc', '3 Science Drive 2 Singapore 117543', '06/03/2020 2005', 23.80, NULL, 1, True, True, 2, True),
+(33, 'kalsyc', '3 Science Drive 2 Singapore 117543', '07/01/2020 1225', 22.80, NULL, 1, True, True, 2, True),
+(34, 'kalsyc', '3 Science Drive 2 Singapore 117543', '03/04/2020 1325', 22.80, NULL, 1, True, True, 2, True),
+(35, 'kalsyc', '3 Science Drive 2 Singapore 117543', '01/04/2020 1355', 21.80, NULL, 1, True, True, 2, True),
+
+(36, 'kalsyc', '3 Science Drive 2 Singapore 117543', '01/04/2020 1355', 21.80, NULL, 1, True, True, 4, True),
 (37, 'kalsyc', '3 Science Drive 2 Singapore 117543', '07/05/2020 1815', 13.80, NULL, 1, False, True, 4, False),
 (38, 'lynjaaa', '3 Science Drive 2 Singapore 117543', '07/05/2020 1855', 25.80, NULL, 1, False, True, 4, False);
 
 INSERT INTO Contains(orderid, foodid, quantity) VALUES
-(2, 2, 1),
-(3, 2, 1),
+(2, 10, 1),
+(3, 8, 2),
 (3, 3, 1),
 (4, 2, 2),
 (5, 3, 1),
 (6, 4, 1),
-(7, 5, 1),
+(7, 86, 1),
+(7, 88, 1),
 (8, 7, 1),
 (9, 4, 1),
 (10, 8, 1),
-(11, 1, 1),
-(11, 2, 2),
-(11, 5, 3),
+(11, 74, 1),
+(11, 76, 2),
+(11, 77, 3),
 (12, 5, 1),
 (13, 3, 1),
 
 (14, 17, 1),
 (15, 18, 1),
 (16, 21, 1),
-(17, 21, 1),
+(17, 27, 1),
 (17, 22, 2),
 (18, 26, 2),
-(23, 27, 3),
-(24, 26, 4),
-(25, 25, 3),
-(28, 24, 3),
-(34, 23, 5),
-(18, 18, 1),
+(18, 22, 1),
 (19, 18, 1),
 (20, 17, 1),
-(21, 25, 1),
-(22, 25, 1),
-(23, 25, 1),
-(24, 28, 1),
-(25, 19, 1),
-(26, 19, 1),
-(27, 19, 1),
-(28, 20, 1),
-(29, 19, 1),
-(30, 19, 1),
-(31, 20, 1),
-(32, 20, 1),
-(33, 20, 1),
-(34, 19, 1),
-(35, 19, 1);
+
+(21, 59, 1),
+(22, 60, 1),
+(23, 61, 1),
+(24, 93, 1),
+(25, 58, 1),
+(23, 56, 3),
+(24, 57, 4),
+(25, 92, 3),
+(25, 57, 3),
+
+(26, 48, 1),
+(27, 49, 2),
+(28, 50, 1),
+(28, 51, 3),
+(29, 52, 1),
+(30, 53, 4),
+
+(31, 9, 1),
+(32, 10, 1),
+(33, 15, 1),
+(34, 16, 1),
+(34, 12, 5),
+(35, 13, 1),
+
+(36, 34, 2),
+(36, 32, 3),
+(37, 35, 1),
+(37, 33, 4),
+(38, 31, 5),
+(38, 29, 9);
+
 
 INSERT INTO PaymentMethods(paymentmethodid, username, cardInfo) VALUES
-(100, 'justning', 'dbs card'),
-(101, 'justning', 'ocbc card'),
-(102, 'justning', 'uob card'),
-(103, 'justning', 'stanchart card'),
-(104, 'user0', 'uob card'),
-(105, 'user1', 'dbs card'),
-(106, 'user2', 'paylah debit'),
-(107, 'user3', 'american express card');
+(100, 'justning', '1234567887654321'),
+(101, 'justning', '2345678998765432'),
+(102, 'justning', '3456789009876543'),
+(103, 'justning', '1605199999915061'),
+(104, 'user0', '1234567887654321'),
+(105, 'user1', '2345678998765432'),
+(106, 'user2', '3456789009876543'),
+(107, 'user3', '1605199999915061');
 
 INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, day1, day2, day3, day4, day5) VALUES
 (1, 'user31', '2019-10-19', 1, 3, 0, 0, 2, 2),
@@ -861,13 +880,23 @@ INSERT INTO Delivers(orderid, username, rating, location, deliveryFee, timeDepar
 (15, 'user33', NULL, '3 Science Drive 2 Singapore 117543', 5, NULL, NULL, NULL);
 
 INSERT INTO FDSPromo(fdspromoid, description, type, value, minAmnt, appliedto, startTime, endTime, points) VALUES
-(1, '10% off all orders this Circuit Breaker', 'percentoff', 10, 0, 'total', '18/04/2020', '05/04/2020', 0),
-(2, '25% off all orders this Valentine Day', 'percentoff', 25, 0, 'total', '14/02/2020', '28/02/2020', 30),
+(1, '10% off all orders this Circuit Breaker', 'percentoff', 10, 0, 'total', '02/04/2020', '02/06/2020', 0),
+(2, '$15 off all orders this Valentine Day, with minimum spend of $70', 'amountoff', 15, 70, 'total', '14/02/2020', '28/02/2020', 100),
 (3, '$5 off all orders for the month of May, minimum order of $50', 'amountoff', 5, 50, 'total', '01/05/2020', '31/05/2020', 40),
-(4, '5% off all delivery for the month of May', 'percentoff',  5, 0, 'delivery', '01/05/2020', '31/05/2020', 25),
-(5, '5% off all orders for from 4Fingers', 'percentoff', 5, 0, 'total', '01/05/2020', '31/05/2020', 12),
-(6, '5% off all orders for from RIRIMALA', 'percentoff', 5, 0, 'total', '01/05/2020', '31/05/2020', 12),
-(7, '$5 off all orders for CCB', 'amountoff', 5, 0, 'total', '01/06/2020', '15/06/2020', 0);
+(4, '5% off all delivery for the month of May', 'percentoff',  5, 0, 'delivery', '01/05/2020', '31/05/2020', 20),
+(5, '5% off all orders from 4Fingers', 'percentoff', 5, 0, 'total', '01/05/2020', '31/05/2020', 12),
+(6, '5% off all orders from RIRIMALA', 'percentoff', 5, 0, 'total', '01/05/2020', '31/05/2020', 12),
+(7, '$5 off all orders for CCB, no minimum spend!', 'amountoff', 5, 0, 'total', '01/06/2020', '15/06/2020', 0),
+(8, '10% off all orders from Marche with minimum spending of $80', 'percentoff', 10, 80, 'total', '01/05/2020', '31/05/2020', 12),
+(9, '$10 off orders from KFC with minimum spending of $40', 'amountoff', 10, 40, 'total', '01/05/2020', '15/06/2020', 12),
+(10, '$2 off all deliveries this Circuit Breaker with $20 minimum spend', 'amountoff', 2, 20, 'total', '01/05/2020', '15/06/2020', 0);
+
+INSERT INTO RestaurantPromo(fdspromoid, restid) VALUES
+(5, 1),
+(6, 5),
+(8, 7),
+(9, 4);
+
 
 INSERT INTO DeliveryPromo(deliverypromoid, description, amount, points) values 
 (1, '$1 off delivery', 1, 10),
@@ -876,6 +905,10 @@ INSERT INTO DeliveryPromo(deliverypromoid, description, amount, points) values
 (4, '$4 off delivery', 4, 40);
 
 INSERT INTO AllStats(month, year, totalNewCust, totalNumOrders, totalCostOfOrders) values
+(9, 2019, 45, 145, 2136),
+(10, 2019, 34, 62, 722),
+(11, 2019, 15, 32, 343),
+(12, 2019, 53, 211, 2040),
 (1, 2020, 20, 50, 654),
 (2, 2020, 34, 62, 722),
 (3, 2020, 18, 47, 443),
@@ -883,18 +916,16 @@ INSERT INTO AllStats(month, year, totalNewCust, totalNumOrders, totalCostOfOrder
 
 INSERT INTO CustomerStats(username, month, year, totalNumOrders, totalCostOfOrders) values
 ('justning', 1, 2020, 2, 54),
-('justning', 2, 2020, 6, 134),
+('justning', 2, 2020, 3, 134),
 ('lynjaaa', 1, 2020, 1, 25),
 ('kalsyc', 1, 2020, 4, 89),
-('justning', 3, 2020, 7, 154),
-('justning', 4, 2019, 6, 204),
-('lynjaaa', 2, 2020, 0, 0),
-('kalsyc', 2, 2020, 7, 160),
-('justning', 5, 2019, 8, 54),
-('justning', 6, 2019, 9, 134),
+('justning', 3, 2020, 1, 154),
+('kalsyc', 12, 2019, 7, 160),
+('justning', 10, 2019, 8, 54),
+('justning', 12, 2019, 9, 134),
 ('lynjaaa', 3, 2020, 1, 25),
 ('kalsyc', 3, 2020, 4, 89),
-('justning', 6, 2020, 3, 134),
+('justning', 11, 2019, 3, 134),
 ('lynjaaa', 4, 2020, 1, 25);
 
 INSERT INTO RiderStats(month, year, username, totalOrders, totalSalary) values
@@ -922,18 +953,37 @@ INSERT INTO RiderStats(month, year, username, totalOrders, totalSalary) values
 (5, 2020, 'user39', 21,  605),
 (5, 2020, 'user40', 34, 970),
 (5, 2020, 'partridertest', 12, 380),
-(5, 2020, 'user41', 21, 605),
-(5, 2020, 'user42', 23, 765),
-(5, 2020, 'user43', 23, 765),
-(5, 2020, 'user45', 21, 605),
-(5, 2020, 'user46', 21, 605),
-(5, 2020, 'user47', 23, 765),
-(5, 2020, 'user48', 11, 375),
-(5, 2020, 'user49', 13, 405);
+(11, 2019, 'user41', 21, 605),
+(12, 2019, 'user42', 23, 765),
+(10, 2019, 'user43', 23, 765),
+(10, 2019, 'user45', 21, 605),
+(11, 2019, 'user46', 21, 605),
+(10, 2019, 'user47', 23, 765),
+(11, 2019, 'user48', 11, 375),
+(12, 2019, 'user49', 13, 405);
 
-INSERT INTO RestaurantPromo(fdspromoid, restid) VALUES
-(5, 1),
-(6, 5);
+INSERT INTO HoursPerMonth(username, month, hours) values 
+('user41', '01/11/2019', 20),
+('user42', '01/12/2019', 20),
+('user43', '01/10/2019', 20),
+('user45', '01/10/2019', 20),
+('user46', '01/11/2019', 20),
+('user47', '01/10/2019', 20),
+('user48', '01/11/2019', 20),
+('user49', '01/12/2019', 20);
 
-
-
+INSERT INTO Reviews(orderid, reviewDesc) values
+(2, 'really delicious food'),
+(3, 'I love the food here!'),
+(4, 'highly reccommended!'),
+(5, 'yumzzz'),
+(7, 'thumbs up'),
+(8, 'the food is amazing! please support!'),
+(9, 'loving it'),
+(10, 'really delicious food'),
+(11, 'I love the food here!'),
+(12, 'highly reccommended!'),
+(13, 'yumzzz'),
+(14, 'thumbs up'),
+(15, 'the food is amazing! please support!'),
+(16, 'loving it');

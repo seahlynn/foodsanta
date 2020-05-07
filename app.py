@@ -59,7 +59,74 @@ def updateWeeklySalary():
                 where month = (select extract(month from current_timestamp)) and year = (select extract(year from current_timestamp)) and username = {username}"
         db.session.execute(todo)
         db.session.commit()
-    
+
+def haveNextMonth(inputUsername):
+    username = inputUsername
+    today = datetime.today()
+    nextMonth = datetime(today.year + int((today.month + 1) / 12), (today.month + 1) % 12, 1).date()
+    nextScheduleQuery = f"select count(*) from MonthlyWorkSchedule where mnthStartDay = '{nextMonth}' and username = '{username}'"
+    nextScheduleResult = db.session.execute(nextScheduleQuery).fetchall()[0][0]
+    return nextScheduleResult
+
+def generateNextMonth(inputUsername):
+    username = inputUsername
+    #check if current month has schedule to duplicate
+    today = datetime.today()
+    datem = datetime(today.year, today.month, 1).date()
+    nextMonth = datetime(today.year + int((today.month + 1) / 12), (today.month + 1) % 12, 1).date()
+    newMwsidQuery = f"select max(mwsid) from MonthlyWorkSchedule"
+    newMwsid = int(db.session.execute(newMwsidQuery).fetchall()[0][0] or 0) + 1
+
+    scheduleQuery = f"select max(mwsid) from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'"
+    scheduleResult = int(db.session.execute(scheduleQuery).fetchall()[0][0] or 0)
+    if scheduleResult != 0: #current month has schedule to duplicate
+        insertion = f"insert into MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, day1, day2, day3, day4, day5) select '{newMwsid}', '{username}', '{nextMonth}', wkStartDay, day1, day2, day3, day4, day5 from MonthlyWorkSchedule where mwsid = '{scheduleResult}'; commit;" 
+        insertionResult = db.session.execute(insertion)
+    else:
+        insertion = f"insert into MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, day1, day2, day3, day4, day5) values ('{newMwsid}', '{username}', '{nextMonth}', 2, 3, 2, 3, 2, 3); commit;"
+        insertionResult = db.session.execute(insertion)
+    return;
+
+def haveNextWeek(inputUsername):
+    username = inputUsername
+    today = datetime.today()
+    daysToNextMonday = 0 - today.weekday()
+    if daysToNextMonday <= 0:
+        daysToNextMonday += 7
+    nextMonday = (today + timedelta(days = daysToNextMonday)).date()
+    nextScheduleQuery = f"select count(*) from WeeklyWorkSchedule where startDate = '{nextMonday}' and username = '{username}'"
+    nextScheduleResult = db.session.execute(nextScheduleQuery).fetchall()[0][0]
+    print(nextScheduleResult)
+    return nextScheduleResult
+
+def generateNextWeek(inputUsername):
+    username = inputUsername
+    #check if current week has schedule to duplicate
+    today = datetime.today()
+    monday = today - timedelta(days = today.weekday())
+    datem = monday.date()
+    daysToNextMonday = 0 - today.weekday()
+    if daysToNextMonday <= 0:
+        daysToNextMonday += 7
+    nextMonday = (today + timedelta(days = daysToNextMonday)).date()
+    newWwsidQuery = f"select max(wwsid) from WeeklyWorkSchedule"
+    newDwsidQuery = f"select max(dwsid) from DailyWorkShift"
+    newWwsid = int(db.session.execute(newWwsidQuery).fetchall()[0][0] or 0) + 1
+    newDwsid = int(db.session.execute(newDwsidQuery).fetchall()[0][0] or 0) + 1
+
+    scheduleQuery = f"select max(wwsid) from WeeklyWorkSchedule where startDate = '{datem}' and username = '{username}'"
+    scheduleResult = int(db.session.execute(scheduleQuery).fetchall()[0][0] or 0)
+    if scheduleResult != 0: #current week has schedule to duplicate
+        insertion = f"insert into WeeklyWorkSchedule(wwsid, username, startDate, wwsHours) select '{newWwsid}', '{username}', '{nextMonday}', 0 from WeeklyWorkSchedule where wwsid = '{scheduleResult}'; commit;"
+        insertionResult = db.session.execute(insertion)
+        insertion = f"insert into DailyWorkShift(dwsid, wwsid, day, startHour, duration) select (select max(dwsid) from DailyWorkShift) + row_number() over (order by d.day), '{newWwsid}', d.day, d.startHour, d.duration from DailyWorkShift d where d.wwsid = '{scheduleResult}'; commit;" 
+        insertionResult = db.session.execute(insertion)
+
+    else:
+        insertion = f"insert into WeeklyWorkSchedule(wwsid, username, startDate, wwsHours) values ('{newWwsid}', '{username}', '{nextMonday}', 0); commit;"
+        insertionResult = db.session.execute(insertion)
+        insertion = f"insert into DailyWorkShift(dwsid, wwsid, day, startHour, duration) values ('{newDwsid}', '{newWwsid}', 4, 18, 4), ('{newDwsid}' + 1, '{newWwsid}', 5, 18, 4), ('{newDwsid}' + 2, '{newWwsid}', 6, 18, 4); commit;"
+        insertionResult = db.session.execute(insertion)
 
 def checkAndGenerateRiderSchedule():
     partridersquery = f"select username from PartTimeRiders"
@@ -73,13 +140,14 @@ def checkAndGenerateRiderSchedule():
         if haveNextMonth(fullrider[0]) == 0:
             generateNextMonth(fullrider[0])
 
+checkAndGenerateRiderSchedule() #pre processing on startup
+
 sched = BackgroundScheduler(daemon=True)
 sched.add_job(updateDailyLimit,'cron', hour=0)
 sched.add_job(checkAndGenerateRiderSchedule,'cron', hour=0)
 sched.add_job(insertRiderStats, 'cron', day=1)
 sched.add_job(updateWeeklySalary, 'cron', day_of_week='mon')
 sched.start()
-
 
 @app.route('/', methods=['GET'])
 def index():
@@ -94,15 +162,13 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    #preprocessing tings
-    checkAndGenerateRiderSchedule()
     print("Login page accessed")
     session.clear()
 
     if request.method == 'POST':
         form = request.form
-        username = form["username"]
-        password = form["password"]
+        username = form["username"].strip()
+        password = form["password"].strip()
         is_valid = is_valid_user(username, password)
         if is_valid:
             print("Login verified")
@@ -249,6 +315,10 @@ def restcompleteorder():
     username = session['username']
     orderid = request.form['orderid']
     
+    if orderid == '':
+        flash("Please view details for an order to confirm it!")
+        return redirect('gotorestorders')
+
     todo = f"update Orders set preparedByRest = True where orderid = {orderid}"
     db.session.execute(todo)
     db.session.commit()
@@ -258,9 +328,25 @@ def restcompleteorder():
     orderquery = f"select * from Orders natural join Users where restid = {restid} and preparedByRest = false"
     orderresult = db.session.execute(orderquery)
     orderlist = [dict(orderid = row[1], username = row[0], phone = row[13], time = row[3]) for row in orderresult.fetchall()]
-    
+
     return render_template('stafforders.html', orderlist = orderlist)
 
+@app.route('/vieworderhistory', methods=['GET', 'POST'])
+def vieworderhistory():
+    username = session['username']
+    
+    # to have orderlist remaining
+    restid = db.session.execute(f"select restid from RestaurantStaff where username = '{username}'").fetchall()[0][0]
+    orderquery = f"select * from Orders natural join Users where restid = {restid} and preparedByRest = false"
+    orderresult = db.session.execute(orderquery)
+    orderlist = [dict(orderid = row[1], username = row[0], phone = row[13], time = row[3]) for row in orderresult.fetchall()]
+
+    # to have pastorderlist
+    orderquery = f"select * from Orders natural join Users where restid = {restid} and preparedByRest = true"
+    orderresult = db.session.execute(orderquery)
+    pastorderlist = [dict(orderid = row[1], username = row[0], cost = row[4], time = row[3]) for row in orderresult.fetchall()]
+    
+    return render_template('stafforders.html', pastorderlist = pastorderlist, orderlist = orderlist)
 
 @app.route('/gotostaffstats', methods=['GET', 'POST'])
 def gotostaffstats():
@@ -1337,6 +1423,8 @@ def orderstatus():
     and Orders.delivered = False"
     checkifunallocatedorderresult = db.session.execute(checkifunallocatedorder).fetchall()
 
+    riderusername = "Your order hasn't been allocated to a rider"
+    
     if checkifunallocatedorderresult[0][0] != 0:
 
         orderidquery = f"select Delivers.orderid \
@@ -1395,7 +1483,7 @@ def orderstatus():
         db.session.execute(updateriderpicked)
         db.session.execute(updateorderselectedbyrider)
         db.session.commit()
-
+        
     inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant \
     from Orders O, Delivers D, Restaurants R \
     where D.orderid = O.orderid \
@@ -1413,7 +1501,7 @@ def orderstatus():
     finishedresult = db.session.execute(finishedquery)
     finishedlist = [dict(rest = row[0], total = row[1], received = row[2], orderid = row[3]) for row in finishedresult.fetchall()]
     
-    return render_template('orderstatus.html', orderlist = orderlist, finishedlist = finishedlist)
+    return render_template('orderstatus.html', orderlist = orderlist, finishedlist = finishedlist, rider = riderusername)
 
 @app.route('/submitreviewandrating', methods=['POST'])
 def submitreviewandrating():
@@ -1668,7 +1756,7 @@ def collectFromRestaurant():
 
     if session['attemptedToCollect']:
         flash("The food is not ready for collection! Please wait at the restaurant.")
-        print('flash statement')
+        ('flash statement')
 
     # timestamp for when he leaves for the restaurant
     currentTime = datetime.now().strftime("%d/%m/%Y %H%M")
@@ -1790,33 +1878,6 @@ def getFullTimeSchedule():
     
     return render_template('schedulefulltime.html', schedule = schedule, monthYear = monthYear)
 
-def haveNextMonth(inputUsername):
-    username = inputUsername
-    today = datetime.today()
-    nextMonth = datetime(today.year + int((today.month + 1) / 12), (today.month + 1) % 12, 1).date()
-    nextScheduleQuery = f"select count(*) from MonthlyWorkSchedule where mnthStartDay = '{nextMonth}' and username = '{username}'"
-    nextScheduleResult = db.session.execute(nextScheduleQuery).fetchall()[0][0]
-    return nextScheduleResult
-
-def generateNextMonth(inputUsername):
-    username = inputUsername
-    #check if current month has schedule to duplicate
-    today = datetime.today()
-    datem = datetime(today.year, today.month, 1).date()
-    nextMonth = datetime(today.year + int((today.month + 1) / 12), (today.month + 1) % 12, 1).date()
-    newMwsidQuery = f"select max(mwsid) from MonthlyWorkSchedule"
-    newMwsid = int(db.session.execute(newMwsidQuery).fetchall()[0][0] or 0) + 1
-
-    scheduleQuery = f"select max(mwsid) from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'"
-    scheduleResult = int(db.session.execute(scheduleQuery).fetchall()[0][0] or 0)
-    if scheduleResult != 0: #current month has schedule to duplicate
-        insertion = f"insert into MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, day1, day2, day3, day4, day5) select '{newMwsid}', '{username}', '{nextMonth}', wkStartDay, day1, day2, day3, day4, day5 from MonthlyWorkSchedule where mwsid = '{scheduleResult}'; commit;" 
-        insertionResult = db.session.execute(insertion)
-    else:
-        insertion = f"insert into MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, day1, day2, day3, day4, day5) values ('{newMwsid}', '{username}', '{nextMonth}', 2, 3, 2, 3, 2, 3); commit;"
-        insertionResult = db.session.execute(insertion)
-    return;
-
 @app.route('/getNextFullTimeSchedule', methods=['GET'])
 def getNextFullTimeSchedule():
     username = session['username']
@@ -1906,47 +1967,6 @@ def getPartTimeSchedule():
     schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
     
     return render_template('scheduleparttime.html', schedule = schedule, datem = datem, datemEnd = datemEnd)
-
-def haveNextWeek(inputUsername):
-    username = inputUsername
-    today = datetime.today()
-    daysToNextMonday = 0 - today.weekday()
-    if daysToNextMonday <= 0:
-        daysToNextMonday += 7
-    nextMonday = (today + timedelta(days = daysToNextMonday)).date()
-    nextScheduleQuery = f"select count(*) from WeeklyWorkSchedule where startDate = '{nextMonday}' and username = '{username}'"
-    nextScheduleResult = db.session.execute(nextScheduleQuery).fetchall()[0][0]
-    print(nextScheduleResult)
-    return nextScheduleResult
-
-def generateNextWeek(inputUsername):
-    username = inputUsername
-    #check if current week has schedule to duplicate
-    today = datetime.today()
-    monday = today - timedelta(days = today.weekday())
-    datem = monday.date()
-    daysToNextMonday = 0 - today.weekday()
-    if daysToNextMonday <= 0:
-        daysToNextMonday += 7
-    nextMonday = (today + timedelta(days = daysToNextMonday)).date()
-    newWwsidQuery = f"select max(wwsid) from WeeklyWorkSchedule"
-    newDwsidQuery = f"select max(dwsid) from DailyWorkShift"
-    newWwsid = int(db.session.execute(newWwsidQuery).fetchall()[0][0] or 0) + 1
-    newDwsid = int(db.session.execute(newDwsidQuery).fetchall()[0][0] or 0) + 1
-
-    scheduleQuery = f"select max(wwsid) from WeeklyWorkSchedule where startDate = '{datem}' and username = '{username}'"
-    scheduleResult = int(db.session.execute(scheduleQuery).fetchall()[0][0] or 0)
-    if scheduleResult != 0: #current week has schedule to duplicate
-        insertion = f"insert into WeeklyWorkSchedule(wwsid, username, startDate, wwsHours) select '{newWwsid}', '{username}', '{nextMonday}', 0 from WeeklyWorkSchedule where wwsid = '{scheduleResult}'; commit;"
-        insertionResult = db.session.execute(insertion)
-        insertion = f"insert into DailyWorkShift(dwsid, wwsid, day, startHour, duration) select (select max(dwsid) from DailyWorkShift) + row_number() over (order by d.day), '{newWwsid}', d.day, d.startHour, d.duration from DailyWorkShift d where d.wwsid = '{scheduleResult}'; commit;" 
-        insertionResult = db.session.execute(insertion)
-
-    else:
-        insertion = f"insert into WeeklyWorkSchedule(wwsid, username, startDate, wwsHours) values ('{newWwsid}', '{username}', '{nextMonday}', 0); commit;"
-        insertionResult = db.session.execute(insertion)
-        insertion = f"insert into DailyWorkShift(dwsid, wwsid, day, startHour, duration) values ('{newDwsid}', '{newWwsid}', 4, 18, 4), ('{newDwsid}' + 1, '{newWwsid}', 5, 18, 4), ('{newDwsid}' + 2, '{newWwsid}', 6, 18, 4); commit;"
-        insertionResult = db.session.execute(insertion)
     return;
 
 @app.route('/getNextPartTimeSchedule', methods=['GET'])
