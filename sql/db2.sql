@@ -182,6 +182,7 @@ INSERT INTO PartTimeRiders(username) VALUES
 ('user48'),
 ('user49');
 
+
 INSERT INTO Locations(username, location, dateAdded) VALUES
 ('justning', '21 Lower Kent Ridge Rd, Singapore 119077', '2020-04-03'),
 ('justning', '469 Bukit Timah Rd, Singapore 259756', '2020-04-01'),
