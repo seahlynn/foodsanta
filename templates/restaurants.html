@@ -112,23 +112,26 @@
             <form method="POST" action="viewcart" style="width: auto;">
               <button type="submit"> View Cart </button>         
             </form>
+
+            <div class="reviews">
+              <br> 
+              <h1> Reviews </h1>
+    
+            {% for p in reviewlist %}
+              <table align = 'center'>
+                <tr>
+                  <td style="font-weight:bold" >{{ p.username }}: </td>
+                  <td> <q> {{ p.review | safe}} </q></td>
+                </tr>
+            </table>
+            {% endfor %}
+            </div>
+
           </div>
         </div>
 
-        
-        <div class="reviews">
-          <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br>
-          <h1> Reviews </h1>
-
-        {% for p in reviewlist %}
-          <table align = 'center'>
-            <tr>
-              <td style="font-weight:bold" >{{ p.username }}: </td>
-              <td> <q> {{ p.review | safe}} </q></td>
-            </tr>
-        </table>
-        {% endfor %}
-        </div>
+        <br> <br> <br>
+       
       {% endblock %}
     </body>
 </html>
