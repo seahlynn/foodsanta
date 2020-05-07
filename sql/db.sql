@@ -34,7 +34,8 @@ INSERT INTO FullTimeRiders(username) VALUES
 ('fullridertest');
 
 INSERT INTO PartTimeRiders(username) VALUES
-('partridertest');
+('partridertest'),
+('justning');
 
 INSERT INTO Locations(username, location, dateAdded) VALUES
 ('justning', '21 Lower Kent Ridge Rd, Singapore 119077', '2020-04-03'),
