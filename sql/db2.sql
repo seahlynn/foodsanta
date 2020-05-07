@@ -182,21 +182,6 @@ INSERT INTO PartTimeRiders(username) VALUES
 ('user48'),
 ('user49');
 
-<<<<<<< HEAD
-
-=======
-INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES 
-(1, '4Fingers', 15, '68 Orchard Rd #B1-07, Plaza, Singapore 238839'),
-(2, 'Yoogane', 25, '3, #03-08 Gateway Dr, Westgate, Singapore 608532'),
-(3, 'SushiTei', 40, '154 West Coast Rd, #01-87 West Coast Plaza, Singapore 127371'),
-(4, 'KFC', 10, '500 Dover Rd, 5 Singapore Polytechnic Food Court, Singapore 139651'),
-(5, 'RiRi Mala', 15, '32 New Market Road #01 42 52, Singapore 050032'),
-(6, 'Ah Bear Mookata', 20, '505 W Coast Dr, #01-208, Singapore 120505'),
-(7, 'Marche', 50, '50 Jurong Gateway Rd, #01-03 JEM, Singapore 608549'),
-(8, 'HaiDiLao', 80, '1 Harbourfront Walk #03-09 Vivocity, Singapore 098585'),
-(9, 'Caesar Pizza', 30, '16 Collyer Quay, #01-05 Income At Raffles, Singapore 049318');
->>>>>>> 819b458d174d48949b739b968a61142a5a4cc409
-
 INSERT INTO RestaurantStaff(username, restid) VALUES
 ('staffresttest', 1),
 ('user21', 1),
@@ -913,6 +898,7 @@ INSERT INTO RiderStats(month, year, username, totalOrders, totalSalary) values
 (5, 2020, 'user47', 23, 765),
 (5, 2020, 'user48', 11, 375),
 (5, 2020, 'user49', 13, 405);
+
 INSERT INTO RestaurantPromo(fdspromoid, restid) VALUES
 (5, 1),
 (6, 5);

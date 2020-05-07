@@ -249,6 +249,10 @@ def restcompleteorder():
     username = session['username']
     orderid = request.form['orderid']
     
+    if orderid == '':
+        flash("Please view details for an order to confirm it!")
+        return redirect('gotorestorders')
+
     todo = f"update Orders set preparedByRest = True where orderid = {orderid}"
     db.session.execute(todo)
     db.session.commit()
@@ -258,9 +262,25 @@ def restcompleteorder():
     orderquery = f"select * from Orders natural join Users where restid = {restid} and preparedByRest = false"
     orderresult = db.session.execute(orderquery)
     orderlist = [dict(orderid = row[1], username = row[0], phone = row[13], time = row[3]) for row in orderresult.fetchall()]
-    
+
     return render_template('stafforders.html', orderlist = orderlist)
 
+@app.route('/vieworderhistory', methods=['GET', 'POST'])
+def vieworderhistory():
+    username = session['username']
+    
+    # to have orderlist remaining
+    restid = db.session.execute(f"select restid from RestaurantStaff where username = '{username}'").fetchall()[0][0]
+    orderquery = f"select * from Orders natural join Users where restid = {restid} and preparedByRest = false"
+    orderresult = db.session.execute(orderquery)
+    orderlist = [dict(orderid = row[1], username = row[0], phone = row[13], time = row[3]) for row in orderresult.fetchall()]
+
+    # to have pastorderlist
+    orderquery = f"select * from Orders natural join Users where restid = {restid} and preparedByRest = true"
+    orderresult = db.session.execute(orderquery)
+    pastorderlist = [dict(orderid = row[1], username = row[0], cost = row[4], time = row[3]) for row in orderresult.fetchall()]
+    
+    return render_template('stafforders.html', pastorderlist = pastorderlist, orderlist = orderlist)
 
 @app.route('/gotostaffstats', methods=['GET', 'POST'])
 def gotostaffstats():
