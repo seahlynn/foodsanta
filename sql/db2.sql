@@ -909,6 +909,7 @@ INSERT INTO RiderStats(month, year, username, totalOrders, totalSalary) values
 (5, 2020, 'user47', 23, 765),
 (5, 2020, 'user48', 11, 375),
 (5, 2020, 'user49', 13, 405);
+
 INSERT INTO RestaurantPromo(fdspromoid, restid) VALUES
 (5, 1),
 (6, 5);
