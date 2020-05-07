@@ -182,8 +182,6 @@ INSERT INTO PartTimeRiders(username) VALUES
 ('user48'),
 ('user49');
 
-<<<<<<< HEAD
-
 =======
 INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES 
 (1, '4Fingers', 15, '68 Orchard Rd #B1-07, Plaza, Singapore 238839'),
