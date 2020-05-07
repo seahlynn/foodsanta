@@ -167,8 +167,8 @@ def login():
 
     if request.method == 'POST':
         form = request.form
-        username = form["username"]
-        password = form["password"]
+        username = form["username"].strip()
+        password = form["password"].strip()
         is_valid = is_valid_user(username, password)
         if is_valid:
             print("Login verified")
@@ -1727,7 +1727,7 @@ def collectFromRestaurant():
 
     if session['attemptedToCollect']:
         flash("The food is not ready for collection! Please wait at the restaurant.")
-        print('flash statement')
+        ('flash statement')
 
     # timestamp for when he leaves for the restaurant
     currentTime = datetime.now().strftime("%d/%m/%Y %H%M")
