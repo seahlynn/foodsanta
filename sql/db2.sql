@@ -73,7 +73,7 @@ INSERT INTO Users(username, name, password, phoneNumber, dateCreated) VALUES
 ('4fingersstaff', '4Fingers Staff', '4fingerscool', '96567556', '2019-05-06'), 
 ('riristaff', 'RiRi Mala Staff', 'riricool', '96567556', '2019-05-06'), 
 ('caesarstaff', 'Caesar Pizza Staff', 'caesarcool', '96567556', '2019-05-06'),
-('soupshackstaff', 'Bat Corona Soup Shack Staff', 'soupshackcool', '96567556', '2019-05-06'); 
+('subwaystaff', 'Subway', 'subwaycool', '96567556', '2019-05-06'); 
 
 
 INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES 
@@ -86,7 +86,7 @@ INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES
 (7, 'Marche', 50, '50 Jurong Gateway Rd, #01-03 JEM, Singapore 608549'),
 (8, 'HaiDiLao', 80, '1 Harbourfront Walk #03-09 Vivocity, Singapore 098585'),
 (9, 'Caesar Pizza', 30, '16 Collyer Quay, #01-05 Income At Raffles, Singapore 049318'),
-(10, 'BatCoronaSoupShack', 69, 'Wuhan Wet Market, China');
+(10, 'Subway', 10, '3155 Commonwealth Ave W, Singapore 129588');
 
 INSERT INTO RestaurantStaff(username, restid) VALUES
 ('stafftest', NULL),
@@ -99,7 +99,7 @@ INSERT INTO RestaurantStaff(username, restid) VALUES
 ('4fingersstaff', 1), 
 ('riristaff', 5), 
 ('caesarstaff', 9),
-('soupshackstaff', 10);
+('subwaystaff', 10);
 
 INSERT INTO FDSManagers(username) VALUES
 ('managertest');
@@ -181,30 +181,6 @@ INSERT INTO PartTimeRiders(username) VALUES
 ('user47'),
 ('user48'),
 ('user49');
-
-INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES 
-(1, '4Fingers', 15, '68 Orchard Rd #B1-07, Plaza, Singapore 238839'),
-(2, 'Yoogane', 25, '3, #03-08 Gateway Dr, Westgate, Singapore 608532'),
-(3, 'SushiTei', 40, '154 West Coast Rd, #01-87 West Coast Plaza, Singapore 127371'),
-(4, 'KFC', 10, '500 Dover Rd, 5 Singapore Polytechnic Food Court, Singapore 139651'),
-(5, 'RiRi Mala', 15, '32 New Market Road #01 42 52, Singapore 050032'),
-(6, 'Ah Bear Mookata', 20, '505 W Coast Dr, #01-208, Singapore 120505'),
-(7, 'Marche', 50, '50 Jurong Gateway Rd, #01-03 JEM, Singapore 608549'),
-(8, 'HaiDiLao', 80, '1 Harbourfront Walk #03-09 Vivocity, Singapore 098585'),
-(9, 'Caesar Pizza', 30, '16 Collyer Quay, #01-05 Income At Raffles, Singapore 049318'),
-(10, 'Subway', 10, '3155 Commonwealth Ave W, Singapore 129588');
-
-INSERT INTO RestaurantStaff(username, restid) VALUES
-('staffresttest', 1),
-('user21', 1),
-('user22', 2),
-('user23', 3),
-('user24', 4),
-('user25', 5),
-('user26', 6),
-('user27', 7),
-('user28', 8),
-('user29', 9);
 
 INSERT INTO Locations(username, location, dateAdded) VALUES
 ('justning', '21 Lower Kent Ridge Rd, Singapore 119077', '2020-04-03'),
