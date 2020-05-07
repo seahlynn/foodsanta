@@ -1,5 +1,6 @@
 import settings
 import os
+import random
 from flask import Flask, render_template, request, session, flash, redirect, escape
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask_sqlalchemy import SQLAlchemy
@@ -1263,26 +1264,35 @@ def orderstatus():
     username = session['username']
 
     # check if there is an order that has yet to be allocated
-    checkifunallocatedorder = f"select count(*) from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Orders.selectedByRider = False and Orders.delivered = False"
+    checkifunallocatedorder = f"select count(*) \
+    from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
+    where Orders.selectedByRider = False \
+    and Orders.delivered = False"
     checkifunallocatedorderresult = db.session.execute(checkifunallocatedorder).fetchall()
 
     if checkifunallocatedorderresult[0][0] != 0:
 
-        orderidquery = f"select Delivers.orderid from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Orders.selectedByRider = False and Orders.delivered = False"
+        orderidquery = f"select Delivers.orderid \
+        from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
+        where Orders.selectedByRider = False \
+        and Orders.delivered = False"
         orderid = db.session.execute(orderidquery).fetchall()[0][0]
 
         # allocate an available rider to deliver
         # rider is currently working (either part time or full time)
         # rider is not currently taking an order that has not been delivered
-        checkavailableriderquery = f"select distinct * \
-        from PartTimeRiders P natural join WeeklyWorkSchedule W natural join DailyWorkShift D \
-        where D.day = (select extract(isodow from current_timestamp) - 1) \
-        and D.starthour < (select extract(hour from current_timestamp)) \
-        and D.duration > (D.starthour - (select extract(hour from current_timestamp))) \
-        and not exists ( \
+        checkavailableriderquery = f"select username \
+        from DeliveryRiders D \
+        where exists ( \
+            select 1 \
+            from RidersPerHour R \
+            where D.username = R.username \
+            and (select extract(isodow from R.day)) = (select extract(isodow from current_timestamp)) \
+            and R.hour = (select extract(hour from current_timestamp))) \
+        and not exists (  \
             select 1 \
             from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
-            where Delivers.username = P.username \
+            where Delivers.username = D.username \
             and Orders.selectedByRider = True \
             and Orders.delivered = False)"
         availableriders = db.session.execute(checkavailableriderquery).fetchall()
@@ -1311,6 +1321,7 @@ def orderstatus():
             nextavailriderresult = db.session.execute(nextavailriderquery).fetchall()
             riderusername = nextavailriderresult[0]
     
+        print('rider selected for delivery is ' + riderusername)
         updateriderpicked = f"update Delivers set username = '{riderusername}' where orderid = '{orderid}'"
         updateorderselectedbyrider = f"update Orders set selectedByRider = True where orderid = '{orderid}'"
         db.session.execute(updateriderpicked)
@@ -1360,7 +1371,8 @@ def submitreviewandrating():
 
     checkRquery = f"select count(*) \
     from Delivers \
-    where orderid = {orderid} and rating is not null"
+    where orderid = {orderid} \
+    and rating is not null"
     checkRresult = db.session.execute(checkRquery).fetchall()
     checkR = checkRresult[0][0]
 
@@ -1470,7 +1482,9 @@ def gotodelivery():
     and Orders.delivered = False \
     and Orders.selectedByRider = True"
     hasallocatedOrdersResult = db.session.execute(hasallocatedOrdersQuery).fetchall()
-
+    print('delivery to be made ' + str(hasallocatedOrdersResult[0][0]))
+    
+    
     if hasallocatedOrdersResult[0][0] != 0:
         # there exists an allocated order (just pull one)
         allocatedorderquery = f"select Delivers.orderid, Orders.custLocation, Restaurants.location \
@@ -1479,6 +1493,7 @@ def gotodelivery():
         limit 1"
         allocatedOrderresult = db.session.execute(allocatedorderquery)
         allocatedOrder = [dict(orderid = row[0], custLocation = row[1], restLocation = row[2]) for row in allocatedOrderresult.fetchall()]
+        print(allocatedOrder)
         session['deliveringOrderId'] = allocatedOrder[0]['orderid']
         return render_template('riders_viewAllocatedOrder.html', allocatedOrder = allocatedOrder)
 
