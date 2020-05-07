@@ -7,7 +7,7 @@
     <body align = 'center'>
     {% extends 'riderbase.html' %}
       {% block overall %}
-        <div style="display: inline"> 
+        <div> 
           <div class="results" style="width:50%; float: left;">
             {% block content %}
           <h2> Profile </h2>
@@ -23,32 +23,7 @@
                   </tr>
                   {% endfor %}
               </table>
-          <h2> Delivery Stats </h2>
-          {% for s in riderstats %}
-              <table border="1" align = 'center'>
-                <tr>
-                        <td> Month: </td>
-                        <td>{{ s.month }}</td>
-                    </tr>
-                    <tr>
-                        <td> Year: </td>
-                        <td>{{ s.year }}</td>
-                    </tr>
-                    <tr>
-                        <td> Total Orders Completed: </td>
-                        <td>{{ s.totalOrders }}</td>
-                    </tr>
-                    <tr>
-                        <td> Total Hours Worked: </td>
-                        <td>{{ s.totalHours }}</td>
-                    </tr>
-                    <tr>
-                        <td> Total Salary Earned: </td>
-                        <td>{{ s.totalSalary }}</td>
-                    </tr>
-                {% endfor %}
               {% endblock %}
-              </table>    
           </div>
  
           <div class="editprofile" style="width:50%; display: inline-block;">
@@ -72,7 +47,30 @@
             </datalist>
           </div>
         </div>
-        
+        <br><br><br><br>
+        <div style="width: 100%;">
+          <h2> Delivery Stats </h2>
+            <table align="center" border=1>
+              <tr>
+                  <th> Month </th>
+                  <th> Year </th>
+                  <th> Total Orders Completed </th>
+                  <th> Total Hours Worked </th>
+                  <th> Total Salary Earned </th>
+                </tr>
+
+                {% for s in riderstats %}
+                <tr>
+                  <td> {{ s.month }} </td>
+                  <td> {{ s.year }} </td>
+                  <td>{{ s.totalOrders }}</td>
+                  <td>{{ s.totalHours }}</td>
+                  <td>{{ s.totalSalary }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
       {% endblock %}
     </body>
 </html>

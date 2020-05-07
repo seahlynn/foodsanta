@@ -34,7 +34,8 @@ INSERT INTO FullTimeRiders(username) VALUES
 ('fullridertest');
 
 INSERT INTO PartTimeRiders(username) VALUES
-('partridertest');
+('partridertest'),
+('justning');
 
 INSERT INTO Locations(username, location, dateAdded) VALUES
 ('justning', '21 Lower Kent Ridge Rd, Singapore 119077', '2020-04-03'),
@@ -140,6 +141,7 @@ INSERT INTO DeliveryPromo(deliverypromoid, description, amount, points) values
 
 INSERT INTO AllStats(month, year, totalNewCust, totalNumOrders, totalCostOfOrders) values
 (1, 2020, 20, 50, 654),
+(1, 2019, 15, 34, 324),
 (2, 2020, 34, 62, 722),
 (3, 2020, 18, 47, 443),
 (4, 2020, 22, 53, 528);
@@ -161,19 +163,35 @@ INSERT INTO CustomerStats(username, month, year, totalNumOrders, totalCostOfOrde
 ('lynjaaa', 4, 2020, 1, 25);
 
 
-INSERT INTO RiderStats(month, year, username, totalOrders, totalHours, totalSalary) values
-(1, 2020, 'justning', 34, 80, 970),
-(1, 2020, 'bakwah', 23, 65, 765),
-(1, 2020, 'kalsyc', 40, 102, 1280),
-(1, 2020, 'lynjaaa', 13, 34, 405),
-(2, 2020, 'justning', 21, 50, 605),
-(2, 2020, 'bakwah', 32, 76, 920),
-(3, 2020, 'kalsyc', 11, 32, 375),
-(3, 2020, 'lynjaaa', 38, 100, 1190),
-(4, 2020, 'justning', 34, 80, 970),
-(4, 2020, 'bakwah', 23, 65, 765),
-(4, 2020, 'kalsyc', 40, 102, 1280),
-(4, 2020, 'lynjaaa', 13, 34, 405);
+INSERT INTO RiderStats(month, year, username, totalOrders, totalSalary) values
+(1, 2020, 'justning', 34, 970),
+(1, 2020, 'bakwah', 23, 765),
+(1, 2020, 'kalsyc', 40, 1280),
+(1, 2020, 'lynjaaa', 13, 405),
+(2, 2020, 'justning', 21, 605),
+(2, 2020, 'bakwah', 32, 920),
+(3, 2020, 'kalsyc', 11, 375),
+(3, 2020, 'lynjaaa', 38, 1190),
+(4, 2020, 'justning', 34, 970),
+(4, 2020, 'bakwah', 23, 765),
+(4, 2020, 'kalsyc', 40, 1280),
+(4, 2020, 'lynjaaa', 13, 405),
+(4, 2020, 'partridertest', 222, 222);
+
+INSERT INTO HoursPerMonth(username, month, hours) VALUES
+('justning', '01/01/2020', 80),
+('justning', '01/02/2020', 50),
+('justning', '01/04/2020', 80),
+('bakwah', '01/01/2020', 65),
+('bakwah', '01/02/2020', 76),
+('bakwah', '01/04/2020', 102),
+('kalsyc', '01/01/2020', 65),
+('kalsyc', '01/03/2020', 32),
+('kalsyc', '01/04/2020', 102),
+('lynjaaa', '01/01/2020', 34),
+('lynjaaa', '01/03/2020', 100),
+('lynjaaa', '01/04/2020', 34),
+('partridertest', '01/04/2020', 222);
 
 INSERT INTO RestaurantPromo(fdspromoid, restid) VALUES
 (5, 1),

@@ -8,20 +8,22 @@
       {% block overall %}
         <div class="container" >
           <h1> You have been allocated an order with the following details! </h1>
+          {% for o in allocatedOrder %}
           <table border="1", style='margin-top: 20px;' align='center'> 
             <tr>
               <td> orderid: </td>
-              <td>{{ allocatedOrder.orderid }}</td>
+              <td>{{ o.orderid }}</td>
             </tr>
             <tr>
               <td> To pick up from restaurant location: </td>
-              <td>{{ allocatedOrder.restLocation }}</td>
+              <td>{{ o.restLocation }}</td>
             </tr>
             <tr>
               <td> To deliver to from customer location: </td>
-              <td>{{ allocatedOrder.custLocation }}</td>
+              <td>{{ o.custLocation }}</td>
             </tr>            
           </table>
+          {% endfor %}
         </div>
 
         <br>

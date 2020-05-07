@@ -352,7 +352,6 @@ CREATE TABLE RiderStats (
     year            INTEGER,
 	username 	    VARCHAR(30),
 	totalOrders		INTEGER,
-	totalHours		INTEGER,
 	totalSalary		INTEGER,
     
     PRIMARY KEY (username, month, year),
@@ -518,7 +517,7 @@ begin
     set totalSalary = totalSalary + 5
     where month = (select extract(month from current_timestamp)
     and year = (select extract(year from current_timestamp)
-    and username = NEW.username; 
+    and username = NEW.username;
 return new;
 end; $$ language plpgsql;
 
@@ -690,7 +689,6 @@ pointsused INTEGER;
 customer RECORD;
 begin
     select into pointsused (select points from FDSPromo where fdspromoid = NEW.fdspromoid);
-
     if pointsused = 0 then
 	    for customer in
 	        (select username from Customers)

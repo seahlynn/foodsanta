@@ -1,5 +1,6 @@
 import settings
 import os
+import random
 from flask import Flask, render_template, request, session, flash, redirect, escape
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask_sqlalchemy import SQLAlchemy
@@ -28,7 +29,25 @@ def updateDailyLimit():
     todo = f"update Food F1 set availability = (select dailylimit from Food F2 where F1.foodid = F2.foodid)"
     db.session.execute(todo)
     db.session.commit()
-    print("Scheduler is alive!")
+
+def insertRiderStats():
+    FTusernameresult = db.session.execute(f"select distinct username from FullTimeRiders")
+    FTusernamelist = [dict(username = row[0]) for row in FTusernameresult.fetchall()]
+
+    for i in FTusernamelist:
+        username = i['username']
+        todo = f"insert into RiderStats values ((select extract(month from current_timestamp)), (select extract(year from current_timestamp)), '{username}', 0, 3000);" 
+        db.session.execute(todo)
+        db.session.commit()
+
+    PTusernameresult = db.session.execute(f"select distinct username from PartTimeRiders")
+    PTusernamelist = [dict(username = row[0]) for row in PTusernameresult.fetchall()]
+
+    for i in PTusernamelist:
+        username = i['username']
+        todo = f"insert into RiderStats values ((select extract(month from current_timestamp)), (select extract(year from current_timestamp)), '{username}', 0, 0);" 
+        db.session.execute(todo)
+        db.session.commit()
 
 def checkAndGenerateRiderSchedule():
     partridersquery = f"select username from PartTimeRiders"
@@ -45,6 +64,7 @@ def checkAndGenerateRiderSchedule():
 sched = BackgroundScheduler(daemon=True)
 sched.add_job(updateDailyLimit,'cron', hour=0)
 sched.add_job(checkAndGenerateRiderSchedule,'cron', hour=0)
+sched.add_job(insertRiderStats, 'cron', minute = 34)
 sched.start()
 
 
@@ -696,9 +716,9 @@ def viewallriderstats():
     yearlistresult = db.session.execute(f"select distinct year from Allstats order by year desc")
     yearlist = [dict(year = row[0]) for row in yearlistresult.fetchall()]
     
-    statsquery = f"select * from RiderStats order by month, year"
+    statsquery = f"select R.month, R.year, R.username, R.totalOrders, R.totalSalary, H.hours from RiderStats R, HoursPerMonth H where R.username = H.username and R.month = (extract(month from H.month)) order by month, year"
     statsresult = db.session.execute(statsquery)
-    riderstatslist = [dict(month = row[0], year = row[1], username = row[2], orders = row[3], hours = row[4], salary = row[5]) for row in statsresult.fetchall()]
+    riderstatslist = [dict(month = row[0], year = row[1], username = row[2], orders = row[3], hours = row[5], salary = row[4]) for row in statsresult.fetchall()]
 
     return render_template('stats.html', yearlist = yearlist, monthlist = monthlist, riderstatslist = riderstatslist)
 
@@ -714,18 +734,18 @@ def viewspecificriderstats():
     year = request.form.get('year')
 
     if month is None and year is None:
-        statsquery = f"select * from RiderStats order by month, year"
+        statsquery = f"select R.month, R.year, R.username, R.totalOrders, R.totalSalary, H.hours from RiderStats R, HoursPerMonth H where R.username = H.username and R.month = (extract(month from H.month)) and R.year = (extract(year from H.month)) order by month, year"
     elif month is None:
         year = int(year)
-        statsquery = f"select * from RideStats where year = {year} order by month"
+        statsquery = f"select R.month, R.year, R.username, R.totalOrders, R.totalSalary, H.hours from RiderStats R, HoursPerMonth H where R.username = H.username and R.month = (extract(month from H.month)) and R.year = (extract(year from H.month)) and R.year = {year} order by year"
     elif year is None:
         month = int(month)
-        statsquery = f"select * from RiderStats where month = {month} order by year"
+        statsquery = f"select R.month, R.year, R.username, R.totalOrders, R.totalSalary, H.hours from RiderStats R, HoursPerMonth H where R.username = H.username and R.month = (extract(month from H.month)) and R.year = (extract(year from H.month)) and R.month = {month} order by month"
     else:
-        statsquery = f"select * from RiderStats where month = {month} and year = {year}"
+        statsquery = f"select R.month, R.year, R.username, R.totalOrders, R.totalSalary, H.hours from RiderStats R, HoursPerMonth H where R.username = H.username and R.month = (extract(month from H.month)) and R.year = (extract(year from H.month)) and R.year = {year} and R.month = {month} order by month, year"
 
     statsresult = db.session.execute(statsquery)
-    riderstatslist = [dict(month = row[0], year = row[1], username = row[2], orders = row[3], hours = row[4], salary = row[5]) for row in statsresult.fetchall()]
+    riderstatslist = [dict(month = row[0], year = row[1], username = row[2], orders = row[3], hours = row[5], salary = row[4]) for row in statsresult.fetchall()]
 
     return render_template('stats.html', yearlist = yearlist, monthlist = monthlist, riderstatslist = riderstatslist)
 
@@ -1253,26 +1273,35 @@ def orderstatus():
     username = session['username']
 
     # check if there is an order that has yet to be allocated
-    checkifunallocatedorder = f"select count(*) from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Orders.selectedByRider = False and Orders.delivered = False"
+    checkifunallocatedorder = f"select count(*) \
+    from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
+    where Orders.selectedByRider = False \
+    and Orders.delivered = False"
     checkifunallocatedorderresult = db.session.execute(checkifunallocatedorder).fetchall()
 
     if checkifunallocatedorderresult[0][0] != 0:
 
-        orderidquery = f"select Delivers.orderid from Delivers join Orders on (Delivers.orderid = Orders.orderid) where Orders.selectedByRider = False and Orders.delivered = False"
+        orderidquery = f"select Delivers.orderid \
+        from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
+        where Orders.selectedByRider = False \
+        and Orders.delivered = False"
         orderid = db.session.execute(orderidquery).fetchall()[0][0]
 
         # allocate an available rider to deliver
         # rider is currently working (either part time or full time)
         # rider is not currently taking an order that has not been delivered
-        checkavailableriderquery = f"select distinct * \
-        from PartTimeRiders P natural join WeeklyWorkSchedule W natural join DailyWorkShift D \
-        where D.day = (select extract(isodow from current_timestamp) - 1) \
-        and D.starthour < (select extract(hour from current_timestamp)) \
-        and D.duration > (D.starthour - (select extract(hour from current_timestamp))) \
-        and not exists ( \
+        checkavailableriderquery = f"select username \
+        from DeliveryRiders D \
+        where exists ( \
+            select 1 \
+            from RidersPerHour R \
+            where D.username = R.username \
+            and (select extract(isodow from R.day)) = (select extract(isodow from current_timestamp)) \
+            and R.hour = (select extract(hour from current_timestamp))) \
+        and not exists (  \
             select 1 \
             from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
-            where Delivers.username = P.username \
+            where Delivers.username = D.username \
             and Orders.selectedByRider = True \
             and Orders.delivered = False)"
         availableriders = db.session.execute(checkavailableriderquery).fetchall()
@@ -1284,23 +1313,24 @@ def orderstatus():
             riderusername = randrider[0]
 
         else:
-            nextavailriderquery = f"select distinct P.username, D1.timeDepartToRestaurant \
-            from (PartTimeRiders P natural join WeeklyWorkSchedule W natural join DailyWorkShift D) \
-            join (Delivers D1 join Orders on (D1.orderid = Orders.orderid)) on (P.username = D1.username) \
-            where D.day = (select extract(isodow from current_timestamp) - 1) \
-            and D.starthour < (select extract(hour from current_timestamp)) \
-            and D.duration > (D.starthour - (select extract(hour from current_timestamp))) \
-            and exists ( \
+            nextavailriderquery = f"select username \
+            from DeliveryRiders D \
+            where exists ( \
+                select 1 \
+                from RidersPerHour R \
+                where D.username = R.username \
+                and (select extract(isodow from R.day)) = (select extract(isodow from current_timestamp)) \
+                and R.hour = (select extract(hour from current_timestamp))) \
+            and exists (  \
                 select 1 \
                 from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
-                where Delivers.username = P.username \
+                where Delivers.username = D.username \
                 and Orders.selectedByRider = True \
-                and Orders.delivered = False ) \
-            order by D1.timeDepartToRestaurant    \
-            limit 1"
+                and Orders.delivered = False)" \
             nextavailriderresult = db.session.execute(nextavailriderquery).fetchall()
             riderusername = nextavailriderresult[0]
     
+        print('rider selected for delivery is ' + riderusername)
         updateriderpicked = f"update Delivers set username = '{riderusername}' where orderid = '{orderid}'"
         updateorderselectedbyrider = f"update Orders set selectedByRider = True where orderid = '{orderid}'"
         db.session.execute(updateriderpicked)
@@ -1350,7 +1380,8 @@ def submitreviewandrating():
 
     checkRquery = f"select count(*) \
     from Delivers \
-    where orderid = {orderid} and rating is not null"
+    where orderid = {orderid} \
+    and rating is not null"
     checkRresult = db.session.execute(checkRquery).fetchall()
     checkR = checkRresult[0][0]
 
@@ -1441,7 +1472,7 @@ def gotoriderprofile():
     profileresult = db.session.execute(profilequery)
     profile = [dict(name = row[0], number = row[1]) for row in profileresult.fetchall()]
 
-    riderstatsquery = f"select * from RiderStats where username = '{username}'"    
+    riderstatsquery = f"select R.month, R.year, R.username, R.totalOrders, R.totalSalary, H.hours from RiderStats R, HoursPerMonth H where R.username = H.username and R.month = (extract(month from H.month)) and R.year = (extract(year from H.month)) and R.username = '{username}' order by month, year" 
     riderstatsresult = db.session.execute(riderstatsquery)
     riderstats = [dict(month = row[0], year = row[1], totalOrders = row[3], totalHours = row[4], totalSalary = row[5]) for row in riderstatsresult.fetchall()]
     
@@ -1460,7 +1491,9 @@ def gotodelivery():
     and Orders.delivered = False \
     and Orders.selectedByRider = True"
     hasallocatedOrdersResult = db.session.execute(hasallocatedOrdersQuery).fetchall()
-
+    print('delivery to be made ' + str(hasallocatedOrdersResult[0][0]))
+    
+    
     if hasallocatedOrdersResult[0][0] != 0:
         # there exists an allocated order (just pull one)
         allocatedorderquery = f"select Delivers.orderid, Orders.custLocation, Restaurants.location \
@@ -1469,6 +1502,7 @@ def gotodelivery():
         limit 1"
         allocatedOrderresult = db.session.execute(allocatedorderquery)
         allocatedOrder = [dict(orderid = row[0], custLocation = row[1], restLocation = row[2]) for row in allocatedOrderresult.fetchall()]
+        print(allocatedOrder)
         session['deliveringOrderId'] = allocatedOrder[0]['orderid']
         return render_template('riders_viewAllocatedOrder.html', allocatedOrder = allocatedOrder)
 
@@ -1611,20 +1645,12 @@ def orderDelivered():
     db.session.commit()
 
     # update rider stats
-    # check if rider has stats or not
-    checkRiderStatsExistQuery = f"select count(*) from RiderStats where username = '{username}' and month = 4"
-    checkResult = db.session.execute(checkRiderStatsExistQuery).fetchall()
-
-    if (checkResult[0][0]):
-        updateRiderStats = f"update RiderStats set totalOrders = totalOrders + 1 where username = '{username}'"
-    else: # by right, rider's stats should be added when the rider takes up his shift
-        updateRiderStats = f"insert into RiderStats (username, totalOrders, totalHours, totalSalary, month, year) values ('{username}', 1, null, null, 4, 2020)"    
-
+    updateRiderStats = f"update RiderStats set totalOrders = totalOrders + 1 where username = '{username}' and month = (select extract(month from current_timestamp)) and year = (select extract(year from current_timestamp))"
     db.session.execute(updateRiderStats)
     db.session.commit()
 
     # check current rider stats
-    numOrdersQuery = f"select distinct totalOrders from RiderStats where username = '{username}' and month = 4"
+    numOrdersQuery = f"select distinct totalOrders from RiderStats where username = '{username}' and month = (select extract(month from current_timestamp))"
     numOrdersResult = db.session.execute(numOrdersQuery).fetchall()
     numOrders = numOrdersResult[0][0]
 
