@@ -1533,7 +1533,7 @@ def gotoriderprofile():
 
     riderstatsquery = f"select R.month, R.year, R.username, R.totalOrders, R.totalSalary, H.hours from RiderStats R, HoursPerMonth H where R.username = H.username and R.month = (extract(month from H.month)) and R.year = (extract(year from H.month)) and R.username = '{username}' order by month, year" 
     riderstatsresult = db.session.execute(riderstatsquery)
-    riderstats = [dict(month = row[0], year = row[1], totalOrders = row[3], totalHours = row[4], totalSalary = row[5]) for row in riderstatsresult.fetchall()]
+    riderstats = [dict(month = row[0], year = row[1], totalOrders = row[3], totalHours = row[5], totalSalary = row[4]) for row in riderstatsresult.fetchall()]
     
     return render_template('riderprofile.html', profile = profile, riderstats = riderstats)
 
