@@ -31,10 +31,19 @@ def updateDailyLimit():
     db.session.commit()
 
 def insertRiderStats():
-    usernameresult = db.session.execute(f"select distinct username from DeliveryRiders")
-    usernamelist = [dict(username = row[0]) for row in usernameresult.fetchall()]
+    FTusernameresult = db.session.execute(f"select distinct username from FullTimeRiders")
+    FTusernamelist = [dict(username = row[0]) for row in FTusernameresult.fetchall()]
 
-    for i in usernamelist:
+    for i in FTusernamelist:
+        username = i['username']
+        todo = f"insert into RiderStats values ((select extract(month from current_timestamp)), (select extract(year from current_timestamp)), '{username}', 0, 3000);" 
+        db.session.execute(todo)
+        db.session.commit()
+
+    PTusernameresult = db.session.execute(f"select distinct username from PartTimeRiders")
+    PTusernamelist = [dict(username = row[0]) for row in PTusernameresult.fetchall()]
+
+    for i in PTusernamelist:
         username = i['username']
         todo = f"insert into RiderStats values ((select extract(month from current_timestamp)), (select extract(year from current_timestamp)), '{username}', 0, 0);" 
         db.session.execute(todo)
@@ -55,7 +64,7 @@ def checkAndGenerateRiderSchedule():
 sched = BackgroundScheduler(daemon=True)
 sched.add_job(updateDailyLimit,'cron', hour=0)
 sched.add_job(checkAndGenerateRiderSchedule,'cron', hour=0)
-sched.add_job(insertRiderStats, 'cron', day = 1)
+sched.add_job(insertRiderStats, 'cron', minute = 34)
 sched.start()
 
 

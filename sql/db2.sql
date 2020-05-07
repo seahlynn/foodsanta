@@ -417,19 +417,35 @@ INSERT INTO CustomerStats(username, month, year, totalNumOrders, totalCostOfOrde
 ('justning', 6, 2020, 3, 134),
 ('lynjaaa', 4, 2020, 1, 25);
 
-INSERT INTO RiderStats(month, year, username, totalOrders, totalHours, totalSalary) values
-(1, 2020, 'user31', 34, 80, 970),
-(1, 2020, 'bakwah', 23, 65, 765),
-(1, 2020, 'user32', 40, 102, 1280),
-(1, 2020, 'user48', 13, 34, 405),
-(2, 2020, 'user31', 21, 50, 605),
-(2, 2020, 'user32', 32, 76, 920),
-(3, 2020, 'user49', 11, 32, 375),
-(3, 2020, 'user48', 38, 100, 1190),
-(4, 2020, 'user31', 34, 80, 970),
-(4, 2020, 'bakwah', 23, 65, 765),
-(4, 2020, 'user32', 40, 102, 1280),
-(4, 2020, 'user48', 13, 34, 405);
+INSERT INTO RiderStats(month, year, username, totalOrders, totalSalary) values
+(1, 2020, 'user31', 34, 970),
+(1, 2020, 'bakwah', 23, 765),
+(1, 2020, 'user32', 40, 1280),
+(1, 2020, 'user48', 13, 405),
+(2, 2020, 'user31', 21,  605),
+(2, 2020, 'user32', 32, 920),
+(3, 2020, 'user49', 11, 375),
+(3, 2020, 'user48', 38, 1190),
+(4, 2020, 'user31', 34, 970),
+(4, 2020, 'bakwah', 23, 765),
+(4, 2020, 'user32', 40, 1280),
+(4, 2020, 'user48', 13, 405);
+
+
+INSERT INTO HoursPerMonth(username, month, hours) VALUES
+('user31', '01/01/2020', 80),
+('bakwah', '01/01/2020', 65),
+('user32', '01/01/2020', 102),
+('user48', '01/01/2020', 34),
+('user31', '01/02/2020', 50),
+('user32', '01/02/2020', 76),
+('user49', '01/03/2020', 32),
+('user48', '01/03/2020', 100),
+('user31', '01/04/2020', 80),
+('bakwah', '01/04/2020', 65),
+('user32', '01/04/2020', 102),
+('user48', '01/04/2020', 34);
+
 
 INSERT INTO RestaurantPromo(fdspromoid, restid) VALUES
 (5, 1),
