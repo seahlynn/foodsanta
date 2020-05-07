@@ -293,7 +293,7 @@ CREATE TABLE DailyWorkShift (
     wwsid               INTEGER,
     day                 INTEGER NOT NULL,
     startHour           INTEGER NOT NULL
-                        CHECK (startHour >= 10 AND startHour <= 22),
+                        CHECK (startHour >= 10 AND startHour <= 21),
     duration            INTEGER NOT NULL
                         CHECK (duration in (1, 2, 3, 4)),
 
@@ -730,21 +730,71 @@ create trigger incrementTimesOrderedFoodTrigger
     for each row
     execute function incrementTimesOrderedFoodFunction();
 
-
-/* update weekly work schedule hours upon insertion*/ 
-create or replace function updateWwsHoursOnInsertFunction()
+/* update weekly work schedule hours, hours per month, riders per hour upon insertion */ 
+create or replace function updateDwsInsertionFunction()
 returns trigger as $$
 DECLARE
-totalHours INTEGER;
 existingDay TEXT;
+existingStartHour INTEGER;
+existingDuration INTEGER;
+totalHours INTEGER;
+startHour INTEGER;
+duration INTEGER;
 monthStart DATE;
 HPMexists INTEGER;
 newUsername TEXT;
+shiftDate DATE;
+hourIterator INTEGER;
+hourEnd INTEGER;
 begin
+    -- transforming date into string for error message
+    select case when NEW.day = 0 then 'Monday' 
+                when NEW.day = 1 then 'Tuesday' 
+                when NEW.day = 2 then 'Wednesday' 
+                when NEW.day = 3 then 'Thursday' 
+                when NEW.day = 4 then 'Friday' 
+                when NEW.day = 5 then 'Saturday'
+                when NEW.day = 6 then 'Sunday' end into existingDay
+    from DailyWorkShift
+    where wwsid = NEW.wwsid;
+
+    -- checking for clashing shifts
+    select d1.startHour, d1.duration into existingStartHour, existingDuration
+        from DailyWorkShift d1, DailyWorkShift d2
+        where d1.wwsid = NEW.wwsid and d1.day = NEW.day and d2.dwsid = new.dwsid and d1.dwsid <> d2.dwsid
+        and   ((d1.startHour <= NEW.startHour and NEW.startHour <= d1.startHour + d1.duration)
+        or    (d1.startHour <= NEW.startHour + NEW.duration and NEW.startHour + NEW.duration <= d1.startHour + d1.duration));
+    if existingStartHour is not null then
+        raise exception 'FoodSanta: A shift you are trying to add (%00hrs to %00hrs on %) clashes with an existing shift (%00hrs to %00hrs)! Ho ho ho!',
+        NEW.startHour, (NEW.startHour + NEW.duration), existingDay, existingStartHour, (existingStartHour + existingDuration);
+    end if;
+
+    -- update wwshours
     update WeeklyWorkSchedule
     set wwsHours = wwsHours + NEW.duration
     where wwsid = NEW.wwsid;
 
+    -- checking new total hours
+    select wwsHours into totalHours
+    from WeeklyWorkSchedule
+    where wwsid = NEW.wwsid;
+
+    -- total hours validity
+    if totalHours > 44 then
+        raise exception 'FoodSanta: A shift you are trying to add (%00hrs to %00hrs on %) results in you working more than 48 hours this week! Ho ho ho!',
+        NEW.startHour, (NEW.startHour + NEW.duration), existingDay;
+    end if;
+
+    -- not working beyond 10pm
+    select NEW.startHour, NEW.duration into startHour, duration
+    from DailyWorkShift
+    where (NEW.startHour + NEW.duration) > 22;
+    if startHour is not null then
+        raise exception 'FoodSanta: A shift you are trying to add (%00hrs to %00hrs on %) exceeds the working hours of 2200hrs! Ho ho ho!',
+        NEW.startHour, ((NEW.startHour + NEW.duration) % 24), existingDay;
+    end if;
+
+    -- update hours per month
     select cast(date_trunc('month', startDate + NEW.day) as date) into monthStart from WeeklyWorkSchedule where wwsid = NEW.wwsid;
     select username into newUsername from WeeklyWorkSchedule where wwsid = NEW.wwsid;
     select count(*) into HPMexists from HoursPerMonth where username = newUsername and month = monthStart;
@@ -757,38 +807,65 @@ begin
         insert into HoursPerMonth(username, month, hours) values (newUsername, monthStart, NEW.duration);
     end if;
 
-    select wwsHours into totalHours
-        from WeeklyWorkSchedule
-        where wwsid = NEW.wwsid;
-
-    select case when NEW.day = 0 then 'Monday' when NEW.day = 1 then 'Tuesday' when NEW.day = 2 then 'Wednesday' when NEW.day = 3 then 'Thursday' when NEW.day = 4 then 'Friday' when NEW.day = 5 then 'Saturday' when NEW.day = 6 then 'Sunday' end into existingDay
-        from DailyWorkShift
-        where wwsid = NEW.wwsid;
-    if totalHours > 44 then
-        raise exception 'FoodSanta: A shift you are trying to add (%hrs to %hrs on %) results in you working more than 48 hours this week! Ho ho ho!', NEW.startHour * 100, (NEW.startHour + NEW.duration) * 100, existingDay;
-    end if;
+    -- update riders per hour
+    select username into newUsername from WeeklyWorkSchedule where wwsid = NEW.wwsid;
+    select startDate + NEW.day into shiftDate from WeeklyWorkSchedule where wwsid = NEW.wwsid;
+    hourIterator = NEW.startHour;
+    hourEnd = NEW.startHour + NEW.duration;
+    LOOP
+        EXIT WHEN hourIterator >= hourEnd;
+        insert into RidersPerHour(username, day, hour) values (newUsername, shiftDate, hourIterator);
+        hourIterator = hourIterator + 1;
+    END LOOP;
 return new;
 end; $$ language plpgsql;        
 
-drop trigger if exists updateWwsHoursOnInsertTrigger on DailyWorkShift;
-create trigger updateWwsHoursOnInsertTrigger
-    before insert on DailyWorkShift
+drop trigger if exists updateDwsInsertionTrigger on DailyWorkShift;
+create trigger updateDwsInsertionTrigger
+    after insert on DailyWorkShift
     for each row
-    execute function updateWwsHoursOnInsertFunction();
+    execute function updateDwsInsertionFunction();
 
-/* update weekly work schedule hours upon deletion*/ 
-create or replace function updateWwsHoursOnDeleteFunction()
+/* update weekly work schedule hours, hours per month and riders per hour upon deletion*/ 
+create or replace function updateDwsDeletionFunction()
 returns trigger as $$
 DECLARE
 totalHours INTEGER;
 existingDay TEXT;
 monthStart DATE;
 oldUsername TEXT;
+shiftDate DATE;
+hourIterator INTEGER;
+hourEnd INTEGER;
+count INTEGER;
 begin
+    -- update wwshours
     update WeeklyWorkSchedule
     set wwsHours = wwsHours - OLD.duration
     where wwsid = OLD.wwsid;
 
+    -- checking new total hours
+    select wwsHours into totalHours
+        from WeeklyWorkSchedule
+        where wwsid = OLD.wwsid;
+
+    -- total hours validity
+    if totalHours < 10 then
+    -- transforming date into string for error catching
+        select case when OLD.day = 0 then 'Monday' 
+                    when OLD.day = 1 then 'Tuesday' 
+                    when OLD.day = 2 then 'Wednesday' 
+                    when OLD.day = 3 then 'Thursday'
+                    when OLD.day = 4 then 'Friday' 
+                    when OLD.day = 5 then 'Saturday' 
+                    when OLD.day = 6 then 'Sunday' end into existingDay
+        from DailyWorkShift
+        where wwsid = OLD.wwsid;
+        raise exception 'FoodSanta: A shift you are trying to delete (%00hrs to %00hrs on %) results in you working less than 10 hours this week! Ho ho ho!',
+        OLD.startHour, (OLD.startHour + OLD.duration), existingDay;
+    end if;
+
+    -- update hours per month
     select cast(date_trunc('month', startDate + OLD.day) as date) into monthStart from WeeklyWorkSchedule where wwsid = OLD.wwsid;
     select username into oldUsername from WeeklyWorkSchedule where wwsid = OLD.wwsid;
     update HoursPerMonth
@@ -796,76 +873,31 @@ begin
     where username = oldUsername
     and month = monthStart;
 
-    select wwsHours into totalHours
-        from WeeklyWorkSchedule
-        where wwsid = OLD.wwsid;
-
-    select case when OLD.day = 0 then 'Monday' when OLD.day = 1 then 'Tuesday' when OLD.day = 2 then 'Wednesday' when OLD.day = 3 then 'Thursday' when OLD.day = 4 then 'Friday' when OLD.day = 5 then 'Saturday' when OLD.day = 6 then 'Sunday' end into existingDay
-        from DailyWorkShift
-        where wwsid = OLD.wwsid;
-    if totalHours < 10 then
-        raise exception 'FoodSanta: A shift you are trying to delete (%hrs to %hrs on %) results in you working less than 10 hours this week! Ho ho ho!', OLD.startHour * 100, (OLD.startHour + OLD.duration) * 100, existingDay;
-    end if;
+    -- update riders per hour
+    select startDate + OLD.day into shiftDate from WeeklyWorkSchedule where wwsid = OLD.wwsid;
+    hourIterator = OLD.startHour;
+    hourEnd = OLD.startHour + OLD.duration;
+    LOOP
+        EXIT WHEN hourIterator >= hourEnd;
+        delete from RidersPerHour where username = oldUsername and day = shiftDate and hour = hourIterator;
+        select count(*) into count from RidersPerHour where day = shiftDate and hour = hourIterator;
+        if count < 5 then
+            raise exception 'FoodSanta: The shift you are trying to delete (%00hrs to %00hrs on %) results in less than 5 people working at %00hrs! Ho ho ho!',
+            OLD.startHour, ((OLD.startHour + OLD.duration) % 24), existingDay, hourIterator;
+        end if;
+        hourIterator = hourIterator + 1;
+    END LOOP;
 return new;
 end; $$ language plpgsql;        
 
-drop trigger if exists updateWwsHoursOnDeleteTrigger on DailyWorkShift;
-create trigger updateWwsHoursOnDeleteTrigger
+drop trigger if exists updateDwsDeletionTrigger on DailyWorkShift;
+create trigger updateDwsDeletionTrigger
     after delete on DailyWorkShift
     for each row
-    execute function updateWwsHoursOnDeleteFunction();
+    execute function updateDwsDeletionFunction();
 
-/* check validity of a new part time shift hours*/
-create or replace function validPartTimeShiftFunction()
-returns trigger as $$
-DECLARE
-existingDay TEXT;
-existingStartHour INTEGER;
-existingDuration INTEGER;
-begin
-    select case when d1.day = 0 then 'Monday' when d1.day = 1 then 'Tuesday' when d1.day = 2 then 'Wednesday' when d1.day = 3 then 'Thursday' when d1.day = 4 then 'Friday' when d1.day = 5 then 'Saturday' when d1.day = 6 then 'Sunday' end, d1.startHour, d1.duration into existingDay, existingStartHour, existingDuration
-        from DailyWorkShift d1, DailyWorkShift d2
-        where d1.wwsid = NEW.wwsid and d1.day = NEW.day and d2.dwsid = new.dwsid and d1.dwsid <> d2.dwsid
-        and   ((d1.startHour <= NEW.startHour and NEW.startHour <= d1.startHour + d1.duration)
-        or    (d1.startHour <= NEW.startHour + NEW.duration and NEW.startHour + NEW.duration <= d1.startHour + d1.duration));
-    if existingStartHour is not null then
-        raise exception 'FoodSanta: A shift you are trying to add (%hrs to %hrs on %) clashes with an existing shift (%hrs to %hrs)! Ho ho ho!', NEW.startHour * 100, (NEW.startHour + NEW.duration) * 100, existingDay, existingStartHour * 100, (existingStartHour + existingDuration) * 100;
-    end if;
-    return null;
-end; $$ language plpgsql;        
-
-drop trigger if exists validPartTimeShiftTrigger on DailyWorkShift;
-create trigger validPartTimeShiftTrigger
-    after insert on DailyWorkShift
-    for each row
-    execute function validPartTimeShiftFunction();
-
-/* check if a new part time shift hours exceeds 10pm*/
-create or replace function tenPmPartTimeShiftFunction()
-returns trigger as $$
-DECLARE
-day TEXT;
-startHour INTEGER;
-duration INTEGER;
-begin
-    select case when d1.day = 0 then 'Monday' when d1.day = 1 then 'Tuesday' when d1.day = 2 then 'Wednesday' when d1.day = 3 then 'Thursday' when d1.day = 4 then 'Friday' when d1.day = 5 then 'Saturday' when d1.day = 6 then 'Sunday' end, d1.startHour, d1.duration into day, startHour, duration
-        from DailyWorkShift d1
-        where d1.dwsid = NEW.dwsid
-        and   (NEW.startHour + NEW.duration) > 22;
-    if startHour is not null then
-        raise exception 'FoodSanta: A shift you are trying to add (%hrs to %hrs on %) exceeds the working hours of 2200hrs! Ho ho ho!', NEW.startHour * 100, ((NEW.startHour + NEW.duration) % 24) * 100, day;
-    end if;
-    return null;
-end; $$ language plpgsql;        
-
-drop trigger if exists tenPmPartTimeShiftTrigger on DailyWorkShift;
-create trigger tenPmPartTimeShiftTrigger
-    after insert on DailyWorkShift
-    for each row
-    execute function tenPmPartTimeShiftFunction();
-
-/* update monthly work schedule hours upon addition or update*/ 
-create or replace function updateMwsHoursOnUpdateFunction()
+/* update monthly work schedule hours and hours per month upon addition or update*/ 
+create or replace function updateMwsInsertionUpdateFunction()
 returns trigger as $$
 DECLARE
 mnthIterator DATE;
@@ -873,22 +905,109 @@ mnthEnd DATE;
 wkStartDay INTEGER;
 totalHours INTEGER = 0;
 weekday INTEGER;
+dayShifts INTEGER[];
+shift INTEGER;
+sql TEXT;
+count INTEGER;
+failedDay DATE;
+failedHour INTEGER;
 begin
+    -- preparing variables
     select NEW.wkStartDay into wkStartDay;
     select NEW.mnthStartDay into mnthIterator;
     select last_day(NEW.mnthStartDay) into mnthEnd;
 
+    -- reset riders per hour, saving the dates for the <5 constraint checking later
+    drop table if exists temp cascade;
+    create table temp (
+        day DATE,
+        hour INTEGER,
+        count INTEGER,
+        PRIMARY KEY (day, hour, count)
+    );
+    insert into temp(day, hour, count) select day, hour, count(hour) from RidersPerHour where extract(MONTH from day) = extract(MONTH from NEW.mnthStartDay) group by day, hour;
+    delete from RidersPerHour where username = NEW.username and extract(MONTH from day) = extract(MONTH from NEW.mnthStartDay);
+
+    -- extracting shifts
+    dayShifts = ARRAY[NEW.day1, NEW.day2, NEW.day3, NEw.day4, NEW.day5];
+
+    -- looping through every day of the month to see which days are worked
     LOOP
         EXIT WHEN mnthIterator > mnthEnd;
-        weekday := extract(isodow from mnthIterator) - 1;
-        if wkStartDay <> ((weekday + 1) % 7)
-        and wkStartDay <> ((weekday + 2) % 7) then
-            totalHours := totalHours + 8;
+        weekday = extract(isodow from mnthIterator) - 1;
+        -- if condition for days that are worked on
+        if wkStartDay <> ((weekday + 1) % 7) and wkStartDay <> ((weekday + 2) % 7) then
+            -- counting up total hours
+            totalHours = totalHours + 8;
+
+            -- finding shift for this day, then adding hours accordingly to riders per hour
+            shift = dayShifts[(weekday - wkStartDay + 8) % 7];
+            if shift = 0 then
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 10);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 11);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 12);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 13);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 15);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 16);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 17);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 18);
+            elsif shift = 1 then
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 11);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 12);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 13);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 14);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 16);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 17);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 18);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 19);
+            elsif shift = 2 then
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 12);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 13);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 14);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 15);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 17);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 18);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 19);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 20);
+            elsif shift = 3 then
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 13);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 14);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 15);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 16);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 18);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 19);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 20);
+                insert into RidersPerHour(username, day, hour) values (NEW.username, mnthIterator, 21);
+            end if;
         end if;
-        mnthIterator := mnthIterator + 1;
+        mnthIterator = mnthIterator + 1;
     END LOOP;
 
-    NEW.mwsHours := totalHours;
+    -- finally checking for <5
+    with tempCheck as (
+        select day, hour, count(hour) as count
+        from RidersPerHour
+        where extract(MONTH from day) = extract(MONTH from NEW.mnthStartDay)
+        group by day, hour
+    )
+    select tempCheck.count, tempCheck.day, tempCheck.hour into count, failedDay, failedHour
+    from tempCheck, temp
+    where tempCheck.day = temp.day
+    and tempCheck.hour = temp.hour
+    and tempCheck.count < temp.count
+    and tempCheck.count < 5
+    order by tempCheck.day, tempCheck.hour
+    limit 1;
+
+    if count < 5 then
+        raise exception 'FoodSanta: Your new shift results in less than 5 people working at %00hrs on %! Ho ho ho!',
+        failedHour, failedDay;
+    end if;
+    
+    -- updating value of insertion/update
+    NEW.mwsHours = totalHours;
+
+    -- determine operator to reflect insert/update in HoursPerMonth
     if tg_op = 'INSERT' then
         insert into HoursPerMonth(username, month, hours) values (NEW.username, NEW.mnthStartDay, NEW.mwsHours);
     elsif tg_op = 'UPDATE' then
@@ -900,10 +1019,9 @@ begin
     return new;
 end; $$ language plpgsql;        
 
-drop trigger if exists updateMwsHoursOnUpdateTrigger on DailyWorkShift;
-create trigger updateMwsHoursOnUpdateTrigger
+drop trigger if exists updateMwsInsertionUpdateTrigger on DailyWorkShift;
+create trigger updateMwsInsertionUpdateTrigger
     before insert or update on MonthlyWorkSchedule
     for each row
-    execute function updateMwsHoursOnUpdateFunction();
-
+    execute function updateMwsInsertionUpdateFunction();
 

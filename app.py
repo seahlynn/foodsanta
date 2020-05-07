@@ -30,9 +30,22 @@ def updateDailyLimit():
     db.session.commit()
     print("Scheduler is alive!")
 
+def checkAndGenerateRiderSchedule():
+    username = session['username']
+    partriderquery = f"select count(*) from PartTimeRiders where username = '{username}'"
+    partrider = db.session.execute(partriderquery).fetchall()[0][0]
+    fullriderquery = f"select count(*) from FullTimeRiders where username = '{username}'"
+    fullrider = db.session.execute(fullriderquery).fetchall()[0][0]
+    if partrider > 0:
+        if haveNextWeek() == 0:
+            generateNextWeek()
+    elif fullrider > 0:
+        if haveNextMonth() == 0:
+            generateNextMonth()
 
 sched = BackgroundScheduler(daemon=True)
 sched.add_job(updateDailyLimit,'cron', hour=0)
+sched.add_job(checkAndGenerateRiderSchedule,'cron', hour=0)
 sched.start()
 
 
@@ -1423,7 +1436,7 @@ Riders accept allocated undelivered orders to pick up and deliver
 @app.route('/gotoriderprofile', methods=['GET'])
 def gotoriderprofile():
     username = session['username']
-
+    
     profilequery = f"select name, phoneNumber from Users where username = '{username}'"
     profileresult = db.session.execute(profilequery)
     profile = [dict(name = row[0], number = row[1]) for row in profileresult.fetchall()]
@@ -1437,6 +1450,8 @@ def gotoriderprofile():
 @app.route('/gotodelivery', methods=['GET'])
 def gotodelivery():
     username = session['username']  
+
+    checkAndGenerateRiderSchedule()
 
     # check if rider has been allocated an order that has yet to be delivered
     hasallocatedOrdersQuery = f"select count(*) \
@@ -1643,14 +1658,16 @@ def getFullTimeSchedule():
     scheduleQuery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select wkStartDay, day1 from MonthlyWorkSchedule  where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 1) % 7, day2 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 2) % 7, day3 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 3) % 7, day4 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 4) % 7, day5 from MonthlyWorkSchedule M where mnthStartDay = '{datem}' and username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shiftString from dayShift order by day, shift;"
     scheduleResult = db.session.execute(scheduleQuery)
     schedule = [dict(day = row[0], shift = row[1]) for row in scheduleResult.fetchall()]
-
-    nextMonth = datetime(today.year, today.month + 1 % 12, 1).date()
-    nextScheduleQuery = f"select count(*) from MonthlyWorkSchedule where mnthStartDay = '{nextMonth}'"
-    nextScheduleResult = db.session.execute(nextScheduleQuery).fetchall()[0][0]
-    if nextScheduleResult == 0:
-        generateNextMonth()
     
     return render_template('schedulefulltime.html', schedule = schedule, monthYear = monthYear)
+
+def haveNextMonth():
+    username = session['username']
+    today = datetime.today()
+    nextMonth = datetime(today.year, today.month + 1 % 12, 1).date()
+    nextScheduleQuery = f"select count(*) from MonthlyWorkSchedule where mnthStartDay = '{nextMonth}' and username = '{username}'"
+    nextScheduleResult = db.session.execute(nextScheduleQuery).fetchall()[0][0]
+    return nextScheduleResult
 
 def generateNextMonth():
     username = session['username']
@@ -1746,20 +1763,23 @@ def getPartTimeSchedule():
     sunday = monday + timedelta(days = 6)
     datemEnd = sunday.date()
 
-    daysToNextMonday = 0 - today.weekday()
-    if daysToNextMonday <= 0:
-        daysToNextMonday += 7
-    nextMonday = (today + timedelta(days = daysToNextMonday)).date()
-    nextScheduleQuery = f"select count(*) from WeeklyWorkSchedule where startDate = '{nextMonday}'"
-    nextScheduleResult = db.session.execute(nextScheduleQuery).fetchall()[0][0]
-    if nextScheduleResult == 0:
-        generateNextWeek()
-
     schedulequery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, duration integer, primary key(day, shift, duration)); insert into dayShift (day, shift, duration) select D.day, D.starthour, D.duration from DailyWorkShift D, WeeklyWorkSchedule W where W.wwsid = D.wwsid and W.username = '{username}' and W.startDate = '{datem}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, concat(cast((shift * 100) as varchar), ' to ', cast(((shift + duration) * 100) as varchar)) as shiftString from dayShift order by day, shift"
     scheduleresult = db.session.execute(schedulequery)
     schedule = [dict(day = row[0], shift = row[1]) for row in scheduleresult.fetchall()]
     
     return render_template('scheduleparttime.html', schedule = schedule, datem = datem, datemEnd = datemEnd)
+
+def haveNextWeek():
+    username = session['username']
+    today = datetime.today()
+    daysToNextMonday = 0 - today.weekday()
+    if daysToNextMonday <= 0:
+        daysToNextMonday += 7
+    nextMonday = (today + timedelta(days = daysToNextMonday)).date()
+    nextScheduleQuery = f"select count(*) from WeeklyWorkSchedule where startDate = '{nextMonday}' and username = '{username}'"
+    nextScheduleResult = db.session.execute(nextScheduleQuery).fetchall()[0][0]
+    print(nextScheduleResult)
+    return nextScheduleResult
 
 def generateNextWeek():
     username = session['username']
@@ -1919,7 +1939,6 @@ def deletePartTimeScheduleResult():
             startIndex = str(e).find('FoodSanta: ')
             endIndex = str(e).find('Ho ho ho!') + 9
             errorMessage = str(e)[startIndex:endIndex]
-            print(errorMessage)
 
     return render_template('scheduledeleteparttimeresult.html', datem = datem, datemEnd = datemEnd, message = message, errorMessage = errorMessage)
     
@@ -1927,21 +1946,18 @@ def deletePartTimeScheduleResult():
 def getRidersPerHour():
     if request.method == "POST":
         form = request.form
-        day = datetime.strptime(form.get('day'), '%Y-%m-%d')
+        formDay = datetime.strptime(form.get('day'), '%Y-%m-%d')
+        day = (formDay - timedelta(days = formDay.weekday())) #sets to monday of the given week
     else:
         today = datetime.today()
         day = (today - timedelta(days = today.weekday()) + timedelta(days = 7)) #defaults to next monday
-    monday = (day - timedelta(days = day.weekday()))
-    tuesday = (monday + timedelta(days = 1)).date()
-    wednesday = (monday + timedelta(days = 2)).date()
-    thursday = (monday + timedelta(days = 3)).date()
-    friday = (monday + timedelta(days = 4)).date()
-    saturday = (monday + timedelta(days = 5)).date()
-    sunday = (monday + timedelta(days = 6)).date()
-    monday = monday.date()
-
-    if not isRidersPerHourPresent(monday):
-        generateRidersPerHour(day)
+    monday = day.date()
+    tuesday = (day + timedelta(days = 1)).date()
+    wednesday = (day + timedelta(days = 2)).date()
+    thursday = (day + timedelta(days = 3)).date()
+    friday = (day + timedelta(days = 4)).date()
+    saturday = (day + timedelta(days = 5)).date()
+    sunday = (day + timedelta(days = 6)).date()
 
     scheduleQuery = f"select hour, count(hour) from RidersPerHour where day = '{monday}' group by hour order by hour"
     scheduleResult = db.session.execute(scheduleQuery)
@@ -1966,88 +1982,8 @@ def getRidersPerHour():
     sundaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
 
     maxDay = (datetime.today() + timedelta(days = 6 - datetime.today().weekday()) + timedelta(days = 7)).date() #defaults to sunday of next week, relative to today
-    print(maxDay)
+
     return render_template('ridersperhour.html', mondaysch = mondaysch, tuesdaysch = tuesdaysch, wednesdaysch = wednesdaysch, thursdaysch = thursdaysch, fridaysch = fridaysch, saturdaysch = saturdaysch, sundaysch = sundaysch, monday = monday, sunday = sunday, maxDay = maxDay)
-
-def isRidersPerHourPresent(inputMonday):
-    monday = inputMonday
-    isWeekCalculated = f"select count(*) from RidersPerHour where day >= '{monday}'"
-    isWeekCalculatedResult = int(db.session.execute(isWeekCalculated).fetchall()[0][0] or 0)
-    return isWeekCalculatedResult
-
-def generateRidersPerHour(inputDate):
-    #for currentWeek
-    day = inputDate
-    currMonth = datetime(day.year, day.month, 1).date()
-    monday = (day - timedelta(days = day.weekday())).date()
-
-    dayArray = (0, 1, 2, 3, 4, 5, 6)
-    shift1 = (10, 11, 12, 13, 15, 16, 17, 18)
-    shift2 = (11, 12, 13, 14, 16, 17, 18, 20)
-    shift3 = (12, 13, 14, 15, 17, 18, 20, 21)
-    shift4 = (13, 14, 15, 16, 18, 20, 21, 22)
-
-    for dayIncrement in dayArray:
-        currDay = (monday + timedelta(days = dayIncrement))
-        #for full time riders
-        workingOnDay = f"select username, wkStartDay, day1, day2, day3, day4, day5 from MonthlyWorkSchedule where mnthStartDay = '{currMonth}' and wkStartDay <> ('{dayIncrement}' + 1) % 7 and wkStartDay <> ('{dayIncrement}' + 2) % 7"
-        result = db.session.execute(workingOnDay).fetchall()
-
-        for row in result:
-            username = row[0]
-            if row[1] == 0: #if wkStartDay = 0
-                wkStartDay = 0
-                shiftWorked = row[(dayIncrement - 0 + 9) % 7] #dayIncrement - wkStartDay + 1, then +7, then +1 to match index
-            elif row[1] == 1: #if wkStartDay = 1
-                wkStartDay = 1
-                shiftWorked = row[(dayIncrement - 1 + 9) % 7]
-            elif row[1] == 2: #if wkStartDay = 2
-                wkStartDay = 2
-                shiftWorked = row[(dayIncrement - 2 + 9) % 7]
-            elif row[1] == 3: #if wkStartDay = 3
-                wkStartDay = 3
-                shiftWorked = row[(dayIncrement - 3 + 9) % 7]
-            elif row[1] == 4: #if wkStartDay = 4
-                wkStartDay = 4
-                shiftWorked = row[(dayIncrement - 4 + 9) % 7]
-            elif row[1] == 5: #if wkStartDay = 5
-                wkStartDay = 5
-                shiftWorked = row[(dayIncrement - 5 + 9) % 7]
-            elif row[1] == 6: #if wkStartDay = 6
-                wkStartDay = 6
-                shiftWorked = row[(dayIncrement - 6 + 9) % 7]
-            
-            if shiftWorked == 0:
-                for hour in shift1:
-                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
-                    insertionResult = db.session.execute(insertion)
-            elif shiftWorked == 1:
-                for hour in shift2:
-                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
-                    insertionResult = db.session.execute(insertion)
-            elif shiftWorked == 2:
-                for hour in shift3:
-                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
-                    insertionResult = db.session.execute(insertion)
-            elif shiftWorked == 3:
-                for hour in shift4:
-                    insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
-                    insertionResult = db.session.execute(insertion)  
-
-        #for part time riders
-        workingOnDay = f"select username, startHour, duration from WeeklyWorkSchedule natural join DailyWorkShift where startDate = '{monday}' and day = '{dayIncrement}'"
-        result = db.session.execute(workingOnDay).fetchall()
-        for row in result:
-            username = row[0]
-            startHour = row[1]
-            duration = row[2]
-            for i in range(duration):
-                hour = startHour + i
-                print('hour: ', hour)
-                insertion = f"insert into RidersPerHour(username, day, hour) values ('{username}', '{currDay}', '{hour}'); commit;"
-                insertionResult = db.session.execute(insertion)  
-
-    return;
 
 #Check if server can be run, must be placed at the back of this file
 if __name__ == '__main__':

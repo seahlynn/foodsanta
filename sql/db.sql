@@ -110,14 +110,12 @@ INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, compl
 (1, 'fullridertest', '2020-05-01', 1, false, 0, 1, 2, 3, 0);
 
 INSERT INTO WeeklyWorkSchedule(wwsid, username, startDate, wwsHours, completed) VALUES
-(1, 'partridertest', '2020-05-04', 0, false),
-(2, 'partridertest', '2020-06-01', 1, false),
-(3, 'justning', '2020-06-01', 1, false);
+(1, 'partridertest', '2020-05-04', 0, false);
 
 INSERT INTO DailyWorkShift(dwsid, wwsid, day, startHour, duration) VALUES
 (1, 1, 0, 10, 4),
-(2, 1, 2, 18, 4),
-(3, 3, 2, 18, 4);
+(2, 1, 2, 10, 4),
+(3, 1, 2, 18, 4);
 
 INSERT INTO Delivers(orderid, username, rating, location, deliveryFee, timeDepartToRestaurant, timeArrivedAtRestaurant, timeOrderDelivered) VALUES
 (2, 'partridertest', 4, '469 Bukit Timah Rd Singapore 259756', 5, NULL, NULL, NULL),
