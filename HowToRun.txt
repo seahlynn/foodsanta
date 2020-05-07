@@ -27,7 +27,7 @@ If you add in a member that's not within the Test table, it will render a succes
 Do note that you need to refresh the browser and not the table.
 
 --FOR SETUP OF FOODSANTA--
-Run \i init.sql in psql
+Run \i init.sql and \i db2.sql in psql
 
 If successful, you should see the tables being created under the database.
 
