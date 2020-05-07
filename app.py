@@ -1321,7 +1321,7 @@ def orderstatus():
         numavailableriders = len(availableriders)
 
         if numavailableriders != 0:
-            randridernum = random.randint(0, numavailableriders)
+            randridernum = random.randint(0, numavailableriders-1)
             randrider = availableriders[randridernum]
             riderusername = randrider[0]
 
@@ -1518,6 +1518,8 @@ def gotodelivery():
         allocatedOrder = [dict(orderid = row[0], custLocation = row[1], restLocation = row[2]) for row in allocatedOrderresult.fetchall()]
         print(allocatedOrder)
         session['deliveringOrderId'] = allocatedOrder[0]['orderid']
+        session['attemptedToCollect'] = False
+
         return render_template('riders_viewAllocatedOrder.html', allocatedOrder = allocatedOrder)
 
     else:
@@ -1592,6 +1594,10 @@ def collectFromRestaurant():
     deliveringOrderId = session['deliveringOrderId']
     username = session['username']
 
+    if session['attemptedToCollect']:
+        flash("The food is not ready for collection! Please wait at the restaurant.")
+        print('flash statement')
+
     # timestamp for when he leaves for the restaurant
     currentTime = datetime.now().strftime("%d/%m/%Y %H%M")
     updateLeaveTime = f"update Delivers set timeDepartToRestaurant= '{currentTime}' where orderid = '{deliveringOrderId}' and username = '{username}'"
@@ -1617,10 +1623,21 @@ def collectedFromRestaurant():
     deliveringOrderId = session['deliveringOrderId']
     username = session['username']
     currentTime = datetime.now().strftime("%d/%m/%Y %H%M")
-    
+
+    # check that order has been prepared
+    checkOrderHasBeenPrepared = f"select O.preparedbyrest \
+    from Delivers D join Orders O on (D.orderid = O.orderid) \
+    and D.orderid = '{deliveringOrderId}'"
+    checkOrderHasBeenPreparedResult = db.session.execute(checkOrderHasBeenPrepared).fetchall()
+
+    if checkOrderHasBeenPreparedResult[0][0] == False:
+        session['attemptedToCollect'] = True
+        return redirect('collectFromRestaurant')
+
     # handle functionality of button
     # 1. update the timeArrivedAtRestaurant
     # 2. move to the next page 
+    session['attemptedToCollect'] = False
     updateDeliveryStatus = f"update Delivers set timeArrivedAtRestaurant = '{currentTime}' where orderid = {deliveringOrderId}"
     db.session.execute(updateDeliveryStatus)
     db.session.commit()
