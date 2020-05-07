@@ -718,7 +718,7 @@ def viewspecificriderstats():
         statsquery = f"select * from RiderStats order by month, year"
     elif month is None:
         year = int(year)
-        statsquery = f"select * from RideStats where year = {year} order by month"
+        statsquery = f"select * from RiderStats where year = {year} order by month"
     elif year is None:
         month = int(month)
         statsquery = f"select * from RiderStats where month = {month} order by year"
