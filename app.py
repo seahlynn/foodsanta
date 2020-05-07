@@ -164,6 +164,7 @@ def index():
 def login():
     print("Login page accessed")
     session.clear()
+    session['isOperational'] = True
 
     if request.method == 'POST':
         form = request.form
@@ -901,6 +902,10 @@ Customer related: View, Edit profile
 def gotocusprofile():
     username = session['username']
 
+    if not session['isOperational']:
+        flash('FoodSanta is closed! Ho ho ho')
+        session['isOperational'] = True
+
     profilequery = f"select U.name, U.phoneNumber, C.points from Users U, Customers C where C.username = '{username}' and U.username = '{username}'"
     profileresult = db.session.execute(profilequery)
     profile = [dict(name = row[0], number = row[1], points = row[2]) for row in profileresult.fetchall()]
@@ -944,23 +949,28 @@ Customer related: View ordering page, order from Menu, add to cart
 '''
 @app.route('/gotorest', methods=['GET'])
 def gotorest():
-    orderidquery = f"select orderid from Orders order by orderid desc limit 1"
-    orderidresult = db.session.execute(orderidquery).fetchall()
-    orderid = int(orderidresult[0][0] or 0) + 1
-    session['orderid'] = orderid
-    session['deliveryfee'] = 4
 
-    query = f"select * from Restaurants"
-    result = db.session.execute(query)
-    restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
+    if (datetime.now().hour < 22 and datetime.now().hour >= 10):
+        orderidquery = f"select orderid from Orders order by orderid desc limit 1"
+        orderidresult = db.session.execute(orderidquery).fetchall()
+        orderid = int(orderidresult[0][0] or 0) + 1
+        session['orderid'] = orderid
+        session['deliveryfee'] = 4
 
-    query = f"select distinct category from Food"
-    result = db.session.execute(query)
-    catlist = [dict(cat = row[0]) for row in result.fetchall()]
-        
+        query = f"select * from Restaurants"
+        result = db.session.execute(query)
+        restlist = [dict(restid = row[0], restname = row[1]) for row in result.fetchall()]
+
+        query = f"select distinct category from Food"
+        result = db.session.execute(query)
+        catlist = [dict(cat = row[0]) for row in result.fetchall()]
+        session['isOperational'] = True
+
     
-    return render_template('restaurants.html', restlist = restlist, catlist = catlist)
+        return render_template('restaurants.html', restlist = restlist, catlist = catlist)
 
+    session['isOperational'] = False
+    return redirect('gotocusprofile')
 
 @app.route('/restresults', methods=['GET', 'POST'])
 def restresults():
