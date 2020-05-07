@@ -515,8 +515,8 @@ returns trigger as $$
 begin
     update RiderStats
     set totalSalary = totalSalary + 5
-    where month = (select extract(month from current_timestamp)
-    and year = (select extract(year from current_timestamp)
+    where month = (select extract(month from current_timestamp))
+    and year = (select extract(year from current_timestamp))
     and username = NEW.username;
 return new;
 end; $$ language plpgsql;

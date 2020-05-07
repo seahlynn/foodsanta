@@ -49,6 +49,18 @@ def insertRiderStats():
         db.session.execute(todo)
         db.session.commit()
 
+def updateWeeklySalary():
+    PTusernameresult = db.session.execute(f"select distinct username from PartTimeRiders")
+    PTusernamelist = [dict(username = row[0]) for row in PTusernameresult.fetchall()]
+
+    for i in PTusernamelist:
+        username = i['username']
+        todo = f"update RiderStats set totalSalary = totalSalary + ((select wwsHours from WeeklyWorkSchedule where startDate = current_date and username = {username}) * 12) \
+                where month = (select extract(month from current_timestamp)) and year = (select extract(year from current_timestamp)) and username = {username}"
+        db.session.execute(todo)
+        db.session.commit()
+    
+
 def checkAndGenerateRiderSchedule():
     partridersquery = f"select username from PartTimeRiders"
     partriders = db.session.execute(partridersquery).fetchall()
@@ -65,6 +77,7 @@ sched = BackgroundScheduler(daemon=True)
 sched.add_job(updateDailyLimit,'cron', hour=0)
 sched.add_job(checkAndGenerateRiderSchedule,'cron', hour=0)
 sched.add_job(insertRiderStats, 'cron', day=1)
+sched.add_job(updateWeeklySalary, 'cron', day_of_week='mon')
 sched.start()
 
 
