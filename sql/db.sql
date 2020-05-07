@@ -106,11 +106,11 @@ INSERT INTO PaymentMethods(paymentmethodid, username, cardInfo) VALUES
 (7, 'justning', 'uob card'),
 (8, 'justning', 'stanchart card');
 
-INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, completed, day1, day2, day3, day4, day5) VALUES
-(1, 'fullridertest', '2020-05-01', 1, false, 0, 1, 2, 3, 0);
+INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, day1, day2, day3, day4, day5) VALUES
+(1, 'fullridertest', '2020-05-01', 2, 3, 2, 3, 2, 3);
 
-INSERT INTO WeeklyWorkSchedule(wwsid, username, startDate, wwsHours, completed) VALUES
-(1, 'partridertest', '2020-05-04', 0, false);
+INSERT INTO WeeklyWorkSchedule(wwsid, username, startDate, wwsHours) VALUES
+(1, 'partridertest', '2020-05-04', 0);
 
 INSERT INTO DailyWorkShift(dwsid, wwsid, day, startHour, duration) VALUES
 (1, 1, 0, 10, 4),

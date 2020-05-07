@@ -258,7 +258,6 @@ CREATE TABLE MonthlyWorkSchedule (
     mnthStartDay       DATE NOT NULL,
     wkStartDay         INTEGER NOT NULL
                        CHECK (wkStartDay in (0, 1, 2, 3, 4, 5, 6)),
-    completed          BOOLEAN NOT NULL,
     day1                INTEGER NOT NULL
                         CHECK (day1 in (0, 1, 2, 3)),
     day2                INTEGER NOT NULL
@@ -281,7 +280,6 @@ CREATE TABLE WeeklyWorkSchedule (
     username            VARCHAR(30),
     startDate           DATE NOT NULL,
     wwsHours            INTEGER NOT NULL DEFAULT 0,
-    completed           BOOLEAN NOT NULL,
 
     PRIMARY KEY (wwsid),
 
@@ -983,7 +981,7 @@ begin
         mnthIterator = mnthIterator + 1;
     END LOOP;
 
-    -- finally checking for <5
+    -- finally checking for < 5
     with tempCheck as (
         select day, hour, count(hour) as count
         from RidersPerHour
@@ -999,11 +997,11 @@ begin
     order by tempCheck.day, tempCheck.hour
     limit 1;
 
-    if count < 5 then
-        raise exception 'FoodSanta: Your new shift results in less than 5 people working at %00hrs on %! Ho ho ho!',
-        failedHour, failedDay;
-    end if;
-    
+    -- if count < 5 then
+    --     raise exception 'FoodSanta: Your new shift results in less than 5 people working at %00hrs on %! Ho ho ho!',
+    --     failedHour, failedDay;
+    -- end if;
+
     -- updating value of insertion/update
     NEW.mwsHours = totalHours;
 
