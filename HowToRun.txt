@@ -55,6 +55,21 @@ flask-sqlalchemy = "*"
 python_version = "3.8"
 """
 
+--FOR TESTING PURPOSES--
+
+This particular section pertains to the testing of a rider allocation to a newly made order.
+According to project requirements, the rider assignment to an order is by the FDS. For FoodSanta,
+we prioritize an allocation of a rider to an order based on his availability in that particular 
+time of the day and that he is not currently busy with another order. This means that there may
+be several riders available, in which case we will randomise the rider that is allocated. If there
+are no riders available, the rider that is currently on shift and is the earliest to have left to 
+pick up his order at the restaurant will be allocated to the order.
+
+Since the rider allocated in this first scenario will be randomised, we have included the print
+statement in the console to determine which rider the order has been allocated to. To test that 
+this rider has indeed received an allocation, enter the application under this rider's account.
+The page should be directed to informing the rider that an allocation has been made. Otherwise,
+FoodSanta will inform him that there are no orders allocated to him now. 
 
 Images/Templates derived from, all rights go to the following webpages and their respective owners:
 
