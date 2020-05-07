@@ -33,7 +33,7 @@ def updateDailyLimit():
 def insertRiderStats():
     FTusernameresult = db.session.execute(f"select distinct username from FullTimeRiders")
     FTusernamelist = [dict(username = row[0]) for row in FTusernameresult.fetchall()]
-
+    print('here')
     for i in FTusernamelist:
         username = i['username']
         todo = f"insert into RiderStats values ((select extract(month from current_timestamp)), (select extract(year from current_timestamp)), '{username}', 0, 3000);" 
@@ -64,7 +64,7 @@ def checkAndGenerateRiderSchedule():
 sched = BackgroundScheduler(daemon=True)
 sched.add_job(updateDailyLimit,'cron', hour=0)
 sched.add_job(checkAndGenerateRiderSchedule,'cron', hour=0)
-sched.add_job(insertRiderStats, 'cron', minute = 34)
+sched.add_job(insertRiderStats, 'cron', day=1)
 sched.start()
 
 
@@ -1326,7 +1326,8 @@ def orderstatus():
                 from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
                 where Delivers.username = D.username \
                 and Orders.selectedByRider = True \
-                and Orders.delivered = False)" \
+                and Orders.delivered = False)"
+
             nextavailriderresult = db.session.execute(nextavailriderquery).fetchall()
             riderusername = nextavailriderresult[0]
     
