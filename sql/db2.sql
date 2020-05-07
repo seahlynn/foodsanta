@@ -29,6 +29,7 @@ INSERT INTO Users(username, name, password, phoneNumber, dateCreated) VALUES
 ('user17','Simon','password17','82948057','2019-09-06'),
 ('user18','Noah','password18','98095014','2019-05-16'),
 ('user19','Teresa','password19','96869590','2019-09-12'),
+
 ('user20','Simon','password20','95880241','2019-07-13'),
 ('user21','youngpunk','password21','88872365','2019-08-10'),
 ('user22','Noah','password22','95898465','2019-06-12'),
@@ -40,16 +41,18 @@ INSERT INTO Users(username, name, password, phoneNumber, dateCreated) VALUES
 ('user28','Edie','password28','83064999','2019-07-03'),
 ('user29','Olivia','password29','91559454','2019-07-01'),
 ('user30','Vernice','password30','83086053','2019-05-09'),
+
 ('user31','Olivia','password31','99040931','2019-06-19'),
 ('user32','Morgan','password32','86843096','2020-04-14'),
 ('user33','Morgan','password33','96389371','2020-03-06'),
 ('user34','Winston','password34','81566501','2020-01-13'),
 ('user35','Edie','password35','85991587','2020-03-14'),
 ('user36','Noah','password36','83276052','2020-04-15'),
-('user37','Iris','password37','97464041','2020-02-06'),
+('user37','Iris','password37','97464041','2020-01-06'),
 ('user38','Grace','password38','93653549','2020-05-04'),
 ('user39','Zack','password39','89346964','2020-03-23'),
 ('user40','Bert','password40','9247133','2020-02-24'),
+
 ('user41','Kenny','password41','91922125','2020-01-27'),
 ('user42','Olivia','password42','81701755','2020-02-01'),
 ('user43','Larry','password43','96673740','2020-04-22'),
@@ -59,6 +62,7 @@ INSERT INTO Users(username, name, password, phoneNumber, dateCreated) VALUES
 ('user47','xiaomeimei','password47','93555106','2020-02-22'),
 ('user48','Winston','password48','82350546','2020-01-06'),
 ('user49','Jill','password49','92145432','2020-03-25'),
+
 ('user50','Lynette','password50','87650123','2020-05-07');
 
 INSERT INTO RestaurantStaff(username) VALUES
@@ -154,8 +158,7 @@ INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES
 (6, 'Ah Bear Mookata', 20, '505 W Coast Dr, #01-208, Singapore 120505'),
 (7, 'Marche', 50, '50 Jurong Gateway Rd, #01-03 JEM, Singapore 608549'),
 (8, 'HaiDiLao', 80, '1 Harbourfront Walk #03-09 Vivocity, Singapore 098585'),
-(9, 'Caesar Pizza', 30, '16 Collyer Quay, #01-05 Income At Raffles, Singapore 049318'),
-(10, 'BatCoronaSoupShack', 69, 'Wuhan Wet Market, China');
+(9, 'Caesar Pizza', 30, '16 Collyer Quay, #01-05 Income At Raffles, Singapore 049318');
 
 INSERT INTO RestaurantStaff(username, restid) VALUES
 ('staffresttest', 1),
@@ -167,8 +170,7 @@ INSERT INTO RestaurantStaff(username, restid) VALUES
 ('user26', 6),
 ('user27', 7),
 ('user28', 8),
-('user29', 9),
-('user30', 10);
+('user29', 9);
 
 INSERT INTO Locations(username, location, dateAdded) VALUES
 ('justning', '21 Lower Kent Ridge Rd, Singapore 119077', '2020-04-03'),
@@ -243,9 +245,7 @@ INSERT INTO Food(foodid, description, restid, price, dailylimit, availability, c
 (49, 'Lobster Bisque', 7, 8.90, 100, 100, 'Soup', 0),
 
 (21, 'prawn paste', 8, 12, 100, 100, 'Chinese', 0),
-(22, 'golden man tou', 8, 8, 100, 100, 'Chinese', 0),
-
-(229, 'CoronaBatSoup', 10, 69, 69, 69, 'COVID-19', 0);
+(22, 'golden man tou', 8, 8, 100, 100, 'Chinese', 0);
 
 INSERT INTO Orders(orderid, username, custLocation, orderCreatedTime, totalCost, fdspromoid, paymentmethodid, preparedByRest, selectedByRider, restid, delivered) VALUES 
 (2, 'justning', '469 Bukit Timah Rd Singapore 259756', '04/05/2020 1230', 10.80, NULL, 4, True, True, 1, True),
@@ -339,17 +339,49 @@ INSERT INTO PaymentMethods(paymentmethodid, username, cardInfo) VALUES
 (107, 'user3', 'american express card');
 
 INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, day1, day2, day3, day4, day5) VALUES
-(1, 'fullridertest', '2020-05-01', 1, 3, 3, 3, 3, 3),
-(2, 'user31', '2020-05-02', 1, 2, 1, 3, 2, 1),
-(3, 'user32', '2020-05-03', 1, 3, 0, 0, 2, 2),
-(4, 'user33', '2020-05-04', 1, 1, 0, 1, 2, 3),
-(5, 'user34', '2020-05-04', 1, 2, 1, 3, 2, 1),
-(6, 'user35', '2020-05-04', 1, 3, 0, 0, 2, 2),
-(7, 'user36', '2020-05-04', 1, 1, 0, 1, 2, 3),
-(8, 'user37', '2020-05-04', 1, 2, 1, 3, 2, 1),
-(9, 'user38', '2020-05-04', 1, 1, 0, 1, 2, 3),
-(10, 'user39', '2020-05-04', 1, 2, 1, 3, 2, 1),
-(11, 'user40', '2020-05-04', 1, 3, 0, 0, 2, 2);
+(1, 'user31', '2019-10-19', 1, 3, 0, 0, 2, 2),
+
+(2, 'user31', '2019-11-19', 1, 2, 1, 3, 2, 1),
+
+(3, 'user31', '2019-12-19', 1, 2, 1, 3, 2, 1),
+
+(4, 'user31', '2020-01-02', 1, 3, 0, 0, 2, 2),
+(5, 'user34', '2020-01-02', 1, 3, 3, 3, 3, 3),
+(6, 'user37', '2020-01-02', 1, 3, 0, 0, 2, 2),
+
+(7, 'user31', '2020-02-02', 1, 2, 1, 3, 2, 1),
+(8, 'user34', '2020-02-02', 1, 3, 0, 0, 2, 2),
+(9, 'user37', '2020-02-02', 1, 2, 1, 3, 2, 1),
+(10, 'user40', '2020-02-02', 1, 3, 0, 0, 2, 2),
+
+(11, 'user31', '2020-03-02', 1, 3, 0, 0, 2, 2),
+(12, 'user33', '2020-03-02', 1, 2, 1, 3, 2, 1),
+(13, 'user34', '2020-03-02', 1, 2, 1, 3, 2, 1),
+(14, 'user35', '2020-03-02', 1, 3, 0, 0, 2, 2),
+(15, 'user37', '2020-03-02', 1, 2, 1, 3, 2, 1),
+(16, 'user39', '2020-03-02', 1, 3, 0, 0, 2, 2),
+(17, 'user40', '2020-03-02', 1, 2, 1, 3, 2, 1),
+
+(18, 'user31', '2020-04-02', 1, 3, 3, 3, 3, 3),
+(19, 'user33', '2020-04-02', 1, 1, 0, 1, 2, 3),
+(20, 'user34', '2020-04-02', 1, 3, 3, 3, 3, 3),
+(21, 'user35', '2020-04-02', 1, 1, 0, 1, 2, 3),
+(22, 'user36', '2020-04-02', 1, 1, 0, 1, 2, 3),
+(23, 'user37', '2020-04-02', 1, 3, 3, 3, 3, 3),
+(24, 'user39', '2020-04-02', 1, 3, 3, 3, 3, 3),
+(25, 'user40', '2020-04-02', 1, 1, 0, 1, 2, 3),
+
+(26, 'fullridertest', '2020-05-01', 1, 3, 3, 3, 3, 3),
+(27, 'user31', '2020-05-02', 1, 2, 1, 3, 2, 1),
+(28, 'user32', '2020-05-03', 1, 3, 0, 0, 2, 2),
+(29, 'user33', '2020-05-04', 1, 1, 0, 1, 2, 3),
+(30, 'user34', '2020-05-04', 1, 2, 1, 3, 2, 1),
+(31, 'user35', '2020-05-04', 1, 3, 0, 0, 2, 2),
+(32, 'user36', '2020-05-04', 1, 1, 0, 1, 2, 3),
+(33, 'user37', '2020-05-04', 1, 2, 1, 3, 2, 1),
+(34, 'user38', '2020-05-04', 1, 1, 0, 1, 2, 3),
+(35, 'user39', '2020-05-04', 1, 2, 1, 3, 2, 1),
+(36, 'user40', '2020-05-04', 1, 3, 0, 0, 2, 2);
 
 /*
 INSERT INTO FixedWeeklySchedule(fwsid, mwsid, day1, day2, day3, day4, day5) VALUES
