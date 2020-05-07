@@ -1664,7 +1664,7 @@ def getFullTimeSchedule():
 def haveNextMonth(inputUsername):
     username = inputUsername
     today = datetime.today()
-    nextMonth = datetime(today.year, today.month + 1 % 12, 1).date()
+    nextMonth = datetime(today.year + int((today.month + 1) / 12), (today.month + 1) % 12, 1).date()
     nextScheduleQuery = f"select count(*) from MonthlyWorkSchedule where mnthStartDay = '{nextMonth}' and username = '{username}'"
     nextScheduleResult = db.session.execute(nextScheduleQuery).fetchall()[0][0]
     return nextScheduleResult
@@ -1674,7 +1674,7 @@ def generateNextMonth(inputUsername):
     #check if current month has schedule to duplicate
     today = datetime.today()
     datem = datetime(today.year, today.month, 1).date()
-    nextMonth = datetime(today.year, today.month + 1 % 12, 1).date()
+    nextMonth = datetime(today.year + int((today.month + 1) / 12), (today.month + 1) % 12, 1).date()
     newMwsidQuery = f"select max(mwsid) from MonthlyWorkSchedule"
     newMwsid = int(db.session.execute(newMwsidQuery).fetchall()[0][0] or 0) + 1
 
@@ -1692,7 +1692,7 @@ def generateNextMonth(inputUsername):
 def getNextFullTimeSchedule():
     username = session['username']
     today = datetime.today()
-    datem = datetime(today.year, today.month + 1 % 12, 1).date()
+    datem = datetime(today.year + int((today.month + 1) / 12), (today.month + 1) % 12, 1).date()
     monthYear = datem.strftime('%B') + ' ' + str(today.year)
     scheduleQuery = f"drop table if exists dayShift; create table dayShift (day integer, shift integer, primary key(day, shift)); insert into dayShift (day, shift) select wkStartDay, day1 from MonthlyWorkSchedule  where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 1) % 7, day2 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 2) % 7, day3 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 3) % 7, day4 from MonthlyWorkSchedule where mnthStartDay = '{datem}' and username = '{username}'; insert into dayShift (day, shift) select (wkStartDay + 4) % 7, day5 from MonthlyWorkSchedule M where mnthStartDay = '{datem}' and username = '{username}'; select case when day = 0 then 'Monday' when day = 1 then 'Tuesday' when day = 2 then 'Wednesday' when day = 3 then 'Thursday' when day = 4 then 'Friday' when day = 5 then 'Saturday' when day = 6 then 'Sunday' end as dayString, case when shift = 0 then '1000 to 1400\n1500 to 1900' when shift = 1 then '1100 to 1500\n1600 to 2000' when shift = 2 then '1200 to 1600\n1700 to 2100' when shift = 3 then '1300 to 1700\n1800 to 2200' end as shiftString from dayShift order by day, shift;"
     scheduleResult = db.session.execute(scheduleQuery)
@@ -1727,7 +1727,7 @@ def getPrevFullTimeScheduleResult():
 def setFullTimeSchedule():
     username = session['username']
     today = datetime.today()
-    datem = datetime(today.year, today.month + 1 % 12, 1).date()
+    datem = datetime(today.year + int((today.month + 1) / 12), (today.month + 1) % 12, 1).date()
     monthYear = datem.strftime('%B') + ' ' + str(today.year)
 
     return render_template('schedulesetfulltime.html', monthYear = monthYear)
@@ -1736,7 +1736,7 @@ def setFullTimeSchedule():
 def setFullTimeScheduleResult():
     username = session['username']
     today = datetime.today()
-    datem = datetime(today.year, today.month + 1 % 12, 1).date()
+    datem = datetime(today.year + int((today.month + 1) / 12), (today.month + 1) % 12, 1).date()
     monthYear = datem.strftime('%B') + ' ' + str(today.year)
     message = 'aborted'
     errorMessage = ''
@@ -1990,7 +1990,7 @@ def getRidersPerHour():
     scheduleResult = db.session.execute(scheduleQuery)
     sundaysch = [dict(hour = row[0], count = row[1]) for row in scheduleResult.fetchall()]
 
-    maxDay = (datetime.today() + timedelta(days = 6 - datetime.today().weekday()) + timedelta(days = 7)).date() #defaults to sunday of next week, relative to today
+    maxDay = (datetime(datetime.today().year + int((datetime.today().month + 2) / 12), (datetime.today().month + 2) % 12, 1) - timedelta(days = 1)).date()
 
     return render_template('ridersperhour.html', mondaysch = mondaysch, tuesdaysch = tuesdaysch, wednesdaysch = wednesdaysch, thursdaysch = thursdaysch, fridaysch = fridaysch, saturdaysch = saturdaysch, sundaysch = sundaysch, monday = monday, sunday = sunday, maxDay = maxDay)
 
