@@ -195,7 +195,6 @@ INSERT INTO Restaurants(restid, restname, minAmt, location) VALUES
 (7, 'Marche', 50, '50 Jurong Gateway Rd, #01-03 JEM, Singapore 608549'),
 (8, 'HaiDiLao', 80, '1 Harbourfront Walk #03-09 Vivocity, Singapore 098585'),
 (9, 'Caesar Pizza', 30, '16 Collyer Quay, #01-05 Income At Raffles, Singapore 049318');
->>>>>>> 819b458d174d48949b739b968a61142a5a4cc409
 
 INSERT INTO RestaurantStaff(username, restid) VALUES
 ('staffresttest', 1),
