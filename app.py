@@ -1294,20 +1294,20 @@ def orderstatus():
             riderusername = randrider[0]
 
         else:
-            nextavailriderquery = f"select distinct P.username, D1.timeDepartToRestaurant \
-            from (PartTimeRiders P natural join WeeklyWorkSchedule W natural join DailyWorkShift D) \
-            join (Delivers D1 join Orders on (D1.orderid = Orders.orderid)) on (P.username = D1.username) \
-            where D.day = (select extract(isodow from current_timestamp) - 1) \
-            and D.starthour < (select extract(hour from current_timestamp)) \
-            and D.duration > (D.starthour - (select extract(hour from current_timestamp))) \
-            and exists ( \
+            nextavailriderquery = f"select username \
+            from DeliveryRiders D \
+            where exists ( \
+                select 1 \
+                from RidersPerHour R \
+                where D.username = R.username \
+                and (select extract(isodow from R.day)) = (select extract(isodow from current_timestamp)) \
+                and R.hour = (select extract(hour from current_timestamp))) \
+            and exists (  \
                 select 1 \
                 from Delivers join Orders on (Delivers.orderid = Orders.orderid) \
-                where Delivers.username = P.username \
+                where Delivers.username = D.username \
                 and Orders.selectedByRider = True \
-                and Orders.delivered = False ) \
-            order by D1.timeDepartToRestaurant    \
-            limit 1"
+                and Orders.delivered = False)" \
             nextavailriderresult = db.session.execute(nextavailriderquery).fetchall()
             riderusername = nextavailriderresult[0]
     
