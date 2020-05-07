@@ -337,12 +337,18 @@ INSERT INTO PaymentMethods(paymentmethodid, username, cardInfo) VALUES
 (106, 'user2', 'paylah debit'),
 (107, 'user3', 'american express card');
 
-
 INSERT INTO MonthlyWorkSchedule(mwsid, username, mnthStartDay, wkStartDay, day1, day2, day3, day4, day5) VALUES
 (1, 'fullridertest', '2020-05-01', 1, 3, 3, 3, 3, 3),
-(2, 'user31', '2020-05-02', 1, 3, 3, 3, 3, 3),
-(3, 'user32', '2020-05-03', 1, 3, 3, 3, 3, 3),
-(4, 'user33', '2020-05-04', 1, 3, 3, 2, 3, 3);
+(2, 'user31', '2020-05-02', 1, 2, 1, 3, 2, 1),
+(3, 'user32', '2020-05-03', 1, 3, 0, 0, 2, 2),
+(4, 'user33', '2020-05-04', 1, 1, 0, 1, 2, 3),
+(5, 'user34', '2020-05-04', 1, 2, 1, 3, 2, 1),
+(6, 'user35', '2020-05-04', 1, 3, 0, 0, 2, 2),
+(7, 'user36', '2020-05-04', 1, 1, 0, 1, 2, 3),
+(8, 'user37', '2020-05-04', 1, 2, 1, 3, 2, 1),
+(9, 'user38', '2020-05-04', 1, 1, 0, 1, 2, 3),
+(10, 'user39', '2020-05-04', 1, 2, 1, 3, 2, 1),
+(11, 'user40', '2020-05-04', 1, 3, 0, 0, 2, 2);
 
 /*
 INSERT INTO FixedWeeklySchedule(fwsid, mwsid, day1, day2, day3, day4, day5) VALUES
@@ -422,15 +428,34 @@ INSERT INTO RiderStats(month, year, username, totalOrders, totalSalary) values
 (1, 2020, 'bakwah', 23, 765),
 (1, 2020, 'user32', 40, 1280),
 (1, 2020, 'user48', 13, 405),
-(2, 2020, 'user31', 21,  605),
+(2, 2020, 'user31', 21, 605),
 (2, 2020, 'user32', 32, 920),
 (3, 2020, 'user49', 11, 375),
 (3, 2020, 'user48', 38, 1190),
 (4, 2020, 'user31', 34, 970),
-(4, 2020, 'bakwah', 23, 765),
 (4, 2020, 'user32', 40, 1280),
-(4, 2020, 'user48', 13, 405);
+(4, 2020, 'user48', 13, 405),
 
+(5, 2020, 'fullridertest', 40, 1280),
+(5, 2020, 'user31', 21,  605),
+(5, 2020, 'user32', 21,  605),
+(5, 2020, 'user33', 32, 920),
+(5, 2020, 'user34', 34, 970),
+(5, 2020, 'user35', 40, 1280),
+(5, 2020, 'user36', 21,  605),
+(5, 2020, 'user37', 34, 970),
+(5, 2020, 'user38', 40, 1280),
+(5, 2020, 'user39', 21,  605),
+(5, 2020, 'user40', 34, 970),
+(5, 2020, 'partridertest', 12, 380),
+(5, 2020, 'user41', 21, 605),
+(5, 2020, 'user42', 23, 765),
+(5, 2020, 'user43', 23, 765),
+(5, 2020, 'user45', 21, 605),
+(5, 2020, 'user46', 21, 605),
+(5, 2020, 'user47', 23, 765),
+(5, 2020, 'user48', 11, 375),
+(5, 2020, 'user49', 13, 405);
 
 INSERT INTO HoursPerMonth(username, month, hours) VALUES
 ('user31', '01/01/2020', 80),

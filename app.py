@@ -1308,7 +1308,7 @@ def orderstatus():
         numavailableriders = len(availableriders)
 
         if numavailableriders != 0:
-            randridernum = random.randint(0, numavailableriders)
+            randridernum = random.randint(0, numavailableriders-1)
             randrider = availableriders[randridernum]
             riderusername = randrider[0]
 
@@ -1653,7 +1653,7 @@ def orderDelivered():
     # check current rider stats
     numOrdersQuery = f"select distinct totalOrders from RiderStats where username = '{username}' and month = (select extract(month from current_timestamp))"
     numOrdersResult = db.session.execute(numOrdersQuery).fetchall()
-    numOrders = numOrdersResult[0][0]
+    numOrders = numOrdersResult[0]
 
     return render_template('riders_deliveryCompleted.html', numOrders = numOrders)    
 
