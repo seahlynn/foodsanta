@@ -771,7 +771,7 @@ begin
     where wwsid = NEW.wwsid;
 
     -- total hours validity
-    if totalHours > 44 then
+    if totalHours > 48 then
         raise exception 'FoodSanta: A shift you are trying to add (%00hrs to %00hrs on %) results in you working more than 48 hours this week! Ho ho ho!',
         NEW.startHour, (NEW.startHour + NEW.duration), existingDay;
     end if;
