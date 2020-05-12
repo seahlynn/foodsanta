@@ -33,7 +33,6 @@ def updateDailyLimit():
 def insertRiderStats():
     FTusernameresult = db.session.execute(f"select distinct username from FullTimeRiders")
     FTusernamelist = [dict(username = row[0]) for row in FTusernameresult.fetchall()]
-    print('here')
     for i in FTusernamelist:
         username = i['username']
         todo = f"insert into RiderStats values ((select extract(month from current_timestamp)), (select extract(year from current_timestamp)), '{username}', 0, 3000);" 
@@ -96,7 +95,6 @@ def haveNextWeek(inputUsername):
     nextMonday = (today + timedelta(days = daysToNextMonday)).date()
     nextScheduleQuery = f"select count(*) from WeeklyWorkSchedule where startDate = '{nextMonday}' and username = '{username}'"
     nextScheduleResult = db.session.execute(nextScheduleQuery).fetchall()[0][0]
-    print(nextScheduleResult)
     return nextScheduleResult
 
 def generateNextWeek(inputUsername):
@@ -1012,7 +1010,6 @@ def restresults():
 def catresults():
     global db
     category = request.args['category']
-    print(category)
 
     query = f"select * from Restaurants"
     result = db.session.execute(query)
@@ -1093,7 +1090,11 @@ def addtocart():
     result = db.session.execute(query).fetchall()
     minAmt = result[0][0]
 
-    return render_template('restaurants.html', restlist = restlist, minAmt = minAmt, foodlist = foodlist, catlist = catlist)
+    query = f"select R.reviewdesc, O.username from Reviews R, Orders O where R.orderid = O.orderid and O.restid = {restid}"
+    result = db.session.execute(query)
+    reviewlist = [dict(username= row[1], review = row[0]) for row in result.fetchall()]
+    
+    return render_template('restaurants.html', restlist = restlist, minAmt = minAmt, foodlist = foodlist, catlist = catlist, reviewlist = reviewlist,)
 
 
 '''
@@ -1152,7 +1153,6 @@ def deletefromcart():
 
     if quantity == 1:
         todo = f"delete from Contains where foodid = {foodid} and orderid = {orderid}"
-        print(quantity)
         db.session.execute(todo)
     else :
         newquantity = quantity - 1
