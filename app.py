@@ -1493,15 +1493,16 @@ def orderstatus():
         db.session.execute(updateriderpicked)
         db.session.execute(updateorderselectedbyrider)
         db.session.commit()
-        
-    inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant \
+    
+
+    inprogressquery = f"select restName, orderCreatedTime, selectedByRider, timeArrivedAtRestaurant, D.username \
     from Orders O, Delivers D, Restaurants R \
     where D.orderid = O.orderid \
     and O.username = '{username}' \
     and O.delivered = False \
     and R.restid = O.restid"
     progressresult = db.session.execute(inprogressquery)
-    orderlist = [dict(rest = row[0], timeordered = row[1], orderpicked = row[2], pickedup = row[3]) for row in progressresult.fetchall()]
+    orderlist = [dict(rest = row[0], timeordered = row[1], orderpicked = row[2], pickedup = row[3], rider = row[4]) for row in progressresult.fetchall()]
 
     finishedquery = f"select R.restName, O.totalCost, D.timeOrderDelivered, O.orderid \
     from Orders O, Delivers D, Restaurants R \
@@ -1511,7 +1512,7 @@ def orderstatus():
     finishedresult = db.session.execute(finishedquery)
     finishedlist = [dict(rest = row[0], total = row[1], received = row[2], orderid = row[3]) for row in finishedresult.fetchall()]
     
-    return render_template('orderstatus.html', orderlist = orderlist, finishedlist = finishedlist, rider = riderusername)
+    return render_template('orderstatus.html', orderlist = orderlist, finishedlist = finishedlist)
 
 @app.route('/submitreviewandrating', methods=['POST'])
 def submitreviewandrating():
